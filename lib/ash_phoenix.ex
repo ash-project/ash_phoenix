@@ -1,5 +1,5 @@
 defmodule AshPhoenix do
   @moduledoc """
-  Documentation for `AshPhoenix`.
+  See the readme for the current state of the project
   """
 end

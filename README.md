@@ -1,11 +1,18 @@
 # AshPhoenix
 
-**TODO: Add description**
+![Elixir CI](https://github.com/ash-project/ash_phoenix/workflows/Ash%20CI/badge.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Coverage Status](https://coveralls.io/repos/github/ash-project/ash_phoenix/badge.svg?branch=master)](https://coveralls.io/github/ash-project/ash_phoenix?branch=master)
+[![Hex version badge](https://img.shields.io/hexpm/v/ash_phoenix.svg)](https://hex.pm/packages/ash_phoenix)
 
-## Installation
+See the online documentation for `AshPhoenix.LiveView` for the current set of utilities. This is a new integration, and doesn't do much. Currently, the only
+thing that is offered are a few helpers for keeping query data live ins ide of live views. There is some experimental code here as well for passing an `Ash.Changeset` to `Phoenix.HTML.form_for/4`.
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `ash_phoenix` to your list of dependencies in `mix.exs`:
+Roadmap:
+
+- UI authorization utilities e.g `<%= if authorized_to_do?(resource, action, actor) do %>`
+- Potentially helpers for easily connecting buttons to resource actions
+- Form helpers for using `Ash.Changeset`s with `form_for`
 
 ```elixir
 def deps do
@@ -14,8 +21,3 @@ def deps do
   ]
 end
 ```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/ash_phoenix](https://hexdocs.pm/ash_phoenix).
-

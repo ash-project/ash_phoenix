@@ -72,6 +72,8 @@ defmodule Ash.Notifier.LiveView do
   page by number, you'll want to use `offset` pagination, but keep in mind that it performs worse on large
   tables.
 
+  To support this, accept a second parameter to your callback function, which will be the options to use in `page_opts
+
   ## Options:
   #{NimbleOptions.docs(@opts)}
 
@@ -394,7 +396,7 @@ defmodule Ash.Notifier.LiveView do
               refetch_list(socket, config.callback, list, config.opts)
 
             other ->
-              run_callback(config.callback, socket, [])
+              run_callback(config.callback, socket, nil)
           end
 
         new_config =
