@@ -6,7 +6,7 @@
 [![Hex version badge](https://img.shields.io/hexpm/v/ash_phoenix.svg)](https://hex.pm/packages/ash_phoenix)
 
 See the online documentation for `AshPhoenix.LiveView` for the current set of utilities. This is a new integration, and doesn't do much. Currently, the only
-thing that is offered are a few helpers for keeping query data live ins ide of live views. There is some experimental code here as well for passing an `Ash.Changeset` to `Phoenix.HTML.form_for/4`.
+thing that is offered are a few helpers for keeping query data live ins ide of live views. There is some experimental code here as well for passing an `Ash.Changeset` to Phoenix.HTML.form_for/4.
 
 Roadmap:
 

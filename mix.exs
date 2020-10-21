@@ -9,8 +9,9 @@ defmodule AshPhoenix.MixProject do
 
   def project do
     [
-      {:ash, ash_version("~> 1.19")},
+      app: :ash_phoenix,
       version: @version,
+      description: @description,
       elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -70,10 +71,17 @@ defmodule AshPhoenix.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ash, "~> 1.19"},
+      {:ash, ash_version("~> 1.20")},
       {:phoenix, "~> 1.5.6"},
       {:phoenix_html, "~> 2.14"},
-      {:phoenix_live_view, "~> 0.14.7"}
+      {:phoenix_live_view, "~> 0.14.7"},
+      {:git_ops, "~> 2.0.1", only: :dev},
+      {:ex_doc, "~> 0.23", only: :dev, runtime: false},
+      {:ex_check, "~> 0.12.0", only: :dev},
+      {:credo, ">= 0.0.0", only: :dev, runtime: false},
+      {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},
+      {:sobelow, ">= 0.0.0", only: :dev, runtime: false},
+      {:excoveralls, "~> 0.13.0", only: [:dev, :test]}
     ]
   end
 

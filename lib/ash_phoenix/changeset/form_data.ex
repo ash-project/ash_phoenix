@@ -20,7 +20,7 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
     end
   end
 
-  def input_validations(changeset, form, field) do
+  def input_validations(_changeset, _form, _field) do
     # Ash.Changeset.
     # [required: ]
     []
@@ -40,6 +40,11 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
     name = to_string(name || form_for_name(changeset.resource))
     id = Keyword.get(opts, :id) || name
 
+    hidden =
+      changeset.data
+      |> Map.take(Ash.Resource.primary_key(changeset.resource))
+      |> Enum.to_list()
+
     %Phoenix.HTML.Form{
       source: changeset,
       impl: __MODULE__,
@@ -48,7 +53,7 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
       errors: form_for_errors(changeset),
       data: changeset.data,
       params: %{},
-      hidden: Map.take(changeset.data, Ash.Resource.primary_key(changeset.resource)),
+      hidden: hidden,
       options: Keyword.put_new(opts, :method, form_for_method(changeset))
     }
   end
@@ -67,25 +72,8 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
     end
   end
 
-  def to_form(changeset, form, field, opts) d
-    # # %{params: params, data: data} = changeset
-    # {name, opts} = Keyword.pop(opts, :as)
-
-    # name = to_string(name || form_for_name(changeset.resource))
-    # id = Keyword.get(opts, :id) || name
-
-    # %Phoenix.HTML.Form{
-    #   source: changeset,
-    #   impl: __MODULE__,
-    #   id: id,
-    #   name: name,
-    #   # errors: form_for_errors(changeset),
-    #   data: changeset.data,
-    #   params: %{},
-    #   # hidden: form_for_hidden(data),
-    #   options: Keyword.put_new(opts, :method, form_for_method(changeset))
-    # }
-    nil
+  def to_form(_changeset, _form, _field, _opts) do
+    []
   end
 
   defp form_for_method(%{action_type: :create}), do: "post"

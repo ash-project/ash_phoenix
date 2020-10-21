@@ -72,7 +72,7 @@ defmodule Ash.Notifier.LiveView do
   page by number, you'll want to use `offset` pagination, but keep in mind that it performs worse on large
   tables.
 
-  To support this, accept a second parameter to your callback function, which will be the options to use in `page_opts
+  To support this, accept a second parameter to your callback function, which will be the options to use in `page_opts`
 
   ## Options:
   #{NimbleOptions.docs(@opts)}
@@ -395,7 +395,7 @@ defmodule Ash.Notifier.LiveView do
             list when is_list(list) ->
               refetch_list(socket, config.callback, list, config.opts)
 
-            other ->
+            _ ->
               run_callback(config.callback, socket, nil)
           end
 
@@ -428,16 +428,11 @@ defmodule Ash.Notifier.LiveView do
         resulting_page = run_callback(callback, socket, nil)
 
         Enum.map(current_list, fn result ->
-          case Enum.find(
-                 resulting_page.results,
-                 &(Map.take(&1, pkey) == Map.take(result, pkey))
-               ) do
-            nil ->
-              result
-
-            replacement ->
-              replacement
-          end
+          Enum.find(
+            resulting_page.results,
+            result,
+            &(Map.take(&1, pkey) == Map.take(result, pkey))
+          )
         end)
     end
   end
@@ -470,16 +465,11 @@ defmodule Ash.Notifier.LiveView do
         preserved_records =
           current_page.results
           |> Enum.map(fn result ->
-            case Enum.find(
-                   resulting_page.results,
-                   &(Map.take(&1, pkey) == Map.take(result, pkey))
-                 ) do
-              nil ->
-                result
-
-              replacement ->
-                replacement
-            end
+            Enum.find(
+              resulting_page.results,
+              result,
+              &(Map.take(&1, pkey) == Map.take(result, pkey))
+            )
           end)
 
         %{resulting_page | results: preserved_records}
@@ -490,7 +480,7 @@ defmodule Ash.Notifier.LiveView do
     callback.(socket, page_opts)
   end
 
-  defp run_callback(callback, socket, page_opts) when is_function(callback, 1) do
+  defp run_callback(callback, socket, _page_opts) when is_function(callback, 1) do
     callback.(socket)
   end
 
