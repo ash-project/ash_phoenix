@@ -1,4 +1,4 @@
-defmodule Ash.Notifier.LiveView do
+defmodule AshPhoenix.LiveView do
   @moduledoc """
   Utilities for keeping ash query results up to date in a live view.
   """
@@ -21,7 +21,7 @@ defmodule Ash.Notifier.LiveView do
       doc: "A boolean flag indicating whether a refetch is allowed to happen. Defaults to `true`"
     ],
     results: [
-      type: {:one_of, [:keep, :lose]},
+      type: {:in, [:keep, :lose]},
       doc:
         "For list and page queries, by default the records shown are never changed (unless the page changes)",
       default: :keep
@@ -54,7 +54,7 @@ defmodule Ash.Notifier.LiveView do
   end
 
   @doc """
-  Runs the configured query and action, and stores the information required to keep it live in the socket assigns.
+  Runs the callback, and stores the information required to keep it live in the socket assigns.
 
   The data will be assigned to the provided key, e.g `keep_live(socket, :me, ...)` would assign the results
   to `:me` (accessed as `@me` in the template).
