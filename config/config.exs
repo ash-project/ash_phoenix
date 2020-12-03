@@ -1,6 +1,8 @@
 use Mix.Config
 
 if Mix.env() == :dev do
+  config :phoenix, :json_library, Jason
+
   config :git_ops,
     mix_project: AshPhoenix.MixProject,
     changelog_file: "CHANGELOG.md",

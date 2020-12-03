@@ -18,6 +18,7 @@ defmodule AshPhoenix.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       test_coverage: [tool: ExCoveralls],
+      compilers: [:phoenix] ++ Mix.compilers(),
       docs: docs(),
       preferred_cli_env: [
         coveralls: :test,
@@ -74,7 +75,7 @@ defmodule AshPhoenix.MixProject do
       {:ash, ash_version("~> 1.20")},
       {:phoenix, "~> 1.5.6"},
       {:phoenix_html, "~> 2.14"},
-      {:phoenix_live_view, "~> 0.14.7"},
+      {:phoenix_live_view, "~> 0.15"},
       {:git_ops, "~> 2.0.1", only: :dev},
       {:ex_doc, "~> 0.23", only: :dev, runtime: false},
       {:ex_check, "~> 0.12.0", only: :dev},

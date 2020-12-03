@@ -1,4 +1,4 @@
-defmodule Ash.Notifier.LiveView do
+defmodule AshPhoenix.LiveView do
   @moduledoc """
   Utilities for keeping ash query results up to date in a live view.
   """
@@ -21,7 +21,7 @@ defmodule Ash.Notifier.LiveView do
       doc: "A boolean flag indicating whether a refetch is allowed to happen. Defaults to `true`"
     ],
     results: [
-      type: {:one_of, [:keep, :lose]},
+      type: {:in, [:keep, :lose]},
       doc:
         "For list and page queries, by default the records shown are never changed (unless the page changes)",
       default: :keep
@@ -54,7 +54,7 @@ defmodule Ash.Notifier.LiveView do
   end
 
   @doc """
-  Runs the configured query and action, and stores the information required to keep it live in the socket assigns.
+  Runs the callback, and stores the information required to keep it live in the socket assigns.
 
   The data will be assigned to the provided key, e.g `keep_live(socket, :me, ...)` would assign the results
   to `:me` (accessed as `@me` in the template).
@@ -164,7 +164,11 @@ defmodule Ash.Notifier.LiveView do
         end
       end
 
-    current_page = Map.get(socket.assigns, assign)
+    current_page =
+      case Map.get(socket.assigns, assign) do
+        {:ok, data} -> data
+        data -> data
+      end
 
     unless config.opts[:api] do
       raise "Must set api to use change_page/3"
@@ -182,8 +186,9 @@ defmodule Ash.Notifier.LiveView do
   end
 
   def page_from_params(params, default_limit, count? \\ false) do
+    params = params || %{}
+
     params
-    |> Kernel.||(%{})
     |> Map.take(["after", "before", "limit", "offset"])
     |> Enum.reject(fn {_, val} -> is_nil(val) || val == "" end)
     |> Enum.map(fn {key, value} -> {String.to_existing_atom(key), value} end)
@@ -197,7 +202,7 @@ defmodule Ash.Notifier.LiveView do
       end
     end)
     |> Keyword.put_new(:limit, default_limit)
-    |> Keyword.put(:count, count?)
+    |> Keyword.put(:count, count? || params["count"] == "true")
   end
 
   def page_params(%Ash.Page.Keyset{} = keyset) do
@@ -211,6 +216,7 @@ defmodule Ash.Notifier.LiveView do
       true ->
         []
     end
+    |> set_count(keyset)
   end
 
   def page_params(%Ash.Page.Offset{} = offset) do
@@ -219,7 +225,14 @@ defmodule Ash.Notifier.LiveView do
     else
       [limit: offset.limit]
     end
+    |> set_count(offset)
   end
+
+  defp set_count(params, %{count: count}) when not is_nil(count) do
+    Keyword.put(params, :count, true)
+  end
+
+  defp set_count(params, _), do: params
 
   def page_link_params(_, "first") do
     []
