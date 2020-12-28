@@ -17,7 +17,7 @@ Roadmap:
 ```elixir
 def deps do
   [
-    {:ash_phoenix, "~> 0.1.1"}
+    {:ash_phoenix, "~> 0.1.2"}
   ]
 end
 ```
