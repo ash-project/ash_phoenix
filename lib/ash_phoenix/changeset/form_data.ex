@@ -6,9 +6,31 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
   # is much better than ours. Unsurprising, the current system
   # was simply tacked on based on the API error system.
 
-  def input_type(%{resource: resource}, _, field) do
-    type = Ash.Resource.attribute(resource, field)
+  def input_type(%{resource: resource, action: action}, _, field) do
+    attribute = Ash.Resource.attribute(resource, field)
 
+    if attribute do
+      type_to_form_type(attribute.type)
+    else
+      argument = get_argument(action, field)
+
+      if argument do
+        type_to_form_type(argument.type)
+      else
+        :text_input
+      end
+    end
+  end
+
+  defp get_argument(action, field) when is_atom(field) do
+    Enum.find(action.arguments, &(&1.name == field))
+  end
+
+  defp get_argument(action, field) when is_binary(field) do
+    Enum.find(action.arguments, &(to_string(&1.name) == field))
+  end
+
+  defp type_to_form_type(type) do
     case Ash.Type.ecto_type(type) do
       :integer -> :number_input
       :boolean -> :checkbox
@@ -21,8 +43,6 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
   end
 
   def input_validations(_changeset, _form, _field) do
-    # Ash.Changeset.
-    # [required: ]
     []
   end
 
