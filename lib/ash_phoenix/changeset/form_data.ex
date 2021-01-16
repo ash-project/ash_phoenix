@@ -1,10 +1,7 @@
 defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
   # Most of this logic was simply copied from ecto
   # The goal here is to eventually lift complex validations
-  # up into the form. While implementing this, it has become
-  # very clear that ecto's changeset's implementations of errors
-  # is much better than ours. Unsurprising, the current system
-  # was simply tacked on based on the API error system.
+  # up into the form.
 
   def input_type(%{resource: resource, action: action}, _, field) do
     attribute = Ash.Resource.attribute(resource, field)
