@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.2.0](https://github.com/ash-project/ash_phoenix/compare/v0.1.2...v0.2.0) (2021-01-22)
+
+
+
+
+### Features:
+
+* support arguments in changeset
+
+### Improvements:
+
+* support the latest ash
+
+* support arguments in form_data
+
 ## [v0.1.2](https://github.com/ash-project/ash_phoenix/compare/v0.1.1...v0.1.2) (2020-12-28)
 
 
