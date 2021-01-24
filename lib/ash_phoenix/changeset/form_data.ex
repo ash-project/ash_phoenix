@@ -67,7 +67,7 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
       impl: __MODULE__,
       id: id,
       name: name,
-      errors: form_for_errors(changeset),
+      errors: form_for_errors(changeset, opts),
       data: changeset.data,
       params: %{},
       hidden: hidden,
@@ -75,30 +75,60 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
     }
   end
 
-  defp form_for_errors(changeset) do
-    changeset.errors
-    |> Enum.filter(&Map.has_key?(&1, :field))
-    |> Enum.filter(fn error ->
-      Map.has_key?(changeset.arguments, error.field) ||
-        Map.has_key?(changeset.arguments, to_string(error.field)) ||
-        Map.has_key?(changeset.attributes, error.field) ||
-        Map.has_key?(changeset.relationships, error.field)
-    end)
-    |> Enum.map(fn
-      %{field: field, message: {message, opts}} ->
-        {field, {message, opts}}
-
-      %{field: field, message: message} ->
-        {field, {message, []}}
-
-      %{field: field} = error ->
-        {field, {Exception.message(error), []}}
-    end)
-  end
-
   def to_form(_changeset, _form, _field, _opts) do
     []
   end
+
+  defp form_for_errors(changeset, opts) do
+    changeset.errors
+    |> Enum.filter(&(Map.has_key?(&1, :field) || Map.has_key?(&1, :fields)))
+    |> Enum.flat_map(fn
+      %{field: field, message: {message, opts}} = error ->
+        [{field, {message, vars(error, opts)}}]
+
+      %{field: field, message: message} = error ->
+        [{field, {message, vars(error, [])}}]
+
+      %{field: field} = error ->
+        [{field, {Exception.message(error), vars(error, [])}}]
+
+      %{fields: fields, message: {message, opts}} = error ->
+        Enum.map(fields, fn field ->
+          [{field, {message, vars(error, opts)}}]
+        end)
+
+      %{fields: fields, message: message} = error ->
+        Enum.map(fields, fn field ->
+          [{field, {message, vars(error, [])}}]
+        end)
+
+      %{fields: fields} = error ->
+        message = Exception.message(error)
+
+        Enum.map(fields, fn field ->
+          {field, {message, vars(error, [])}}
+        end)
+    end)
+    |> filter_errors(changeset, opts)
+  end
+
+  defp filter_errors(errors, changeset, opts) do
+    if opts[:all_errors?] || is_nil(changeset.action) do
+      errors
+    else
+      Enum.filter(errors, fn {field, _} ->
+        field in (opts[:error_keys] || []) ||
+          Map.has_key?(changeset.params, field) ||
+          Map.has_key?(changeset.params, to_string(field))
+      end)
+    end
+  end
+
+  defp vars(%{vars: vars}, opts) do
+    Keyword.merge(vars, opts)
+  end
+
+  defp vars(_, opts), do: opts
 
   defp form_for_method(%{action_type: :create}), do: "post"
   defp form_for_method(_), do: "put"
