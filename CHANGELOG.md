@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.2.1](https://github.com/ash-project/ash_phoenix/compare/v0.2.0...v0.2.1) (2021-01-24)
+
+
+
+
+### Bug Fixes:
+
+* better error messages
+
+### Improvements:
+
+* support ci_string in html
+
 ## [v0.2.0](https://github.com/ash-project/ash_phoenix/compare/v0.1.2...v0.2.0) (2021-01-22)
 
 
