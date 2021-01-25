@@ -69,7 +69,7 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
       name: name,
       errors: form_for_errors(changeset, opts),
       data: changeset.data,
-      params: %{},
+      params: changeset.params,
       hidden: hidden,
       options: Keyword.put_new(opts, :method, form_for_method(changeset))
     }
@@ -83,31 +83,34 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
     changeset.errors
     |> Enum.filter(&(Map.has_key?(&1, :field) || Map.has_key?(&1, :fields)))
     |> Enum.flat_map(fn
-      %{field: field, message: {message, opts}} = error ->
+      %{field: field, message: {message, opts}} = error when not is_nil(field) ->
         [{field, {message, vars(error, opts)}}]
 
-      %{field: field, message: message} = error ->
+      %{field: field, message: message} = error when not is_nil(field) ->
         [{field, {message, vars(error, [])}}]
 
-      %{field: field} = error ->
+      %{field: field} = error when not is_nil(field) ->
         [{field, {Exception.message(error), vars(error, [])}}]
 
-      %{fields: fields, message: {message, opts}} = error ->
+      %{fields: fields, message: {message, opts}} = error when is_list(fields) ->
         Enum.map(fields, fn field ->
           [{field, {message, vars(error, opts)}}]
         end)
 
-      %{fields: fields, message: message} = error ->
+      %{fields: fields, message: message} = error when is_list(fields) ->
         Enum.map(fields, fn field ->
           [{field, {message, vars(error, [])}}]
         end)
 
-      %{fields: fields} = error ->
+      %{fields: fields} = error when is_list(fields) ->
         message = Exception.message(error)
 
         Enum.map(fields, fn field ->
           {field, {message, vars(error, [])}}
         end)
+
+      _ ->
+        []
     end)
     |> filter_errors(changeset, opts)
   end
