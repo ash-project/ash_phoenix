@@ -46,7 +46,34 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
   # # Returns the HTML5 validations that would apply to the given field.
 
   def input_value(changeset, _form, field) do
-    Map.get(changeset.attributes, field)
+    params_only? = field in (changeset.context[:params_only] || [])
+
+    case get_changing_value(changeset, field, params_only?) do
+      {:ok, value} ->
+        value
+
+      :error ->
+        unless params_only? do
+          Map.get(changeset.data, field)
+        end
+    end
+  end
+
+  defp get_changing_value(changeset, field, params_only?) do
+    if params_only? do
+      case Map.fetch(changeset.params, field) do
+        {:ok, value} ->
+          value
+
+        :error ->
+          Map.fetch(changeset.params, to_string(field))
+      end
+    else
+      with :error <- Map.fetch(changeset.attributes, field),
+           :error <- Map.fetch(changeset.params, field) do
+        Map.fetch(changeset.params, to_string(field))
+      end
+    end
   end
 
   # # Returns the value for the given field.
@@ -71,7 +98,8 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
       data: changeset.data,
       params: changeset.params,
       hidden: hidden,
-      options: Keyword.put_new(opts, :method, form_for_method(changeset))
+      options:
+        Keyword.delete(Keyword.put_new(opts, :method, form_for_method(changeset)), :only_params)
     }
   end
 
