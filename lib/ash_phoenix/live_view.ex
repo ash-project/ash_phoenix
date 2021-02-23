@@ -436,7 +436,7 @@ defmodule AshPhoenix.LiveView do
         nil
 
         first = List.first(current_list).__struct__
-        pkey = Ash.Resource.primary_key(first)
+        pkey = Ash.Resource.Info.primary_key(first)
 
         resulting_page = run_callback(callback, socket, nil)
 
@@ -460,7 +460,7 @@ defmodule AshPhoenix.LiveView do
 
       true ->
         first = List.first(current_page.results).__struct__
-        pkey = Ash.Resource.primary_key(first)
+        pkey = Ash.Resource.Info.primary_key(first)
 
         filter =
           case pkey do
