@@ -20,6 +20,8 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
     end
   end
 
+  defp get_argument(nil, _), do: nil
+
   defp get_argument(action, field) when is_atom(field) do
     Enum.find(action.arguments, &(&1.name == field))
   end
@@ -87,7 +89,7 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
       end
 
     %Phoenix.HTML.Form{
-      action: changeset.action.name,
+      action: changeset.action && changeset.action.name,
       source: Ash.Changeset.put_context(changeset, :form, %{path: []}),
       impl: __MODULE__,
       id: id,
@@ -109,6 +111,13 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
     changeset_opts = [skip_defaults: :all]
     id = to_string(id || form.id <> "_#{field}")
     name = to_string(name || form.name <> "[#{field}]")
+
+    arguments =
+      if changeset.action do
+        changeset.action.arguments
+      else
+        []
+      end
 
     {source, resource, data, opts} =
       cond do
@@ -134,7 +143,7 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
 
         arg =
             Enum.find(
-              changeset.action.arguments,
+              arguments,
               &(&1.name == field || to_string(&1.name) == field)
             ) ->
           case get_embedded(arg.type) do
@@ -213,7 +222,7 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
         end
 
       %Phoenix.HTML.Form{
-        action: changeset.action.name,
+        action: changeset.action && changeset.action.name,
         source: changeset,
         impl: __MODULE__,
         id: id <> "_" <> index_string,
@@ -268,7 +277,7 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
         end
 
       %Phoenix.HTML.Form{
-        action: changeset.action.name,
+        action: changeset.action && changeset.action.name,
         source: changeset,
         impl: __MODULE__,
         id: id,
