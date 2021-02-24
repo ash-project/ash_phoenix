@@ -114,7 +114,7 @@ defmodule AshPhoenix.LiveView do
 
   require Ash.Query
 
-  @type callback_result :: Ash.record() | list(Ash.record()) | Ash.page() | nil
+  @type callback_result :: struct() | list(struct()) | Ash.Page.page() | nil
   @type callback :: (socket -> callback_result) | (socket, Keyword.t() | nil -> callback_result)
 
   @spec keep_live(socket, assign, callback, liveness_options) :: socket
