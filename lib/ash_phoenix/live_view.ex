@@ -26,6 +26,15 @@ defmodule AshPhoenix.LiveView do
         "For list and page queries, by default the records shown are never changed (unless the page changes)",
       default: :keep
     ],
+    load_until_connected?: [
+      type: :boolean,
+      doc:
+        "If the socket is not connected, then the value of the provided assign is set to `:loading`. Has no effect if `initial` is provided."
+    ],
+    initial: [
+      type: :any,
+      doc: "Results to use instead of running the query immediately."
+    ],
     api: [
       type: :atom,
       doc:
@@ -121,30 +130,42 @@ defmodule AshPhoenix.LiveView do
   def keep_live(socket, assign, callback, opts \\ []) do
     opts = NimbleOptions.validate!(opts, @opts)
 
-    if opts[:refetch_interval] do
-      :timer.send_interval(opts[:refetch_interval], {:refetch, assign, []})
+    if opts[:load_until_connected?] && !Phoenix.LiveView.connected?(socket) do
+      Phoenix.LiveView.assign(socket, assign, :loading)
+    else
+      if opts[:refetch_interval] do
+        :timer.send_interval(opts[:refetch_interval], {:refetch, assign, []})
+      end
+
+      if Phoenix.LiveView.connected?(socket) do
+        for topic <- List.wrap(opts[:subscribe]) do
+          socket.endpoint.subscribe(topic)
+        end
+      end
+
+      live_config = Map.get(socket.assigns, :ash_live_config, %{})
+
+      result =
+        case Keyword.fetch(opts, :initial) do
+          {:ok, result} ->
+            mark_page_as_first(result)
+
+          :error ->
+            callback
+            |> run_callback(socket, nil)
+            |> mark_page_as_first()
+        end
+
+      this_config = %{
+        last_fetched_at: System.monotonic_time(:millisecond),
+        callback: callback,
+        opts: opts
+      }
+
+      socket
+      |> Phoenix.LiveView.assign(assign, result)
+      |> Phoenix.LiveView.assign(:ash_live_config, Map.put(live_config, assign, this_config))
     end
-
-    for topic <- List.wrap(opts[:subscribe]) do
-      socket.endpoint.subscribe(topic)
-    end
-
-    live_config = Map.get(socket.assigns, :ash_live_config, %{})
-
-    result =
-      callback
-      |> run_callback(socket, nil)
-      |> mark_page_as_first()
-
-    this_config = %{
-      last_fetched_at: System.monotonic_time(:millisecond),
-      callback: callback,
-      opts: opts
-    }
-
-    socket
-    |> Phoenix.LiveView.assign(assign, result)
-    |> Phoenix.LiveView.assign(:ash_live_config, Map.put(live_config, assign, this_config))
   end
 
   def change_page(socket, assign, target) do
@@ -438,15 +459,28 @@ defmodule AshPhoenix.LiveView do
         first = List.first(current_list).__struct__
         pkey = Ash.Resource.Info.primary_key(first)
 
-        resulting_page = run_callback(callback, socket, nil)
+        case run_callback(callback, socket, nil) do
+          %struct{} = page when struct in [Ash.Page.Keyset, Ash.Page.Offset] ->
+            Enum.map(current_list, fn result ->
+              Enum.find(
+                page.results,
+                result,
+                &(Map.take(&1, pkey) == Map.take(result, pkey))
+              )
+            end)
 
-        Enum.map(current_list, fn result ->
-          Enum.find(
-            resulting_page.results,
-            result,
-            &(Map.take(&1, pkey) == Map.take(result, pkey))
-          )
-        end)
+          list when is_list(list) ->
+            Enum.map(current_list, fn result ->
+              Enum.find(
+                list,
+                result,
+                &(Map.take(&1, pkey) == Map.take(result, pkey))
+              )
+            end)
+
+          value ->
+            value
+        end
     end
   end
 

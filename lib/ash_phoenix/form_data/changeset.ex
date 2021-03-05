@@ -1,7 +1,5 @@
 defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
-  # Most of this logic was simply copied from ecto
-  # The goal here is to eventually lift complex validations
-  # up into the form.
+  import AshPhoenix.FormData.Helpers
 
   @impl true
   def input_type(%{resource: resource, action: action}, _, field) do
@@ -17,28 +15,6 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
       else
         :text_input
       end
-    end
-  end
-
-  defp get_argument(nil, _), do: nil
-
-  defp get_argument(action, field) when is_atom(field) do
-    Enum.find(action.arguments, &(&1.name == field))
-  end
-
-  defp get_argument(action, field) when is_binary(field) do
-    Enum.find(action.arguments, &(to_string(&1.name) == field))
-  end
-
-  defp type_to_form_type(type) do
-    case Ash.Type.ecto_type(type) do
-      :integer -> :number_input
-      :boolean -> :checkbox
-      :date -> :date_select
-      :time -> :time_select
-      :utc_datetime -> :datetime_select
-      :naive_datetime -> :datetime_select
-      _ -> :text_input
     end
   end
 
@@ -177,12 +153,13 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
       end
 
     data
-    |> to_nested_form(source, resource, id, name, opts, changeset_opts)
+    |> to_nested_form(changeset, source, resource, id, name, opts, changeset_opts)
     |> List.wrap()
   end
 
   defp to_nested_form(
          data,
+         original_changeset,
          attribute,
          resource,
          id,
@@ -208,6 +185,13 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
           Ash.Changeset.for_create(resource, create_action, data, changeset_opts)
         end
       end)
+
+    changesets =
+      if AshPhoenix.hiding_errors?(original_changeset) do
+        Enum.map(changesets, &AshPhoenix.hide_errors/1)
+      else
+        changesets
+      end
 
     for {changeset, index} <- Enum.with_index(changesets) do
       index_string = Integer.to_string(index)
@@ -239,6 +223,7 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
 
   defp to_nested_form(
          data,
+         original_changeset,
          attribute,
          resource,
          id,
@@ -267,6 +252,13 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
       end
 
     if changeset do
+      changeset =
+        if AshPhoenix.hiding_errors?(original_changeset) do
+          AshPhoenix.hide_errors(changeset)
+        else
+          changeset
+        end
+
       hidden =
         if changeset.action_type == :update do
           changeset.data
@@ -354,54 +346,6 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
 
   defp type_validations(_), do: []
 
-  defp form_for_errors(changeset, _opts) do
-    changeset.errors
-    |> Enum.filter(&(Map.has_key?(&1, :field) || Map.has_key?(&1, :fields)))
-    |> Enum.flat_map(fn
-      %{field: field, message: {message, opts}} = error when not is_nil(field) ->
-        [{field, {message, vars(error, opts)}}]
-
-      %{field: field, message: message} = error when not is_nil(field) ->
-        [{field, {message, vars(error, [])}}]
-
-      %{field: field} = error when not is_nil(field) ->
-        [{field, {Exception.message(error), vars(error, [])}}]
-
-      %{fields: fields, message: {message, opts}} = error when is_list(fields) ->
-        Enum.map(fields, fn field ->
-          [{field, {message, vars(error, opts)}}]
-        end)
-
-      %{fields: fields, message: message} = error when is_list(fields) ->
-        Enum.map(fields, fn field ->
-          [{field, {message, vars(error, [])}}]
-        end)
-
-      %{fields: fields} = error when is_list(fields) ->
-        message = Exception.message(error)
-
-        Enum.map(fields, fn field ->
-          {field, {message, vars(error, [])}}
-        end)
-
-      _ ->
-        []
-    end)
-  end
-
-  defp vars(%{vars: vars}, opts) do
-    Keyword.merge(vars, opts)
-  end
-
-  defp vars(_, opts), do: opts
-
   defp form_for_method(%{action_type: :create}), do: "post"
   defp form_for_method(_), do: "put"
-
-  defp form_for_name(resource) do
-    resource
-    |> Module.split()
-    |> List.last()
-    |> Macro.underscore()
-  end
 end
