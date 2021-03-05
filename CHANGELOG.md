@@ -5,6 +5,31 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.3.0](https://github.com/ash-project/ash_phoenix/compare/v0.2.3...v0.3.0) (2021-03-05)
+
+
+
+
+### Features:
+
+* support queries as form targets
+
+* new helpers in `AshPhoenix`
+
+### Bug Fixes:
+
+* various fixes
+
+* a whole new error paradigm
+
+* don't assume action is set
+
+### Improvements:
+
+* don't filter errors based on params
+
+* support latest ash version
+
 ## [v0.2.3](https://github.com/ash-project/ash_phoenix/compare/v0.2.2...v0.2.3) (2021-02-08)
 
 
