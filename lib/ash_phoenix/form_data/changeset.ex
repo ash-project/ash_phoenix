@@ -19,24 +19,18 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
   end
 
   @impl true
-  def input_value(changeset, form, field) do
-    case Keyword.fetch(form.options, :value) do
+  def input_value(changeset, _form, field) do
+    case get_changing_value(changeset, field) do
       {:ok, value} ->
-        value || ""
+        value
 
-      _ ->
-        case get_changing_value(changeset, field) do
+      :error ->
+        case Map.fetch(changeset.data, field) do
           {:ok, value} ->
             value
 
-          :error ->
-            case Map.fetch(changeset.data, field) do
-              {:ok, value} ->
-                value
-
-              _ ->
-                Ash.Changeset.get_argument(changeset, field)
-            end
+          _ ->
+            Ash.Changeset.get_argument(changeset, field)
         end
     end
   end

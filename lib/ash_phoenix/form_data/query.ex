@@ -14,15 +14,9 @@ defimpl Phoenix.HTML.FormData, for: Ash.Query do
 
   @impl true
   def input_value(query, form, field) do
-    case Keyword.fetch(form.options, :value) do
-      {:ok, value} ->
-        value || ""
-
-      _ ->
-        case get_param(query, field) do
-          {:ok, value} -> value
-          :error -> ""
-        end
+    case get_param(query, field) do
+      {:ok, value} -> value
+      :error -> ""
     end
   end
 
