@@ -13,7 +13,7 @@ defimpl Phoenix.HTML.FormData, for: Ash.Query do
   end
 
   @impl true
-  def input_value(query, form, field) do
+  def input_value(query, _form, field) do
     case get_param(query, field) do
       {:ok, value} -> value
       :error -> ""

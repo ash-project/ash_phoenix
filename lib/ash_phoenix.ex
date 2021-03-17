@@ -147,11 +147,10 @@ defmodule AshPhoenix do
           else
             new_value = remove_from_path(current_value, path)
 
-            new_value =
-              case attr.type do
-                {:array, _} -> List.wrap(new_value)
-                _ -> new_value
-              end
+            case attr.type do
+              {:array, _} -> List.wrap(new_value)
+              _ -> new_value
+            end
           end
 
         changeset
@@ -167,11 +166,10 @@ defmodule AshPhoenix do
           else
             new_value = remove_from_path(current_value, path)
 
-            new_value =
-              case arg.type do
-                {:array, _} -> List.wrap(new_value)
-                _ -> new_value
-              end
+            case arg.type do
+              {:array, _} -> List.wrap(new_value)
+              _ -> new_value
+            end
           end
 
         changeset
