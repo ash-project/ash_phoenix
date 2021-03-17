@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.3.1](https://github.com/ash-project/ash_phoenix/compare/v0.3.0...v0.3.1) (2021-03-17)
+
+
+
+
+### Improvements:
+
+* remove `value` option
+
+* don't render NotLoaded
+
 ## [v0.3.0](https://github.com/ash-project/ash_phoenix/compare/v0.2.3...v0.3.0) (2021-03-05)
 
 
