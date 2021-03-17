@@ -58,6 +58,14 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
         []
       end
 
+    removed_embed_values =
+      changeset.context[:private][:removed_embeds]
+      |> Kernel.||(%{})
+      |> Enum.filter(&elem(&1, 1))
+      |> Enum.map(fn {name, _} -> {name, nil} end)
+
+    hidden = hidden ++ removed_embed_values
+
     %Phoenix.HTML.Form{
       action: changeset.action && changeset.action.name,
       source: Ash.Changeset.put_context(changeset, :form, %{path: []}),
@@ -141,9 +149,13 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
 
     data =
       if is_list(data) do
-        prepend ++ data ++ append
+        Enum.reject(prepend ++ data ++ append, &(&1 == ""))
       else
-        data
+        if data == "" do
+          nil
+        else
+          data
+        end
       end
 
     data
