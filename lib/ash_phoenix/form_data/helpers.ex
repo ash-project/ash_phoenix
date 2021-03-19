@@ -23,52 +23,7 @@ defmodule AshPhoenix.FormData.Helpers do
   end
 
   def form_for_errors(query, _opts) do
-    if AshPhoenix.hiding_errors?(query) do
-      []
-    else
-      query.errors
-      |> Enum.filter(fn
-        error when is_exception(error) ->
-          AshPhoenix.FormData.Error.impl_for(error)
-
-        {_key, _value, _vars} ->
-          true
-
-        _ ->
-          false
-      end)
-      |> Enum.flat_map(&transform_error(query, &1))
-      |> Enum.map(fn {field, message, vars} ->
-        {field, {message, vars}}
-      end)
-    end
-  end
-
-  defp transform_error(_query, {_key, _value, _vars} = error), do: error
-
-  defp transform_error(query, error) do
-    case query.context[:private][:ash_phoenix][:transform_error] do
-      transformer when is_function(transformer, 2) ->
-        case transformer.(query, error) do
-          error when is_exception(error) ->
-            List.wrap(AshPhoenix.to_form_error(error))
-
-          {key, value, vars} ->
-            [{key, value, vars}]
-
-          list when is_list(list) ->
-            Enum.flat_map(list, fn
-              error when is_exception(error) ->
-                List.wrap(AshPhoenix.to_form_error(error))
-
-              {key, value, vars} ->
-                [{key, value, vars}]
-            end)
-        end
-
-      nil ->
-        List.wrap(AshPhoenix.to_form_error(error))
-    end
+    AshPhoenix.errors_for(query)
   end
 
   def form_for_name(resource) do
@@ -175,9 +130,9 @@ defmodule AshPhoenix.FormData.Helpers do
           if update_action do
             Ash.Changeset.for_update(data, update_action.name, %{})
           else
-            resource
-            |> Ash.Changeset.new(data)
-            |> Map.put(:params, data)
+            data
+            |> Ash.Changeset.new()
+            |> Map.put(:params, %{})
           end
 
         is_nil(data) ->

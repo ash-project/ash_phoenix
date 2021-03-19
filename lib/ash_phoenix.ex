@@ -1,8 +1,9 @@
 defmodule AshPhoenix do
   @moduledoc """
-  See the readme for the current state of the project
+  Various helpers and utilities for working with Ash changesets and queries and phoenix.
   """
 
+  @doc false
   def to_form_error(exception) when is_exception(exception) do
     case AshPhoenix.FormData.Error.to_form_error(exception) do
       nil ->
@@ -27,10 +28,142 @@ defmodule AshPhoenix do
     end
   end
 
-  def transform_errors(changeset, transform_errors) do
+  @doc """
+  Allows for manually transforming errors to modify or enable error messages in the form.
+
+  By default, only errors that implement the `AshPhoenix.FormData.Error` protocol will show
+  their errors in forms. This is to protect you from showing strange errors to the user. Using
+  this function, you can intercept those errors (as well as ones that *do* implement the protocol)
+  and return custom form-ready messages for them.
+
+  Example:
+
+    AshPhoenix.transform_errors(changeset, fn changeset, %MyApp.CustomError{message: message} ->
+      {:id, "Something went wrong while doing the %{thing}", [thing: "request"]}
+    end)
+
+    # Could potentially be used for translation, although not quite ergonomic yet
+    defp translate_error(key, msg, vars) do
+      if vars[:count] do
+        Gettext.dngettext(MyApp.Gettext, "errors", msg, msg, count, opts)
+      else
+        Gettext.dgettext(MyApp.Gettext, "errors", msg, opts)
+      end
+    end
+
+    AshPhoenix.transform_errors(changeset, fn
+      changeset, %MyApp.CustomError{message: message, field: field} ->
+        translate_error(field, message, [foo: :bar])
+
+      changeset, any_error ->
+        if AshPhoenix.FormData.Error.impl_for(any_error) do
+          any_error
+          |> AshPhoenix.FormData.error.to_form_error()
+          |> List.wrap()
+          |> Enum.map(fn {key, msg, vars} ->
+            translate_error(key, msg, vars)
+          end)
+        end
+    end)
+  """
+  @spec transform_errors(
+          Ash.Changeset.t() | Ash.Query.t(),
+          (Ash.Query.t() | Ash.Changeset.t(), error :: Ash.Error.t() ->
+             [{field :: atom, message :: String.t(), substituations :: Keyword.t()}])
+        ) :: Ash.Query.t() | Ash.Changeset.t()
+  def transform_errors(%Ash.Changeset{} = changeset, transform_errors) do
     Ash.Changeset.put_context(changeset, :private, %{
       ash_phoenix: %{transform_errors: transform_errors}
     })
+  end
+
+  def transform_errors(%Ash.Query{} = changeset, transform_errors) do
+    Ash.Query.put_context(changeset, :private, %{
+      ash_phoenix: %{transform_errors: transform_errors}
+    })
+  end
+
+  @doc """
+  Gets all errors on a changeset or query.
+
+  This honors the AshPhoenix.FormData.Error` protocol and applies any `transform_errors`.
+  See `transform_errors/2` for more information.
+  """
+  @spec errors_for(Ash.Changeset.t() | Ash.Query.t(), Keyword.t()) ::
+          [{atom, {String.t(), Keyword.t()}}] | [String.t()] | map
+  def errors_for(changeset_or_query, opts \\ []) do
+    errors =
+      if hiding_errors?(changeset_or_query) do
+        []
+      else
+        changeset_or_query.errors
+        |> Enum.filter(fn
+          error when is_exception(error) ->
+            AshPhoenix.FormData.Error.impl_for(error)
+
+          {_key, _value, _vars} ->
+            true
+
+          _ ->
+            false
+        end)
+        |> Enum.flat_map(&transform_error(changeset_or_query, &1))
+        |> Enum.map(fn {field, message, vars} ->
+          {field, {message, vars}}
+        end)
+      end
+
+    case opts[:as] do
+      raw when raw in [:raw, nil] ->
+        errors
+
+      :simple ->
+        Map.new(errors, fn {field, {message, vars}} ->
+          message =
+            Enum.reduce(vars || [], message, fn {key, value}, acc ->
+              String.replace(acc, "%{#{key}}", to_string(value))
+            end)
+
+          {field, message}
+        end)
+
+      :plaintext ->
+        Enum.map(errors, fn {field, {message, vars}} ->
+          message =
+            Enum.reduce(vars || [], message, fn {key, value}, acc ->
+              String.replace(acc, "%{#{key}}", to_string(value))
+            end)
+
+          "#{field}: " <> message
+        end)
+    end
+  end
+
+  defp transform_error(_query, {_key, _value, _vars} = error), do: error
+
+  defp transform_error(query, error) do
+    case query.context[:private][:ash_phoenix][:transform_error] do
+      transformer when is_function(transformer, 2) ->
+        case transformer.(query, error) do
+          error when is_exception(error) ->
+            List.wrap(AshPhoenix.to_form_error(error))
+
+          {key, value, vars} ->
+            [{key, value, vars}]
+
+          list when is_list(list) ->
+            Enum.flat_map(list, fn
+              error when is_exception(error) ->
+                List.wrap(AshPhoenix.to_form_error(error))
+
+              {key, value, vars} ->
+                [{key, value, vars}]
+            end)
+        end
+
+      nil ->
+        List.wrap(AshPhoenix.to_form_error(error))
+    end
   end
 
   def hide_errors(%Ash.Changeset{} = changeset) do
