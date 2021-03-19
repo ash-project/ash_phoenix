@@ -59,7 +59,7 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
       end
 
     removed_embed_values =
-      changeset.context[:private][:removed_embeds]
+      changeset.context[:private][:removed_keys]
       |> Kernel.||(%{})
       |> Enum.filter(&elem(&1, 1))
       |> Enum.map(fn {name, _} -> {name, nil} end)
@@ -86,19 +86,18 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
     {id, opts} = Keyword.pop(opts, :id)
     {prepend, opts} = Keyword.pop(opts, :prepend, [])
     {append, opts} = Keyword.pop(opts, :append, [])
+    {use_data?, opts} = Keyword.pop(opts, :use_data?, false)
     changeset_opts = [skip_defaults: :all]
     id = to_string(id || form.id <> "_#{field}")
     name = to_string(name || form.name <> "[#{field}]")
 
-    arguments =
-      if changeset.action do
-        changeset.action.arguments
-      else
-        []
-      end
-
-    {source, resource, data, opts} =
+    {source, resource, data} =
       cond do
+        rel = Ash.Resource.Info.relationship(changeset.resource, field) ->
+          data = relationship_data(changeset, rel, use_data?, opts[:id] || rel.name)
+
+          {rel, rel.destination, data}
+
         attr = Ash.Resource.Info.attribute(changeset.resource, field) ->
           case get_embedded(attr.type) do
             nil ->
@@ -116,14 +115,10 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
                     data
                 end
 
-              {attr, resource, data, opts}
+              {attr, resource, data}
           end
 
-        arg =
-            Enum.find(
-              arguments,
-              &(&1.name == field || to_string(&1.name) == field)
-            ) ->
+        arg = changeset.action && get_argument(changeset.action, field) ->
           case get_embedded(arg.type) do
             nil ->
               raise "Cannot use `form_for` with an argument unless the type is an embedded resource"
@@ -149,13 +144,9 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
 
     data =
       if is_list(data) do
-        Enum.reject(prepend ++ data ++ append, &(&1 == ""))
+        prepend ++ data ++ append
       else
-        if data == "" do
-          nil
-        else
-          data
-        end
+        unwrap(prepend) || unwrap(append) || data
       end
 
     data
@@ -163,141 +154,81 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
     |> List.wrap()
   end
 
-  defp to_nested_form(
-         data,
-         original_changeset,
-         attribute,
-         resource,
-         id,
-         name,
-         opts,
-         changeset_opts
-       )
-       when is_list(data) do
-    create_action =
-      attribute.constraints[:create_action] ||
-        Ash.Resource.Info.primary_action!(resource, :create).name
+  defp unwrap([]), do: nil
+  defp unwrap([value | _]), do: value
+  defp unwrap(value), do: value
 
-    update_action =
-      attribute.constraints[:update_action] ||
-        Ash.Resource.Info.primary_action!(resource, :update).name
-
-    changesets =
-      data
-      |> Enum.map(fn data ->
-        if is_struct(data) do
-          Ash.Changeset.for_update(data, update_action, %{}, changeset_opts)
+  defp relationship_data(changeset, %{cardinality: :one} = rel, use_data?, id) do
+    case get_managed(changeset, rel.name, id) do
+      nil ->
+        if use_data? do
+          changeset_data(changeset, rel)
         else
-          Ash.Changeset.for_create(resource, create_action, data, changeset_opts)
-        end
-      end)
-
-    changesets =
-      if AshPhoenix.hiding_errors?(original_changeset) do
-        Enum.map(changesets, &AshPhoenix.hide_errors/1)
-      else
-        changesets
-      end
-
-    for {changeset, index} <- Enum.with_index(changesets) do
-      index_string = Integer.to_string(index)
-
-      hidden =
-        if changeset.action_type == :update do
-          changeset.data
-          |> Map.take(Ash.Resource.Info.primary_key(changeset.resource))
-          |> Enum.to_list()
-        else
-          []
-        end
-
-      %Phoenix.HTML.Form{
-        action: changeset.action && changeset.action.name,
-        source: changeset,
-        impl: __MODULE__,
-        id: id <> "_" <> index_string,
-        name: name <> "[" <> index_string <> "]",
-        index: index,
-        errors: form_for_errors(changeset, opts),
-        data: data,
-        params: changeset.params,
-        hidden: hidden,
-        options: opts
-      }
-    end
-  end
-
-  defp to_nested_form(
-         data,
-         original_changeset,
-         attribute,
-         resource,
-         id,
-         name,
-         opts,
-         changeset_opts
-       ) do
-    create_action =
-      attribute.constraints[:create_action] ||
-        Ash.Resource.Info.primary_action!(resource, :create).name
-
-    update_action =
-      attribute.constraints[:update_action] ||
-        Ash.Resource.Info.primary_action!(resource, :update).name
-
-    changeset =
-      cond do
-        is_struct(data) ->
-          Ash.Changeset.for_update(data, update_action, %{}, changeset_opts)
-
-        is_nil(data) ->
           nil
-
-        true ->
-          Ash.Changeset.for_create(resource, create_action, data, changeset_opts)
-      end
-
-    if changeset do
-      changeset =
-        if AshPhoenix.hiding_errors?(original_changeset) do
-          AshPhoenix.hide_errors(changeset)
-        else
-          changeset
         end
 
-      hidden =
-        if changeset.action_type == :update do
-          changeset.data
-          |> Map.take(Ash.Resource.Info.primary_key(changeset.resource))
-          |> Enum.to_list()
+      {manage, _opts} ->
+        case manage do
+          [] ->
+            nil
+
+          data when is_list(data) ->
+            List.last(data)
+
+          value ->
+            value
+        end
+    end
+  end
+
+  defp relationship_data(changeset, rel, use_data?, id) do
+    case get_managed(changeset, rel.name, id) do
+      nil ->
+        if use_data? do
+          changeset_data(changeset, rel)
         else
           []
         end
 
-      %Phoenix.HTML.Form{
-        action: changeset.action && changeset.action.name,
-        source: changeset,
-        impl: __MODULE__,
-        id: id,
-        name: name,
-        errors: form_for_errors(changeset, opts),
-        data: data,
-        params: changeset.params,
-        hidden: hidden,
-        options: opts
-      }
+      {manage, _opts} ->
+        manage
     end
   end
 
-  defp get_embedded({:array, type}), do: get_embedded(type)
+  defp get_managed(changeset, relationship_name, id) do
+    manage = changeset.relationships[relationship_name] || []
 
-  defp get_embedded(type) when is_atom(type) do
-    if Ash.Resource.Info.embedded?(type) do
-      type
+    Enum.find(manage, fn {_, opts} -> opts[:meta][:id] == id end)
+  end
+
+  defp changeset_data(changeset, rel) do
+    data = Map.get(changeset.data, rel.name)
+
+    case data do
+      %Ash.NotLoaded{} ->
+        default_data(rel)
+
+      data ->
+        if is_list(data) do
+          Enum.reject(data, &hidden?/1)
+        else
+          if hidden?(data) do
+            nil
+          else
+            data
+          end
+        end
     end
   end
 
-  defp get_embedded(_), do: nil
+  defp hidden?(nil), do: false
+
+  defp hidden?(data) do
+    Ash.Resource.Info.get_metadata(data, :private)[:hidden?]
+  end
+
+  defp default_data(%{cardinality: :many}), do: []
+  defp default_data(%{cardinality: :one}), do: nil
 
   @impl true
   def input_validations(changeset, _, field) do

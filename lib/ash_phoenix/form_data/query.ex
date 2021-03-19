@@ -31,7 +31,75 @@ defimpl Phoenix.HTML.FormData, for: Ash.Query do
   end
 
   @impl true
-  def to_form(_, _, _, _), do: []
+  def to_form(changeset, form, field, opts) do
+    {name, opts} = Keyword.pop(opts, :as)
+    {id, opts} = Keyword.pop(opts, :id)
+    {prepend, opts} = Keyword.pop(opts, :prepend, [])
+    {append, opts} = Keyword.pop(opts, :append, [])
+    changeset_opts = [skip_defaults: :all]
+    id = to_string(id || form.id <> "_#{field}")
+    name = to_string(name || form.name <> "[#{field}]")
+
+    arguments =
+      if changeset.action do
+        changeset.action.arguments
+      else
+        []
+      end
+
+    arg =
+      Enum.find(
+        arguments,
+        &(&1.name == field || to_string(&1.name) == field)
+      )
+
+    {source, resource, data} =
+      if arg do
+        case get_embedded(arg.type) do
+          nil ->
+            raise "Cannot use `form_for` with an argument unless the type is an embedded resource"
+
+          resource ->
+            data = Ash.Changeset.get_argument(changeset, arg.name)
+
+            data =
+              case arg.type do
+                {:array, _} ->
+                  List.wrap(data)
+
+                _ ->
+                  data
+              end
+
+            {arg, resource, data}
+        end
+      else
+        raise "Cannot use `form_for` with anything except embedded resources in attributes/arguments"
+      end
+
+    data =
+      if is_list(data) do
+        Enum.reject(prepend ++ data ++ append, &(&1 == ""))
+      else
+        if data == "" do
+          nil
+        else
+          data
+        end
+      end
+
+    data
+    |> to_nested_form(
+      changeset,
+      source,
+      resource,
+      id,
+      name,
+      opts,
+      changeset_opts
+    )
+    |> List.wrap()
+  end
 
   @impl true
   def to_form(query, opts) do
