@@ -96,8 +96,7 @@ defmodule AshPhoenix.FormData.Helpers do
         resource,
         id,
         name,
-        opts,
-        changeset_opts
+        opts
       )
       when is_list(data) do
     changesets =
@@ -107,7 +106,7 @@ defmodule AshPhoenix.FormData.Helpers do
           update_action = Ash.Resource.Info.primary_action(resource, :update)
 
           if update_action do
-            Ash.Changeset.for_update(data, update_action.name, %{}, changeset_opts)
+            Ash.Changeset.for_update(data, update_action.name, %{})
           else
             Ash.Changeset.new(data)
           end
@@ -115,7 +114,7 @@ defmodule AshPhoenix.FormData.Helpers do
           create_action = Ash.Resource.Info.primary_action(resource, :create)
 
           if create_action do
-            Ash.Changeset.for_create(resource, create_action.name, data, changeset_opts)
+            Ash.Changeset.for_create(resource, create_action.name, data)
           else
             Ash.Changeset.new(resource, data)
           end
@@ -149,7 +148,7 @@ defmodule AshPhoenix.FormData.Helpers do
         name: name <> "[" <> index_string <> "]",
         index: index,
         errors: form_for_errors(changeset, opts),
-        data: data,
+        data: changeset.data,
         params: changeset.params,
         hidden: hidden,
         options: opts
@@ -164,8 +163,7 @@ defmodule AshPhoenix.FormData.Helpers do
         resource,
         id,
         name,
-        opts,
-        changeset_opts
+        opts
       ) do
     create_action = Ash.Resource.Info.primary_action(resource, :create)
 
@@ -175,9 +173,11 @@ defmodule AshPhoenix.FormData.Helpers do
       cond do
         is_struct(data) ->
           if update_action do
-            Ash.Changeset.for_update(data, update_action.name, %{}, changeset_opts)
+            Ash.Changeset.for_update(data, update_action.name, %{})
           else
-            Ash.Changeset.new(data)
+            resource
+            |> Ash.Changeset.new(data)
+            |> Map.put(:params, data)
           end
 
         is_nil(data) ->
@@ -185,9 +185,11 @@ defmodule AshPhoenix.FormData.Helpers do
 
         true ->
           if create_action do
-            Ash.Changeset.for_create(resource, create_action.name, data, changeset_opts)
+            Ash.Changeset.for_create(resource, create_action.name, data)
           else
-            Ash.Changeset.new(resource, data)
+            resource
+            |> Ash.Changeset.new(data)
+            |> Map.put(:params, data)
           end
       end
 
@@ -230,8 +232,7 @@ defmodule AshPhoenix.FormData.Helpers do
         resource,
         id,
         name,
-        opts,
-        changeset_opts
+        opts
       )
       when is_list(data) do
     create_action =
@@ -246,9 +247,9 @@ defmodule AshPhoenix.FormData.Helpers do
       data
       |> Enum.map(fn data ->
         if is_struct(data) do
-          Ash.Changeset.for_update(data, update_action, %{}, changeset_opts)
+          Ash.Changeset.for_update(data, update_action, %{})
         else
-          Ash.Changeset.for_create(resource, create_action, data, changeset_opts)
+          Ash.Changeset.for_create(resource, create_action, data)
         end
       end)
 
@@ -279,7 +280,7 @@ defmodule AshPhoenix.FormData.Helpers do
         name: name <> "[" <> index_string <> "]",
         index: index,
         errors: form_for_errors(changeset, opts),
-        data: data,
+        data: changeset.data,
         params: changeset.params,
         hidden: hidden,
         options: opts
@@ -294,8 +295,7 @@ defmodule AshPhoenix.FormData.Helpers do
         resource,
         id,
         name,
-        opts,
-        changeset_opts
+        opts
       ) do
     create_action =
       attribute.constraints[:create_action] ||
@@ -308,13 +308,13 @@ defmodule AshPhoenix.FormData.Helpers do
     changeset =
       cond do
         is_struct(data) ->
-          Ash.Changeset.for_update(data, update_action, %{}, changeset_opts)
+          Ash.Changeset.for_update(data, update_action, %{})
 
         is_nil(data) ->
           nil
 
         true ->
-          Ash.Changeset.for_create(resource, create_action, data, changeset_opts)
+          Ash.Changeset.for_create(resource, create_action, data)
       end
 
     if changeset do

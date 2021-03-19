@@ -31,18 +31,17 @@ defimpl Phoenix.HTML.FormData, for: Ash.Query do
   end
 
   @impl true
-  def to_form(changeset, form, field, opts) do
+  def to_form(query, form, field, opts) do
     {name, opts} = Keyword.pop(opts, :as)
     {id, opts} = Keyword.pop(opts, :id)
     {prepend, opts} = Keyword.pop(opts, :prepend, [])
     {append, opts} = Keyword.pop(opts, :append, [])
-    changeset_opts = [skip_defaults: :all]
     id = to_string(id || form.id <> "_#{field}")
     name = to_string(name || form.name <> "[#{field}]")
 
     arguments =
-      if changeset.action do
-        changeset.action.arguments
+      if query.action do
+        query.action.arguments
       else
         []
       end
@@ -60,7 +59,7 @@ defimpl Phoenix.HTML.FormData, for: Ash.Query do
             raise "Cannot use `form_for` with an argument unless the type is an embedded resource"
 
           resource ->
-            data = Ash.Changeset.get_argument(changeset, arg.name)
+            data = Ash.Query.get_argument(query, arg.name)
 
             data =
               case arg.type do
@@ -90,13 +89,12 @@ defimpl Phoenix.HTML.FormData, for: Ash.Query do
 
     data
     |> to_nested_form(
-      changeset,
+      query,
       source,
       resource,
       id,
       name,
-      opts,
-      changeset_opts
+      opts
     )
     |> List.wrap()
   end

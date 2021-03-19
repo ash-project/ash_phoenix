@@ -87,7 +87,6 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
     {prepend, opts} = Keyword.pop(opts, :prepend, [])
     {append, opts} = Keyword.pop(opts, :append, [])
     {use_data?, opts} = Keyword.pop(opts, :use_data?, false)
-    changeset_opts = [skip_defaults: :all]
     id = to_string(id || form.id <> "_#{field}")
     name = to_string(name || form.name <> "[#{field}]")
 
@@ -150,7 +149,7 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
       end
 
     data
-    |> to_nested_form(changeset, source, resource, id, name, opts, changeset_opts)
+    |> to_nested_form(changeset, source, resource, id, name, opts)
     |> List.wrap()
   end
 
