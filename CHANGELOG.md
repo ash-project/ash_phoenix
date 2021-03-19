@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.0](https://github.com/ash-project/ash_phoenix/compare/v0.3.2...v0.4.0) (2021-03-19)
+
+
+
+
+### Features:
+
+* add initial support for relationships in `inputs_for`
+
 ## [v0.3.2](https://github.com/ash-project/ash_phoenix/compare/v0.3.1...v0.3.2) (2021-03-17)
 
 
