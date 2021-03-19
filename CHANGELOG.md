@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.1](https://github.com/ash-project/ash_phoenix/compare/v0.4.0...v0.4.1) (2021-03-19)
+
+
+
+
+### Bug Fixes:
+
+* properly set params on related create changeset
+
 ## [v0.4.0](https://github.com/ash-project/ash_phoenix/compare/v0.3.2...v0.4.0) (2021-03-19)
 
 
