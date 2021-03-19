@@ -86,7 +86,7 @@ defmodule AshPhoenix do
   @doc """
   Gets all errors on a changeset or query.
 
-  This honors the AshPhoenix.FormData.Error` protocol and applies any `transform_errors`.
+  This honors the `AshPhoenix.FormData.Error` protocol and applies any `transform_errors`.
   See `transform_errors/2` for more information.
   """
   @spec errors_for(Ash.Changeset.t() | Ash.Query.t(), Keyword.t()) ::
