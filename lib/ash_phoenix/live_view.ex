@@ -255,6 +255,14 @@ defmodule AshPhoenix.LiveView do
 
   defp set_count(params, _), do: params
 
+  def prev_page?(page) do
+    page_link_params(page, "prev") != :invalid
+  end
+
+  def next_page?(page) do
+    page_link_params(page, "next") != :invalid
+  end
+
   def page_link_params(_, "first") do
     []
   end
@@ -307,11 +315,11 @@ defmodule AshPhoenix.LiveView do
   end
 
   def page_link_params(%Ash.Page.Keyset{results: [first | _]} = keyset, "prev") do
-    [before: first.metadata.keyset, limit: keyset.limit]
+    [before: first.__metadata__.keyset, limit: keyset.limit]
   end
 
   def page_link_params(%Ash.Page.Keyset{results: results} = keyset, "next") do
-    [after: List.last(results).metadata.keyset, limit: keyset.limit]
+    [after: List.last(results).__metadata__.keyset, limit: keyset.limit]
   end
 
   def page_link_params(%Ash.Page.Offset{count: count, limit: limit} = offset, target)
@@ -321,6 +329,10 @@ defmodule AshPhoenix.LiveView do
     target = min(target, last_page)
 
     [offset: (target - 1) * limit, limit: limit]
+  end
+
+  def page_link_params({:ok, data}, target) do
+    page_link_params(data, target)
   end
 
   def page_link_params(_page, _target) do
