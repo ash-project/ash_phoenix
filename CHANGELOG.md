@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.3](https://github.com/ash-project/ash_phoenix/compare/v0.4.2...v0.4.3) (2021-03-21)
+
+
+
+
+### Improvements:
+
+* improve pagination helpers
+
+* update ash dep
+
 ## [v0.4.2](https://github.com/ash-project/ash_phoenix/compare/v0.4.1...v0.4.2) (2021-03-19)
 
 
