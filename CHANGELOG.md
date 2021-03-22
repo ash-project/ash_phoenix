@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.4](https://github.com/ash-project/ash_phoenix/compare/v0.4.3...v0.4.4) (2021-03-22)
+
+
+
+
+### Bug Fixes:
+
+* set `impl` correctly
+
 ## [v0.4.3](https://github.com/ash-project/ash_phoenix/compare/v0.4.2...v0.4.3) (2021-03-21)
 
 
