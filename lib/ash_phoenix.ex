@@ -97,6 +97,7 @@ defmodule AshPhoenix do
         []
       else
         changeset_or_query.errors
+        |> Enum.flat_map(&transform_error(changeset_or_query, &1))
         |> Enum.filter(fn
           error when is_exception(error) ->
             AshPhoenix.FormData.Error.impl_for(error)
@@ -107,7 +108,6 @@ defmodule AshPhoenix do
           _ ->
             false
         end)
-        |> Enum.flat_map(&transform_error(changeset_or_query, &1))
         |> Enum.map(fn {field, message, vars} ->
           {field, {message, vars}}
         end)
@@ -142,11 +142,15 @@ defmodule AshPhoenix do
   defp transform_error(_query, {_key, _value, _vars} = error), do: error
 
   defp transform_error(query, error) do
-    case query.context[:private][:ash_phoenix][:transform_error] do
+    case query.context[:private][:ash_phoenix][:transform_errors] do
       transformer when is_function(transformer, 2) ->
         case transformer.(query, error) do
           error when is_exception(error) ->
-            List.wrap(AshPhoenix.to_form_error(error))
+            if AshPhoenix.FormData.Error.impl_for(error) do
+              List.wrap(AshPhoenix.to_form_error(error))
+            else
+              []
+            end
 
           {key, value, vars} ->
             [{key, value, vars}]
@@ -154,7 +158,11 @@ defmodule AshPhoenix do
           list when is_list(list) ->
             Enum.flat_map(list, fn
               error when is_exception(error) ->
-                List.wrap(AshPhoenix.to_form_error(error))
+                if AshPhoenix.FormData.Error.impl_for(error) do
+                  List.wrap(AshPhoenix.to_form_error(error))
+                else
+                  []
+                end
 
               {key, value, vars} ->
                 [{key, value, vars}]
@@ -162,7 +170,11 @@ defmodule AshPhoenix do
         end
 
       nil ->
-        List.wrap(AshPhoenix.to_form_error(error))
+        if AshPhoenix.FormData.Error.impl_for(error) do
+          List.wrap(AshPhoenix.to_form_error(error))
+        else
+          []
+        end
     end
   end
 
