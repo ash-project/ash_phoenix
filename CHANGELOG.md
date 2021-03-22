@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.5](https://github.com/ash-project/ash_phoenix/compare/v0.4.4...v0.4.5) (2021-03-22)
+
+
+
+
+### Bug Fixes:
+
+* transform error order of operations
+
 ## [v0.4.4](https://github.com/ash-project/ash_phoenix/compare/v0.4.3...v0.4.4) (2021-03-22)
 
 
