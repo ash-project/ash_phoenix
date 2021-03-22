@@ -98,7 +98,7 @@ defmodule AshPhoenix.FormData.Helpers do
       %Phoenix.HTML.Form{
         action: changeset.action && changeset.action.name,
         source: changeset,
-        impl: __MODULE__,
+        impl: Phoenix.HTML.FormData.impl_for(changeset),
         id: id <> "_" <> index_string,
         name: name <> "[" <> index_string <> "]",
         index: index,
@@ -168,7 +168,7 @@ defmodule AshPhoenix.FormData.Helpers do
       %Phoenix.HTML.Form{
         action: changeset.action && changeset.action.name,
         source: changeset,
-        impl: __MODULE__,
+        impl: Phoenix.HTML.FormData.impl_for(changeset),
         id: id,
         name: name,
         errors: form_for_errors(changeset, opts),
@@ -230,7 +230,7 @@ defmodule AshPhoenix.FormData.Helpers do
       %Phoenix.HTML.Form{
         action: changeset.action && changeset.action.name,
         source: changeset,
-        impl: __MODULE__,
+        impl: Phoenix.HTML.FormData.impl_for(changeset),
         id: id <> "_" <> index_string,
         name: name <> "[" <> index_string <> "]",
         index: index,
@@ -292,7 +292,7 @@ defmodule AshPhoenix.FormData.Helpers do
       %Phoenix.HTML.Form{
         action: changeset.action && changeset.action.name,
         source: changeset,
-        impl: __MODULE__,
+        impl: Phoenix.HTML.FormData.impl_for(changeset),
         id: id,
         name: name,
         errors: form_for_errors(changeset, opts),
