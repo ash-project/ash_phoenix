@@ -241,22 +241,15 @@ defmodule AshPhoenix do
     [^outer_form_name, key | path] = decode_path(path)
 
     {argument, argument_manages} =
-      if changeset.action do
-        {nil, nil}
+      with action when not is_nil(action) <- changeset.action,
+           argument when not is_nil(argument) <-
+             Enum.find(changeset.action.arguments, &(to_string(&1.name) == key)),
+           manage_change when not is_nil(manage_change) <-
+             find_manage_change(argument, changeset.action) do
+        {argument, manage_change}
       else
-        # This is some magic to avoid having to pass in the relationship name
-        # when we can figure it out from the action
-        argument =
-          changeset.action.arguments
-          |> Enum.find(&(to_string(&1.name) == key))
-
-        if argument do
-          manage_change = find_manage_change(argument, changeset.action)
-
-          if manage_change do
-            {argument, manage_change}
-          end
-        end
+        _ ->
+          {nil, nil}
       end
 
     changeset.resource
@@ -350,22 +343,15 @@ defmodule AshPhoenix do
     [^outer_form_name, key | path] = decode_path(path)
 
     {argument, argument_manages} =
-      if changeset.action do
-        {nil, nil}
+      with action when not is_nil(action) <- changeset.action,
+           argument when not is_nil(argument) <-
+             Enum.find(changeset.action.arguments, &(to_string(&1.name) == key)),
+           manage_change when not is_nil(manage_change) <-
+             find_manage_change(argument, changeset.action) do
+        {argument, manage_change}
       else
-        # This is some magic to avoid having to pass in the relationship name
-        # when we can figure it out from the action
-        argument =
-          changeset.action.arguments
-          |> Enum.find(&(to_string(&1.name) == key))
-
-        if argument do
-          manage_change = find_manage_change(argument, changeset.action)
-
-          if manage_change do
-            {argument, manage_change}
-          end
-        end
+        _ ->
+          {nil, nil}
       end
 
     changeset.resource
@@ -455,6 +441,8 @@ defmodule AshPhoenix do
                     {Map.update!(changeset.data, rel, &hide/1), nil}
                 end
             end
+          else
+            {changeset.data, []}
           end
 
         changeset = mark_removed(changeset, new_value, rel)
@@ -470,20 +458,15 @@ defmodule AshPhoenix do
   end
 
   defp find_manage_change(argument, action) do
-    Enum.find(action.changes, fn
-      {Ash.Resource.Change.ManageRelationship, opts} ->
-        opts[:argument] == argument.name
+    Enum.find_value(action.changes, fn
+      %{change: {Ash.Resource.Change.ManageRelationship, opts}} ->
+        if opts[:argument] == argument.name do
+          opts[:relationship]
+        end
 
       _ ->
-        false
-    end)
-    |> case do
-      nil ->
         nil
-
-      {_, opts} ->
-        opts[:relationship_name]
-    end
+    end)
   end
 
   @doc """
@@ -670,11 +653,19 @@ defmodule AshPhoenix do
   end
 
   defp add_to_path(nil, [], add) do
-    add
+    List.wrap(add)
   end
 
   defp add_to_path(value, [], add) when is_list(value) do
     value ++ List.wrap(add)
+  end
+
+  defp add_to_path(value, [], add) when value == %{} do
+    [value] ++ List.wrap(add)
+  end
+
+  defp add_to_path(value, [key | rest], add) when is_integer(key) and value == %{} do
+    add_to_path([value], [key | rest], add)
   end
 
   defp add_to_path(value, [key | rest], add) when is_integer(key) and is_list(value) do
@@ -705,6 +696,8 @@ defmodule AshPhoenix do
   defp add_to_path(nil, [key | rest], add) when is_binary(key) or is_atom(key) do
     %{key => add_to_path(nil, rest, add)}
   end
+
+  defp add_to_path(_, _, add), do: add
 
   defp remove_from_path(value, [key]) when is_integer(key) and is_list(value) do
     List.delete_at(value, key)
@@ -754,7 +747,15 @@ defmodule AshPhoenix do
 
   defp remove_from_path(value, _), do: value
 
-  defp decode_path(path) do
+  @doc """
+  A utility for decoding the path of a form into a list.
+
+  For example:
+    change[posts][0][comments][1]
+    ["change", "posts", 0, "comments", 1]
+
+  """
+  def decode_path(path) do
     path = Plug.Conn.Query.decode(path)
     do_decode_path(path)
   end

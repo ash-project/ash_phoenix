@@ -95,6 +95,13 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
         rel = Ash.Resource.Info.relationship(changeset.resource, field) ->
           data = relationship_data(changeset, rel, use_data?, opts[:id] || rel.name)
 
+          data =
+            if rel.cardinality == :many && data do
+              List.wrap(data)
+            else
+              data
+            end
+
           {rel, rel.destination, data}
 
         attr = Ash.Resource.Info.attribute(changeset.resource, field) ->
@@ -171,11 +178,25 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
           [] ->
             nil
 
-          data when is_list(data) ->
-            List.last(data)
-
           value ->
-            value
+            value =
+              if is_list(value) do
+                List.last(value)
+              else
+                value
+              end
+
+            if use_data? do
+              data = changeset_data(changeset, rel)
+
+              if data do
+                Ash.Changeset.new(data, value)
+              else
+                value
+              end
+            else
+              value
+            end
         end
     end
   end
@@ -190,8 +211,27 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
         end
 
       {manage, _opts} ->
-        manage
+        if use_data? do
+          changeset
+          |> changeset_data(rel)
+          |> zip_changes(manage)
+        else
+          manage
+        end
     end
+  end
+
+  defp zip_changes([], manage) do
+    manage
+  end
+
+  defp zip_changes([record | rest_data], [manage | rest_manage]) do
+    [Ash.Changeset.new(record, manage) |> Map.put(:params, manage)] ++
+      zip_changes(rest_data, rest_manage)
+  end
+
+  defp zip_changes(records, []) do
+    records
   end
 
   defp get_managed(changeset, relationship_name, id) do

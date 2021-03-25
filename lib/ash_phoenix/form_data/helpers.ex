@@ -61,7 +61,17 @@ defmodule AshPhoenix.FormData.Helpers do
           update_action = Ash.Resource.Info.primary_action(resource, :update)
 
           if update_action do
-            Ash.Changeset.for_update(data, update_action.name, %{})
+            accepted_relationships =
+              resource
+              |> accepted_relationships(update_action)
+              |> Enum.map(fn relationship ->
+                {relationship.name, {:manage, [meta: [id: relationship.name]]}}
+              end)
+
+            Ash.Changeset.for_update(data, update_action.name, %{},
+              relationships: accepted_relationships,
+              actor: opts[:actor]
+            )
           else
             Ash.Changeset.new(data)
           end
@@ -69,7 +79,17 @@ defmodule AshPhoenix.FormData.Helpers do
           create_action = Ash.Resource.Info.primary_action(resource, :create)
 
           if create_action do
-            Ash.Changeset.for_create(resource, create_action.name, data)
+            accepted_relationships =
+              resource
+              |> accepted_relationships(create_action)
+              |> Enum.map(fn relationship ->
+                {relationship.name, {:manage, [meta: [id: relationship.name]]}}
+              end)
+
+            Ash.Changeset.for_create(resource, create_action.name, data,
+              relationships: accepted_relationships,
+              actor: opts[:actor]
+            )
           else
             Ash.Changeset.new(resource, data)
           end
@@ -128,7 +148,17 @@ defmodule AshPhoenix.FormData.Helpers do
       cond do
         is_struct(data) ->
           if update_action do
-            Ash.Changeset.for_update(data, update_action.name, %{})
+            accepted_relationships =
+              resource
+              |> accepted_relationships(update_action)
+              |> Enum.map(fn relationship ->
+                {relationship.name, {:manage, [meta: [id: relationship.name]]}}
+              end)
+
+            Ash.Changeset.for_update(data, update_action.name, %{},
+              relationships: accepted_relationships,
+              actor: opts[:actor]
+            )
           else
             data
             |> Ash.Changeset.new()
@@ -140,7 +170,17 @@ defmodule AshPhoenix.FormData.Helpers do
 
         true ->
           if create_action do
-            Ash.Changeset.for_create(resource, create_action.name, data)
+            accepted_relationships =
+              resource
+              |> accepted_relationships(create_action)
+              |> Enum.map(fn relationship ->
+                {relationship.name, {:manage, [meta: [id: relationship.name]]}}
+              end)
+
+            Ash.Changeset.for_create(resource, create_action.name, data,
+              relationships: accepted_relationships,
+              actor: opts[:actor]
+            )
           else
             resource
             |> Ash.Changeset.new(data)
@@ -202,9 +242,9 @@ defmodule AshPhoenix.FormData.Helpers do
       data
       |> Enum.map(fn data ->
         if is_struct(data) do
-          Ash.Changeset.for_update(data, update_action, %{})
+          Ash.Changeset.for_update(data, update_action, %{}, actor: opts[:actor])
         else
-          Ash.Changeset.for_create(resource, create_action, data)
+          Ash.Changeset.for_create(resource, create_action, data, actor: opts[:actor])
         end
       end)
 
@@ -263,13 +303,13 @@ defmodule AshPhoenix.FormData.Helpers do
     changeset =
       cond do
         is_struct(data) ->
-          Ash.Changeset.for_update(data, update_action, %{})
+          Ash.Changeset.for_update(data, update_action, %{}, actor: opts[:actor])
 
         is_nil(data) ->
           nil
 
         true ->
-          Ash.Changeset.for_create(resource, create_action, data)
+          Ash.Changeset.for_create(resource, create_action, data, actor: opts[:actor])
       end
 
     if changeset do
@@ -301,6 +341,25 @@ defmodule AshPhoenix.FormData.Helpers do
         hidden: hidden,
         options: opts
       }
+    end
+  end
+
+  defp accepted_relationships(resource, action) do
+    accepted =
+      if action.accept do
+        resource
+        |> Ash.Resource.Info.relationships()
+        |> Enum.filter(&(&1.name in action.accept))
+      else
+        Ash.Resource.Info.relationships(resource)
+      end
+
+    if action.reject do
+      resource
+      |> Ash.Resource.Info.relationships()
+      |> Enum.reject(&(&1.name in action.reject))
+    else
+      accepted
     end
   end
 end
