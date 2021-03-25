@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.6](https://github.com/ash-project/ash_phoenix/compare/v0.4.5...v0.4.6) (2021-03-25)
+
+
+
+
+### Improvements:
+
+* many fixes around relationship forms
+
 ## [v0.4.5](https://github.com/ash-project/ash_phoenix/compare/v0.4.4...v0.4.5) (2021-03-22)
 
 
