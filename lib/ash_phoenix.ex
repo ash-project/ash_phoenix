@@ -662,7 +662,7 @@ defmodule AshPhoenix do
   end
 
   defp add_to_path(value, [], add) when is_map(value) do
-    add_to_path([value], [], add)
+    %{"0" => value, "1" => add}
   end
 
   defp add_to_path(value, [key | rest], add) when is_integer(key) and is_list(value) do
