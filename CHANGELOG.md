@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.7](https://github.com/ash-project/ash_phoenix/compare/v0.4.6...v0.4.7) (2021-03-28)
+
+
+
+
+### Bug Fixes:
+
+* fix doubly nested forms and various other issues
+
+### Improvements:
+
+* added various utility functions
+
 ## [v0.4.6](https://github.com/ash-project/ash_phoenix/compare/v0.4.5...v0.4.6) (2021-03-25)
 
 
