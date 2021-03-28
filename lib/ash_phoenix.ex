@@ -438,7 +438,7 @@ defmodule AshPhoenix do
             {changeset.data, []}
           end
 
-        changeset = mark_removed(changeset, new_value, key)
+        changeset = mark_removed(changeset, new_value, (argument && argument.name) || rel.name)
 
         {new_data, %{changeset | data: new_data}}
     end
@@ -661,9 +661,9 @@ defmodule AshPhoenix do
     value ++ List.wrap(add)
   end
 
-  # defp add_to_path(value, [key | rest], add) when is_integer(key) do
-  #   add_to_path([value], [key | rest], add)
-  # end
+  defp add_to_path(value, [], add) when is_map(value) do
+    add_to_path([value], [], add)
+  end
 
   defp add_to_path(value, [key | rest], add) when is_integer(key) and is_list(value) do
     List.update_at(value, key, &add_to_path(&1, rest, add))
