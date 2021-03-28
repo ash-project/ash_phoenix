@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.8](https://github.com/ash-project/ash_phoenix/compare/v0.4.7...v0.4.8) (2021-03-28)
+
+
+
+
+### Bug Fixes:
+
+* add to path when is a map should be a list
+
 ## [v0.4.7](https://github.com/ash-project/ash_phoenix/compare/v0.4.6...v0.4.7) (2021-03-28)
 
 
