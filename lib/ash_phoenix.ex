@@ -2,6 +2,7 @@ defmodule AshPhoenix do
   @moduledoc """
   Various helpers and utilities for working with Ash changesets and queries and phoenix.
   """
+  import AshPhoenix.FormData.Helpers
 
   @doc false
   def to_form_error(exception) when is_exception(exception) do
@@ -109,6 +110,21 @@ defmodule AshPhoenix do
             false
         end)
         |> Enum.map(fn {field, message, vars} ->
+          vars =
+            vars
+            |> Enum.flat_map(fn {key, value} ->
+              try do
+                if is_integer(value) do
+                  [{key, value}]
+                else
+                  [{key, to_string(value)}]
+                end
+              rescue
+                _ ->
+                  []
+              end
+            end)
+
           {field, {message, vars}}
         end)
       end
@@ -119,24 +135,24 @@ defmodule AshPhoenix do
 
       :simple ->
         Map.new(errors, fn {field, {message, vars}} ->
-          message =
-            Enum.reduce(vars || [], message, fn {key, value}, acc ->
-              String.replace(acc, "%{#{key}}", to_string(value))
-            end)
+          message = replace_vars(message, vars)
 
           {field, message}
         end)
 
       :plaintext ->
         Enum.map(errors, fn {field, {message, vars}} ->
-          message =
-            Enum.reduce(vars || [], message, fn {key, value}, acc ->
-              String.replace(acc, "%{#{key}}", to_string(value))
-            end)
+          message = replace_vars(message, vars)
 
           "#{field}: " <> message
         end)
     end
+  end
+
+  defp replace_vars(message, vars) do
+    Enum.reduce(vars || [], message, fn {key, value}, acc ->
+      String.replace(acc, "%{#{key}}", to_string(value))
+    end)
   end
 
   defp transform_error(_query, {_key, _value, _vars} = error), do: error
@@ -240,17 +256,7 @@ defmodule AshPhoenix do
 
     [^outer_form_name, key | path] = decode_path(path)
 
-    {argument, argument_manages} =
-      with action when not is_nil(action) <- changeset.action,
-           argument when not is_nil(argument) <-
-             Enum.find(changeset.action.arguments, &(to_string(&1.name) == key)),
-           manage_change when not is_nil(manage_change) <-
-             find_manage_change(argument, changeset.action) do
-        {argument, manage_change}
-      else
-        _ ->
-          {nil, nil}
-      end
+    {argument, argument_manages} = argument_and_manages(changeset, key)
 
     changeset.resource
     |> Ash.Resource.Info.relationships()
@@ -266,7 +272,7 @@ defmodule AshPhoenix do
           end)
 
         {relationship.name,
-         opts[:id] || opts[:relationship] || (argument && opts[:id]) || relationship.name,
+         opts[:id] || opts[:relationship] || (argument && argument.name) || relationship.name,
          to_manage}
       end
     end)
@@ -342,17 +348,7 @@ defmodule AshPhoenix do
   def remove_related(changeset, path, outer_form_name, opts \\ []) do
     [^outer_form_name, key | path] = decode_path(path)
 
-    {argument, argument_manages} =
-      with action when not is_nil(action) <- changeset.action,
-           argument when not is_nil(argument) <-
-             Enum.find(changeset.action.arguments, &(to_string(&1.name) == key)),
-           manage_change when not is_nil(manage_change) <-
-             find_manage_change(argument, changeset.action) do
-        {argument, manage_change}
-      else
-        _ ->
-          {nil, nil}
-      end
+    {argument, argument_manages} = argument_and_manages(changeset, key)
 
     changeset.resource
     |> Ash.Resource.Info.relationships()
@@ -372,12 +368,16 @@ defmodule AshPhoenix do
     end)
     |> case do
       nil ->
-        changeset
-
-      {_rel, nil} ->
-        changeset
+        {changeset.data, changeset}
 
       {rel, index} ->
+        {changeset, index} =
+          if index == nil do
+            {%{changeset | relationships: Map.put(changeset.relationships, rel, [])}, 0}
+          else
+            {changeset, index}
+          end
+
         new_relationships =
           changeset.relationships
           |> Map.put_new(rel, [])
@@ -412,7 +412,7 @@ defmodule AshPhoenix do
         changeset = %{changeset | relationships: new_relationships}
 
         {new_data, new_value} =
-          if changeset.action_type == :update do
+          if changeset.action_type in [:destroy, :update] do
             case Map.get(changeset.data, rel) do
               %Ash.NotLoaded{} ->
                 {[], new_value}
@@ -426,16 +426,9 @@ defmodule AshPhoenix do
 
                   match?([i] when is_integer(i), path) and is_list(value) ->
                     [i] = path
-                    new_value = List.update_at(Map.get(changeset.data, rel), i, &hide/1)
+                    new_value = hide_at_not_hidden(Map.get(changeset.data, rel), i)
 
-                    if Enum.all?(
-                         new_value,
-                         &Ash.Resource.Info.get_metadata(&1, :private)[:hidden?]
-                       ) do
-                      {Map.put(changeset.data, rel, new_value), []}
-                    else
-                      {Map.put(changeset.data, rel, new_value), new_value}
-                    end
+                    {Map.put(changeset.data, rel, new_value), new_value}
 
                   path == [] || match?([i] when is_integer(i), path) ->
                     {Map.update!(changeset.data, rel, &hide/1), nil}
@@ -445,28 +438,27 @@ defmodule AshPhoenix do
             {changeset.data, []}
           end
 
-        changeset = mark_removed(changeset, new_value, rel)
+        changeset = mark_removed(changeset, new_value, key)
 
         {new_data, %{changeset | data: new_data}}
     end
   end
 
-  defp hide(nil), do: nil
-
-  defp hide(record) do
-    Ash.Resource.Info.put_metadata(record, :private, %{hidden?: true})
-  end
-
-  defp find_manage_change(argument, action) do
-    Enum.find_value(action.changes, fn
-      %{change: {Ash.Resource.Change.ManageRelationship, opts}} ->
-        if opts[:argument] == argument.name do
-          opts[:relationship]
+  defp hide_at_not_hidden(values, i) do
+    values
+    |> Enum.reduce({0, []}, fn value, {counter, acc} ->
+      if hidden?(value) do
+        {counter, [value | acc]}
+      else
+        if counter == i do
+          {counter + 1, [hide(value) | acc]}
+        else
+          {counter + 1, [value | acc]}
         end
-
-      _ ->
-        nil
+      end
     end)
+    |> elem(1)
+    |> Enum.reverse()
   end
 
   @doc """
@@ -643,30 +635,35 @@ defmodule AshPhoenix do
   end
 
   defp mark_removed(%Ash.Query{} = query, value, name) do
-    Ash.Query.put_context(query, :private, %{removed_keys: %{name => value in [nil, []]}})
+    Ash.Query.put_context(query, :private, %{removed_keys: %{name => removed?(value)}})
   end
 
   defp mark_removed(%Ash.Changeset{} = changeset, value, name) do
     Ash.Changeset.put_context(changeset, :private, %{
-      removed_keys: %{name => value in [nil, []]}
+      removed_keys: %{name => removed?(value)}
     })
   end
 
+  defp removed?(nil), do: true
+  defp removed?([]), do: true
+
+  defp removed?(other) do
+    other
+    |> List.wrap()
+    |> Enum.all?(&hidden?/1)
+  end
+
   defp add_to_path(nil, [], add) do
-    List.wrap(add)
+    add
   end
 
   defp add_to_path(value, [], add) when is_list(value) do
     value ++ List.wrap(add)
   end
 
-  defp add_to_path(value, [], add) when value == %{} do
-    [value] ++ List.wrap(add)
-  end
-
-  defp add_to_path(value, [key | rest], add) when is_integer(key) and value == %{} do
-    add_to_path([value], [key | rest], add)
-  end
+  # defp add_to_path(value, [key | rest], add) when is_integer(key) do
+  #   add_to_path([value], [key | rest], add)
+  # end
 
   defp add_to_path(value, [key | rest], add) when is_integer(key) and is_list(value) do
     List.update_at(value, key, &add_to_path(&1, rest, add))

@@ -50,7 +50,7 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
     id = Keyword.get(opts, :id) || name
 
     hidden =
-      if changeset.action_type == :update do
+      if changeset.action_type in [:update] do
         changeset.data
         |> Map.take(Ash.Resource.Info.primary_key(changeset.resource))
         |> Enum.to_list()
@@ -67,8 +67,7 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
     hidden = hidden ++ removed_embed_values
 
     %Phoenix.HTML.Form{
-      action: changeset.action && changeset.action.name,
-      source: Ash.Changeset.put_context(changeset, :form, %{path: []}),
+      source: changeset,
       impl: __MODULE__,
       id: id,
       name: name,
@@ -92,6 +91,59 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
 
     {source, resource, data} =
       cond do
+        arg = changeset.action && get_argument(changeset.action, field) ->
+          case get_embedded(arg.type) do
+            nil ->
+              case argument_and_manages(changeset, arg.name) do
+                {nil, _} ->
+                  raise "Cannot use `form_for` with an argument unless the type is an embedded resource or that argument manages a relationship"
+
+                {argument, rel} ->
+                  if rel do
+                    rel = Ash.Resource.Info.relationship(changeset.resource, rel)
+
+                    data =
+                      relationship_data(
+                        changeset,
+                        rel,
+                        use_data?,
+                        opts[:id] || argument.name || rel.name
+                      )
+
+                    data =
+                      case argument.type do
+                        {:array, _} ->
+                          List.wrap(data)
+
+                        _ ->
+                          if is_list(data) do
+                            List.last(data)
+                          else
+                            data
+                          end
+                      end
+
+                    {rel, rel.destination, data}
+                  else
+                    raise "Cannot use `form_for` with an argument unless the type is an embedded resource or that argument manages a relationship"
+                  end
+              end
+
+            resource ->
+              data = Ash.Changeset.get_argument(changeset, arg.name)
+
+              data =
+                case arg.type do
+                  {:array, _} ->
+                    List.wrap(data)
+
+                  _ ->
+                    data
+                end
+
+              {arg, resource, data}
+          end
+
         rel = Ash.Resource.Info.relationship(changeset.resource, field) ->
           data = relationship_data(changeset, rel, use_data?, opts[:id] || rel.name)
 
@@ -124,26 +176,6 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
               {attr, resource, data}
           end
 
-        arg = changeset.action && get_argument(changeset.action, field) ->
-          case get_embedded(arg.type) do
-            nil ->
-              raise "Cannot use `form_for` with an argument unless the type is an embedded resource"
-
-            resource ->
-              data = Ash.Changeset.get_argument(changeset, arg.name)
-
-              data =
-                case arg.type do
-                  {:array, _} ->
-                    List.wrap(data)
-
-                  _ ->
-                    data
-                end
-
-              {arg, resource, data}
-          end
-
         true ->
           raise "Cannot use `form_for` with anything except embedded resources in attributes/arguments"
       end
@@ -159,6 +191,13 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
     |> to_nested_form(changeset, source, resource, id, name, opts)
     |> List.wrap()
   end
+
+  # defp set_context(forms, context) do
+  #   if
+  #   |> Enum.map(fn form ->
+  #     %{form | source: Ash.Changeset.set_context(form.source, context)}
+  #   end)
+  # end
 
   defp unwrap([]), do: nil
   defp unwrap([value | _]), do: value
@@ -190,7 +229,9 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
               data = changeset_data(changeset, rel)
 
               if data do
-                Ash.Changeset.new(data, value)
+                data
+                |> Ash.Changeset.new(take_attributes(value, rel.destination))
+                |> Map.put(:params, value)
               else
                 value
               end
@@ -226,7 +267,10 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
   end
 
   defp zip_changes([record | rest_data], [manage | rest_manage]) do
-    [Ash.Changeset.new(record, manage) |> Map.put(:params, manage)] ++
+    [
+      Ash.Changeset.new(record, take_attributes(manage, record.__struct__))
+      |> Map.put(:params, manage)
+    ] ++
       zip_changes(rest_data, rest_manage)
   end
 
@@ -258,12 +302,6 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
           end
         end
     end
-  end
-
-  defp hidden?(nil), do: false
-
-  defp hidden?(data) do
-    Ash.Resource.Info.get_metadata(data, :private)[:hidden?]
   end
 
   defp default_data(%{cardinality: :many}), do: []

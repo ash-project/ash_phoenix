@@ -10,6 +10,31 @@ defmodule AshPhoenix.FormData.Helpers do
     Enum.find(action.arguments, &(to_string(&1.name) == field))
   end
 
+  def argument_and_manages(changeset, key) do
+    with action when not is_nil(action) <- changeset.action,
+         argument when not is_nil(argument) <-
+           Enum.find(changeset.action.arguments, &(&1.name == key || to_string(&1.name) == key)),
+         manage_change when not is_nil(manage_change) <-
+           find_manage_change(argument, changeset.action) do
+      {argument, manage_change}
+    else
+      _ ->
+        {nil, nil}
+    end
+  end
+
+  defp find_manage_change(argument, action) do
+    Enum.find_value(action.changes, fn
+      %{change: {Ash.Resource.Change.ManageRelationship, opts}} ->
+        if opts[:argument] == argument.name do
+          opts[:relationship]
+        end
+
+      _ ->
+        nil
+    end)
+  end
+
   def type_to_form_type(type) do
     case Ash.Type.ecto_type(type) do
       :integer -> :number_input
@@ -54,47 +79,7 @@ defmodule AshPhoenix.FormData.Helpers do
         opts
       )
       when is_list(data) do
-    changesets =
-      data
-      |> Enum.map(fn data ->
-        if is_struct(data) do
-          update_action = Ash.Resource.Info.primary_action(resource, :update)
-
-          if update_action do
-            accepted_relationships =
-              resource
-              |> accepted_relationships(update_action)
-              |> Enum.map(fn relationship ->
-                {relationship.name, {:manage, [meta: [id: relationship.name]]}}
-              end)
-
-            Ash.Changeset.for_update(data, update_action.name, %{},
-              relationships: accepted_relationships,
-              actor: opts[:actor]
-            )
-          else
-            Ash.Changeset.new(data)
-          end
-        else
-          create_action = Ash.Resource.Info.primary_action(resource, :create)
-
-          if create_action do
-            accepted_relationships =
-              resource
-              |> accepted_relationships(create_action)
-              |> Enum.map(fn relationship ->
-                {relationship.name, {:manage, [meta: [id: relationship.name]]}}
-              end)
-
-            Ash.Changeset.for_create(resource, create_action.name, data,
-              relationships: accepted_relationships,
-              actor: opts[:actor]
-            )
-          else
-            Ash.Changeset.new(resource, data)
-          end
-        end
-      end)
+    changesets = Enum.map(data, &related_data_to_changeset(resource, &1, opts))
 
     changesets =
       if AshPhoenix.hiding_errors?(original_changeset) do
@@ -107,7 +92,7 @@ defmodule AshPhoenix.FormData.Helpers do
       index_string = Integer.to_string(index)
 
       hidden =
-        if changeset.action_type == :update do
+        if changeset.action_type in [:update, :destroy] do
           changeset.data
           |> Map.take(Ash.Resource.Info.primary_key(changeset.resource))
           |> Enum.to_list()
@@ -116,7 +101,6 @@ defmodule AshPhoenix.FormData.Helpers do
         end
 
       %Phoenix.HTML.Form{
-        action: changeset.action && changeset.action.name,
         source: changeset,
         impl: Phoenix.HTML.FormData.impl_for(changeset),
         id: id <> "_" <> index_string,
@@ -131,6 +115,10 @@ defmodule AshPhoenix.FormData.Helpers do
     end
   end
 
+  def to_nested_form(nil, _, _, _, _, _, _) do
+    nil
+  end
+
   def to_nested_form(
         data,
         original_changeset,
@@ -140,84 +128,35 @@ defmodule AshPhoenix.FormData.Helpers do
         name,
         opts
       ) do
-    create_action = Ash.Resource.Info.primary_action(resource, :create)
-
-    update_action = Ash.Resource.Info.primary_action(resource, :update)
+    changeset = related_data_to_changeset(resource, data, opts)
 
     changeset =
-      cond do
-        is_struct(data) ->
-          if update_action do
-            accepted_relationships =
-              resource
-              |> accepted_relationships(update_action)
-              |> Enum.map(fn relationship ->
-                {relationship.name, {:manage, [meta: [id: relationship.name]]}}
-              end)
-
-            Ash.Changeset.for_update(data, update_action.name, %{},
-              relationships: accepted_relationships,
-              actor: opts[:actor]
-            )
-          else
-            data
-            |> Ash.Changeset.new()
-            |> Map.put(:params, %{})
-          end
-
-        is_nil(data) ->
-          nil
-
-        true ->
-          if create_action do
-            accepted_relationships =
-              resource
-              |> accepted_relationships(create_action)
-              |> Enum.map(fn relationship ->
-                {relationship.name, {:manage, [meta: [id: relationship.name]]}}
-              end)
-
-            Ash.Changeset.for_create(resource, create_action.name, data,
-              relationships: accepted_relationships,
-              actor: opts[:actor]
-            )
-          else
-            resource
-            |> Ash.Changeset.new(data)
-            |> Map.put(:params, data)
-          end
+      if AshPhoenix.hiding_errors?(original_changeset) do
+        AshPhoenix.hide_errors(changeset)
+      else
+        changeset
       end
 
-    if changeset do
-      changeset =
-        if AshPhoenix.hiding_errors?(original_changeset) do
-          AshPhoenix.hide_errors(changeset)
-        else
-          changeset
-        end
+    hidden =
+      if changeset.action_type in [:update, :destroy] do
+        changeset.data
+        |> Map.take(Ash.Resource.Info.primary_key(changeset.resource))
+        |> Enum.to_list()
+      else
+        []
+      end
 
-      hidden =
-        if changeset.action_type == :update do
-          changeset.data
-          |> Map.take(Ash.Resource.Info.primary_key(changeset.resource))
-          |> Enum.to_list()
-        else
-          []
-        end
-
-      %Phoenix.HTML.Form{
-        action: changeset.action && changeset.action.name,
-        source: changeset,
-        impl: Phoenix.HTML.FormData.impl_for(changeset),
-        id: id,
-        name: name,
-        errors: form_for_errors(changeset, opts),
-        data: data,
-        params: changeset.params,
-        hidden: hidden,
-        options: opts
-      }
-    end
+    %Phoenix.HTML.Form{
+      source: changeset,
+      impl: Phoenix.HTML.FormData.impl_for(changeset),
+      id: id,
+      name: name,
+      errors: form_for_errors(changeset, opts),
+      data: data,
+      params: changeset.params,
+      hidden: hidden,
+      options: opts
+    }
   end
 
   def to_nested_form(
@@ -231,12 +170,10 @@ defmodule AshPhoenix.FormData.Helpers do
       )
       when is_list(data) do
     create_action =
-      attribute.constraints[:create_action] ||
-        Ash.Resource.Info.primary_action!(resource, :create).name
+      action!(resource, :create, attribute.constraints[:create_action] || opts[:create_action]).name
 
     update_action =
-      attribute.constraints[:update_action] ||
-        Ash.Resource.Info.primary_action!(resource, :update).name
+      action!(resource, :update, attribute.constraints[:update_action] || opts[:update_action]).name
 
     changesets =
       data
@@ -259,7 +196,7 @@ defmodule AshPhoenix.FormData.Helpers do
       index_string = Integer.to_string(index)
 
       hidden =
-        if changeset.action_type == :update do
+        if changeset.action_type in [:update, :destroy] do
           changeset.data
           |> Map.take(Ash.Resource.Info.primary_key(changeset.resource))
           |> Enum.to_list()
@@ -268,7 +205,6 @@ defmodule AshPhoenix.FormData.Helpers do
         end
 
       %Phoenix.HTML.Form{
-        action: changeset.action && changeset.action.name,
         source: changeset,
         impl: Phoenix.HTML.FormData.impl_for(changeset),
         id: id <> "_" <> index_string,
@@ -293,12 +229,10 @@ defmodule AshPhoenix.FormData.Helpers do
         opts
       ) do
     create_action =
-      attribute.constraints[:create_action] ||
-        Ash.Resource.Info.primary_action!(resource, :create).name
+      action!(resource, :create, attribute.constraints[:create_action] || opts[:create_action]).name
 
     update_action =
-      attribute.constraints[:update_action] ||
-        Ash.Resource.Info.primary_action!(resource, :update).name
+      action!(resource, :update, attribute.constraints[:update_action] || opts[:update_action]).name
 
     changeset =
       cond do
@@ -321,7 +255,7 @@ defmodule AshPhoenix.FormData.Helpers do
         end
 
       hidden =
-        if changeset.action_type == :update do
+        if changeset.action_type in [:update, :destroy] do
           changeset.data
           |> Map.take(Ash.Resource.Info.primary_key(changeset.resource))
           |> Enum.to_list()
@@ -330,7 +264,6 @@ defmodule AshPhoenix.FormData.Helpers do
         end
 
       %Phoenix.HTML.Form{
-        action: changeset.action && changeset.action.name,
         source: changeset,
         impl: Phoenix.HTML.FormData.impl_for(changeset),
         id: id,
@@ -344,22 +277,74 @@ defmodule AshPhoenix.FormData.Helpers do
     end
   end
 
-  defp accepted_relationships(resource, action) do
-    accepted =
-      if action.accept do
-        resource
-        |> Ash.Resource.Info.relationships()
-        |> Enum.filter(&(&1.name in action.accept))
-      else
-        Ash.Resource.Info.relationships(resource)
-      end
+  def hidden?(nil), do: false
 
-    if action.reject do
-      resource
-      |> Ash.Resource.Info.relationships()
-      |> Enum.reject(&(&1.name in action.reject))
+  def hidden?(%_{} = data) do
+    Ash.Resource.Info.get_metadata(data, :private)[:hidden?]
+  end
+
+  def hidden?(_), do: false
+
+  def hide(nil), do: nil
+
+  def hide(record) do
+    Ash.Resource.Info.put_metadata(record, :private, %{hidden?: true})
+  end
+
+  defp related_data_to_changeset(resource, data, opts) do
+    if is_struct(data) do
+      if opts[:update_action] == :_raw do
+        Ash.Changeset.new(data)
+      else
+        update_action = action!(resource, :update, opts[:update_action])
+
+        Ash.Changeset.for_update(data, update_action.name, %{}, actor: opts[:actor])
+      end
     else
-      accepted
+      if opts[:create_action] == :_raw do
+        resource
+        |> Ash.Changeset.new(take_attributes(data, resource))
+        |> Map.put(:params, data)
+      else
+        create_action = action!(resource, :create, opts[:create_action])
+
+        Ash.Changeset.for_create(resource, create_action.name, data, actor: opts[:actor])
+      end
+    end
+  end
+
+  def take_attributes(data, resource) do
+    attributes =
+      resource
+      |> Ash.Resource.Info.attributes()
+      |> Enum.map(&to_string(&1.name))
+
+    Map.take(data, attributes)
+  end
+
+  def action!(resource, type, nil) do
+    case Ash.Resource.Info.primary_action(resource, type) do
+      nil ->
+        raise """
+        No `#{type}_action` configured, and no primary action of type #{type} found on #{
+          inspect(resource)
+        }
+        """
+
+      action ->
+        action
+    end
+  end
+
+  def action!(resource, _type, action) do
+    case Ash.Resource.Info.action(resource, action) do
+      nil ->
+        raise """
+        No such action #{action} on resource #{inspect(resource)}
+        """
+
+      action ->
+        action
     end
   end
 end

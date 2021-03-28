@@ -106,15 +106,7 @@ defimpl Phoenix.HTML.FormData, for: Ash.Query do
     name = to_string(name || form_for_name(query.resource))
     id = Keyword.get(opts, :id) || name
 
-    action =
-      if AshPhoenix.hiding_errors?(query) do
-        nil
-      else
-        query.action && query.action.name
-      end
-
     %Phoenix.HTML.Form{
-      action: action,
       source: query,
       impl: __MODULE__,
       data: %{},
