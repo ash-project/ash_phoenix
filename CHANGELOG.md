@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.10](https://github.com/ash-project/ash_phoenix/compare/v0.4.9...v0.4.10) (2021-03-30)
+
+
+
+
+### Bug Fixes:
+
+* fix remove from path with indices
+
+* append values to maps properly
+
 ## [v0.4.9](https://github.com/ash-project/ash_phoenix/compare/v0.4.8...v0.4.9) (2021-03-28)
 
 
