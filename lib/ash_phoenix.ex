@@ -662,7 +662,13 @@ defmodule AshPhoenix do
   end
 
   defp add_to_path(value, [], add) when is_map(value) do
-    %{"0" => value, "1" => add}
+    case last_index(value) do
+      :error ->
+        %{"0" => value, "1" => add}
+
+      {:ok, index} ->
+        Map.put(value, index, add)
+    end
   end
 
   defp add_to_path(value, [key | rest], add) when is_integer(key) and is_list(value) do
@@ -695,6 +701,28 @@ defmodule AshPhoenix do
   end
 
   defp add_to_path(_, _, add), do: add
+
+  defp last_index(map) do
+    {:ok,
+     map
+     |> Map.keys()
+     |> Enum.map(&String.to_integer/1)
+     |> max_plus_one()
+     |> to_string()}
+  rescue
+    _ ->
+      :error
+  end
+
+  defp max_plus_one([]) do
+    0
+  end
+
+  defp max_plus_one(list) do
+    list
+    |> Enum.max()
+    |> Kernel.+(1)
+  end
 
   defp remove_from_path(value, [key]) when is_integer(key) and is_list(value) do
     List.delete_at(value, key)
