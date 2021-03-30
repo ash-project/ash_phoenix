@@ -737,7 +737,7 @@ defmodule AshPhoenix do
           Map.drop(value, [key, to_string(key)])
         end
 
-      is_binary(key) && Enum.any?(Map.keys(value), &(to_string(&1) == key)) ->
+      is_binary(key) && Enum.any?(Map.keys(value), &(is_atom(&1) && to_string(&1) == key)) ->
         if is_struct(value) do
           Map.put(value, String.to_existing_atom(key), nil)
         else
@@ -747,10 +747,21 @@ defmodule AshPhoenix do
       true ->
         Map.delete(value, key)
     end
+    |> case do
+      empty when empty == %{} ->
+        nil
+
+      value ->
+        value
+    end
   end
 
   defp remove_from_path(value, [key | rest]) when is_list(value) and is_integer(key) do
     List.update_at(value, key, &remove_from_path(&1, rest))
+  end
+
+  defp remove_from_path(value, [key | rest]) when is_integer(key) and is_map(value) do
+    remove_from_path(value, [to_string(key) | rest])
   end
 
   defp remove_from_path(value, [key | rest])
@@ -762,7 +773,7 @@ defmodule AshPhoenix do
       is_atom(key) && Map.has_key?(value, to_string(key)) ->
         Map.update!(value, to_string(key), &remove_from_path(&1, rest))
 
-      is_binary(key) && Enum.any?(Map.keys(value), &(to_string(&1) == key)) ->
+      is_binary(key) && Enum.any?(Map.keys(value), &(is_atom(&1) && to_string(&1) == key)) ->
         Map.update!(value, String.to_existing_atom(key), &remove_from_path(&1, rest))
 
       true ->
