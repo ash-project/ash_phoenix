@@ -28,12 +28,12 @@ end
 
 defimpl AshPhoenix.FormData.Error, for: Ash.Error.Changes.InvalidChanges do
   def to_form_error(error) do
-    fields = Enum.join(error.fields, ",")
+    fields = Enum.join(error.fields || [], ",")
 
-    for field <- error.fields do
+    for field <- error.fields || [] do
       vars =
         error.vars
-        |> Keyword.put(:fields, fields)
+        |> Keyword.put(:fields, fields || [])
         |> Keyword.put(:field, field)
 
       {field, error.message, vars}
