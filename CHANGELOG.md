@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.11](https://github.com/ash-project/ash_phoenix/compare/v0.4.10...v0.4.11) (2021-04-06)
+
+
+
+
+### Bug Fixes:
+
+* handle empty error fields
+
+### Improvements:
+
+* support invalid argument errors
+
 ## [v0.4.10](https://github.com/ash-project/ash_phoenix/compare/v0.4.9...v0.4.10) (2021-03-30)
 
 
