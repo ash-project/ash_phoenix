@@ -92,56 +92,57 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
     {source, resource, data} =
       cond do
         arg = changeset.action && get_argument(changeset.action, field) ->
-          case get_embedded(arg.type) do
-            nil ->
-              case argument_and_manages(changeset, arg.name) do
-                {nil, _} ->
+          case argument_and_manages(changeset, arg.name) do
+            {nil, _} ->
+              case get_embedded(arg.type) do
+                nil ->
                   raise "Cannot use `form_for` with an argument unless the type is an embedded resource or that argument manages a relationship"
 
-                {argument, rel} ->
-                  if rel do
-                    rel = Ash.Resource.Info.relationship(changeset.resource, rel)
+                resource ->
+                  IO.inspect(resource)
+                  data = Ash.Changeset.get_argument(changeset, arg.name)
 
-                    data =
-                      relationship_data(
-                        changeset,
-                        rel,
-                        use_data?,
-                        opts[:id] || argument.name || rel.name
-                      )
+                  data =
+                    case arg.type do
+                      {:array, _} ->
+                        List.wrap(data)
 
-                    data =
-                      case argument.type do
-                        {:array, _} ->
-                          List.wrap(data)
+                      _ ->
+                        data
+                    end
 
-                        _ ->
-                          if is_list(data) do
-                            List.last(data)
-                          else
-                            data
-                          end
-                      end
-
-                    {rel, rel.destination, data}
-                  else
-                    raise "Cannot use `form_for` with an argument unless the type is an embedded resource or that argument manages a relationship"
-                  end
+                  {arg, resource, data}
               end
 
-            resource ->
-              data = Ash.Changeset.get_argument(changeset, arg.name)
+            {argument, rel} ->
+              if rel do
+                rel = Ash.Resource.Info.relationship(changeset.resource, rel)
 
-              data =
-                case arg.type do
-                  {:array, _} ->
-                    List.wrap(data)
+                data =
+                  relationship_data(
+                    changeset,
+                    rel,
+                    use_data?,
+                    opts[:id] || argument.name || rel.name,
+                  )
 
-                  _ ->
-                    data
-                end
+                data =
+                  case argument.type do
+                    {:array, _} ->
+                      List.wrap(data)
 
-              {arg, resource, data}
+                    _ ->
+                      if is_list(data) do
+                        List.last(data)
+                      else
+                        data
+                      end
+                  end
+
+                {rel, rel.destination, data}
+              else
+                raise "Cannot use `form_for` with an argument unless the type is an embedded resource or that argument manages a relationship"
+              end
           end
 
         rel = Ash.Resource.Info.relationship(changeset.resource, field) ->
@@ -191,13 +192,6 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
     |> to_nested_form(changeset, source, resource, id, name, opts)
     |> List.wrap()
   end
-
-  # defp set_context(forms, context) do
-  #   if
-  #   |> Enum.map(fn form ->
-  #     %{form | source: Ash.Changeset.set_context(form.source, context)}
-  #   end)
-  # end
 
   defp unwrap([]), do: nil
   defp unwrap([value | _]), do: value
