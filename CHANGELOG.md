@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.12](https://github.com/ash-project/ash_phoenix/compare/v0.4.11...v0.4.12) (2021-04-14)
+
+
+
+
+### Bug Fixes:
+
+* check for managed relationship before embedded input
+
 ## [v0.4.11](https://github.com/ash-project/ash_phoenix/compare/v0.4.10...v0.4.11) (2021-04-06)
 
 
