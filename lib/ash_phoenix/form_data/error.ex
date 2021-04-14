@@ -33,7 +33,7 @@ defimpl AshPhoenix.FormData.Error, for: Ash.Error.Changes.InvalidChanges do
     for field <- error.fields || [] do
       vars =
         error.vars
-        |> Keyword.put(:fields, fields || [])
+        |> Keyword.put(:fields, fields)
         |> Keyword.put(:field, field)
 
       {field, error.message, vars}

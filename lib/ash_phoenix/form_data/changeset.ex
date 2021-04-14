@@ -99,7 +99,6 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
                   raise "Cannot use `form_for` with an argument unless the type is an embedded resource or that argument manages a relationship"
 
                 resource ->
-                  IO.inspect(resource)
                   data = Ash.Changeset.get_argument(changeset, arg.name)
 
                   data =
@@ -123,7 +122,7 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
                     changeset,
                     rel,
                     use_data?,
-                    opts[:id] || argument.name || rel.name,
+                    opts[:id] || argument.name || rel.name
                   )
 
                 data =
