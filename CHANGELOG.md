@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.13](https://github.com/ash-project/ash_phoenix/compare/v0.4.12...v0.4.13) (2021-04-16)
+
+
+
+
+### Improvements:
+
+* add `add_value/4` and `remove_value/3` helpers
+
 ## [v0.4.12](https://github.com/ash-project/ash_phoenix/compare/v0.4.11...v0.4.12) (2021-04-14)
 
 
