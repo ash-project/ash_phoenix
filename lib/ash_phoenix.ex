@@ -210,6 +210,117 @@ defmodule AshPhoenix do
     query.context[:private][:ash_phoenix][:hide_errors] == true
   end
 
+  @add_value_opts [
+    add: [
+      type: :any,
+      doc: "the value to add to the list",
+      default: nil
+    ]
+  ]
+
+  @doc """
+  A utility to support "add" buttons on list attributes and arguments used in forms.
+
+  To use, simply pass in the form name of the attribute/argument form as well as the name of the primary/outer form.
+
+  ```elixir
+  # In your template, inside a form called `:change`
+  <button phx-click="append_thing" phx-value-path={{form.path <> "[attribute_name]"}}>
+  </button>
+
+  # In the view/component
+
+  def handle_event("append_thing", %{"path" => path}, socket) do
+    changeset = add_value(socket.assigns.changeset, path, "change")
+    {:noreply, assign(socket, changeset: changeset)}
+  end
+  ```
+
+  ## Options
+      #{Ash.OptionsHelpers.docs(@add_value_opts)}
+  """
+  @spec add_value(Ash.Changeset.t(), String.t(), String.t(), Keyword.t()) :: Ash.Changeset.t()
+  def add_value(changeset, path, outer_form_name, opts \\ []) do
+    opts = Ash.OptionsHelpers.validate!(opts, @add_value_opts)
+    add = opts[:add]
+
+    [^outer_form_name, key | path] = decode_path(path)
+
+    attribute_or_argument =
+      Ash.Resource.Info.attribute(changeset.resource, key) ||
+        find_argument(changeset, key)
+
+    if attribute_or_argument do
+      value =
+        case attribute_or_argument do
+          %Ash.Resource.Actions.Argument{} = argument ->
+            changeset
+            |> Ash.Changeset.get_argument(argument.name)
+            |> List.wrap()
+
+          attribute ->
+            changeset
+            |> Ash.Changeset.get_attribute(attribute.name)
+            |> List.wrap()
+        end
+
+      new_value = add_to_path(value, path, add)
+
+      case attribute_or_argument do
+        %Ash.Resource.Actions.Argument{} = argument ->
+          Ash.Changeset.set_argument(changeset, argument.name, new_value)
+
+        attribute ->
+          Ash.Changeset.change_attribute(changeset, attribute.name, new_value)
+      end
+    else
+      changeset
+    end
+  end
+
+  @doc """
+  A utility to support "remove" buttons on list attributes and arguments used in forms.
+  """
+  @spec remove_value(Ash.Changeset.t(), String.t(), String.t()) :: Ash.Changeset.t()
+  def remove_value(changeset, path, outer_form_name) do
+    [^outer_form_name, key | path] = decode_path(path)
+
+    attribute_or_argument =
+      Ash.Resource.Info.attribute(changeset.resource, key) ||
+        find_argument(changeset, key)
+
+    if attribute_or_argument do
+      value =
+        case attribute_or_argument do
+          %Ash.Resource.Actions.Argument{} = argument ->
+            changeset
+            |> Ash.Changeset.get_argument(argument.name)
+            |> List.wrap()
+
+          attribute ->
+            changeset
+            |> Ash.Changeset.get_attribute(attribute.name)
+            |> List.wrap()
+        end
+
+      new_value = remove_from_path(value, path)
+
+      case attribute_or_argument do
+        %Ash.Resource.Actions.Argument{} = argument ->
+          Ash.Changeset.set_argument(changeset, argument.name, new_value)
+
+        attribute ->
+          Ash.Changeset.change_attribute(changeset, attribute.name, new_value)
+      end
+    else
+      changeset
+    end
+  end
+
+  defp find_argument(changeset, key) do
+    changeset.action && Enum.find(changeset.action.arguments, &(to_string(&1.name) == key))
+  end
+
   @add_related_opts [
     add: [
       type: :any,
@@ -655,6 +766,10 @@ defmodule AshPhoenix do
 
   defp add_to_path(nil, [], add) do
     add
+  end
+
+  defp add_to_path(value, [], nil) when is_list(value) do
+    value ++ [nil]
   end
 
   defp add_to_path(value, [], add) when is_list(value) do
