@@ -262,8 +262,7 @@ defmodule AshPhoenix do
             |> Ash.Changeset.get_attribute(attribute.name)
         end
 
-      new_value =
-        add_to_path(IO.inspect(value), IO.inspect(path), IO.inspect(add)) |> IO.inspect()
+      new_value = add_to_path(value, path, add)
 
       case attribute_or_argument do
         %Ash.Resource.Actions.Argument{} = argument ->
