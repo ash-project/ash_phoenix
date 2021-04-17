@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.14](https://github.com/ash-project/ash_phoenix/compare/v0.4.13...v0.4.14) (2021-04-17)
+
+
+
+
+### Bug Fixes:
+
+* support proper nested embedded appends
+
 ## [v0.4.13](https://github.com/ash-project/ash_phoenix/compare/v0.4.12...v0.4.13) (2021-04-16)
 
 
