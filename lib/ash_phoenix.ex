@@ -256,15 +256,14 @@ defmodule AshPhoenix do
           %Ash.Resource.Actions.Argument{} = argument ->
             changeset
             |> Ash.Changeset.get_argument(argument.name)
-            |> List.wrap()
 
           attribute ->
             changeset
             |> Ash.Changeset.get_attribute(attribute.name)
-            |> List.wrap()
         end
 
-      new_value = add_to_path(value, path, add)
+      new_value =
+        add_to_path(IO.inspect(value), IO.inspect(path), IO.inspect(add)) |> IO.inspect()
 
       case attribute_or_argument do
         %Ash.Resource.Actions.Argument{} = argument ->
@@ -762,6 +761,10 @@ defmodule AshPhoenix do
     other
     |> List.wrap()
     |> Enum.all?(&hidden?/1)
+  end
+
+  defp add_to_path(nil, [], nil) do
+    [nil]
   end
 
   defp add_to_path(nil, [], add) do
