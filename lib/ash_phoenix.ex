@@ -593,10 +593,13 @@ defmodule AshPhoenix do
   """
   def add_embed(query, path, outer_form_name, add \\ %{})
 
-  def add_embed(%Ash.Changeset{} = changeset, path, outer_form_name, add) do
-    [^outer_form_name, key | path] = decode_path(path)
+  def add_embed(%Ash.Changeset{} = changeset, original_path, outer_form_name, add) do
+    [^outer_form_name, key | path] = decode_path(original_path)
 
     cond do
+      match?({x, y} when not is_nil(x) and not is_nil(y), argument_and_manages(changeset, key)) ->
+        add_related(changeset, original_path, outer_form_name, add: add)
+
       attr = Ash.Resource.Info.attribute(changeset.resource, key) ->
         current_value = Ash.Changeset.get_attribute(changeset, attr.name)
 
