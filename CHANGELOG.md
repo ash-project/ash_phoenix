@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.16](https://github.com/ash-project/ash_phoenix/compare/v0.4.15...v0.4.16) (2021-04-27)
+
+
+
+
+### Bug Fixes:
+
+* support embeds in relationships
+
 ## [v0.4.15](https://github.com/ash-project/ash_phoenix/compare/v0.4.14...v0.4.15) (2021-04-17)
 
 
