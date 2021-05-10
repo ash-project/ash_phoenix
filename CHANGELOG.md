@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.17](https://github.com/ash-project/ash_phoenix/compare/v0.4.16...v0.4.17) (2021-05-10)
+
+
+
+
+### Bug Fixes:
+
+* ensure error message is always a string
+
 ## [v0.4.16](https://github.com/ash-project/ash_phoenix/compare/v0.4.15...v0.4.16) (2021-04-27)
 
 
