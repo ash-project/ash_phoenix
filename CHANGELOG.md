@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.18](https://github.com/ash-project/ash_phoenix/compare/v0.4.17...v0.4.18) (2021-05-10)
+
+
+
+
+### Improvements:
+
+* track `manage_relationship_source`, as a utility
+
 ## [v0.4.17](https://github.com/ash-project/ash_phoenix/compare/v0.4.16...v0.4.17) (2021-05-10)
 
 
