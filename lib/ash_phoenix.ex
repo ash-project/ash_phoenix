@@ -112,6 +112,7 @@ defmodule AshPhoenix do
         |> Enum.map(fn {field, message, vars} ->
           vars =
             vars
+            |> List.wrap()
             |> Enum.flat_map(fn {key, value} ->
               try do
                 if is_integer(value) do
@@ -125,7 +126,7 @@ defmodule AshPhoenix do
               end
             end)
 
-          {field, {message, vars}}
+          {field, {message || "", vars}}
         end)
       end
 
