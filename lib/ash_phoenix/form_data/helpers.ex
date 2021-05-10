@@ -72,14 +72,18 @@ defmodule AshPhoenix.FormData.Helpers do
   def to_nested_form(
         data,
         original_changeset,
-        %{cardinality: _},
+        %{cardinality: _} = relationship,
         resource,
         id,
         name,
         opts
       )
       when is_list(data) do
-    changesets = Enum.map(data, &related_data_to_changeset(resource, &1, opts))
+    changesets =
+      Enum.map(
+        data,
+        &related_data_to_changeset(resource, &1, opts, relationship, original_changeset)
+      )
 
     changesets =
       if AshPhoenix.hiding_errors?(original_changeset) do
@@ -122,13 +126,13 @@ defmodule AshPhoenix.FormData.Helpers do
   def to_nested_form(
         data,
         original_changeset,
-        %{cardinality: _},
+        %{cardinality: _} = relationship,
         resource,
         id,
         name,
         opts
       ) do
-    changeset = related_data_to_changeset(resource, data, opts)
+    changeset = related_data_to_changeset(resource, data, opts, relationship, original_changeset)
 
     changeset =
       if AshPhoenix.hiding_errors?(original_changeset) do
@@ -291,25 +295,49 @@ defmodule AshPhoenix.FormData.Helpers do
     Ash.Resource.Info.put_metadata(record, :private, %{hidden?: true})
   end
 
-  defp related_data_to_changeset(resource, data, opts) do
+  defp related_data_to_changeset(resource, data, opts, relationship, source_changeset) do
     if is_struct(data) do
       if opts[:update_action] == :_raw do
         Ash.Changeset.new(data)
       else
         update_action = action!(resource, :update, opts[:update_action])
 
-        Ash.Changeset.for_update(data, update_action.name, %{}, actor: opts[:actor])
+        data
+        |> Ash.Changeset.new()
+        |> set_source_context({relationship, source_changeset})
+        |> Ash.Changeset.for_update(update_action.name, %{}, actor: opts[:actor])
       end
     else
       if opts[:create_action] == :_raw do
         resource
         |> Ash.Changeset.new(take_attributes(data, resource))
+        |> set_source_context({relationship, source_changeset})
         |> Map.put(:params, data)
       else
         create_action = action!(resource, :create, opts[:create_action])
 
-        Ash.Changeset.for_create(resource, create_action.name, data, actor: opts[:actor])
+        resource
+        |> Ash.Changeset.new()
+        |> set_source_context({relationship, source_changeset})
+        |> Ash.Changeset.for_create(create_action.name, data, actor: opts[:actor])
       end
+    end
+  end
+
+  defp set_source_context(changeset, {relationship, original_changeset}) do
+    case original_changeset.context[:manage_relationship_source] do
+      nil ->
+        Ash.Changeset.set_context(changeset, %{
+          manage_relationship_source: [
+            {relationship.source, relationship.name, original_changeset}
+          ]
+        })
+
+      value ->
+        Ash.Changeset.set_context(changeset, %{
+          manage_relationship_source:
+            value ++ [{relationship.source, relationship.name, original_changeset}]
+        })
     end
   end
 
