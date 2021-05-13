@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.19](https://github.com/ash-project/ash_phoenix/compare/v0.4.18...v0.4.19) (2021-05-13)
+
+
+
+
+### Bug Fixes:
+
+* support for to many rels as to_one manipulations
+
 ## [v0.4.18](https://github.com/ash-project/ash_phoenix/compare/v0.4.17...v0.4.18) (2021-05-10)
 
 
