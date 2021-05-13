@@ -406,7 +406,7 @@ defmodule AshPhoenix do
           |> Map.put_new(rel, [])
           |> Map.update!(rel, fn manages ->
             List.update_at(manages, index, fn {manage, opts} ->
-              {add_to_path(List.wrap(manage), path, add), opts}
+              {add_to_path(manage, path, add), opts}
             end)
           end)
 
@@ -677,10 +677,14 @@ defmodule AshPhoenix do
   end
   ```
   """
-  def remove_embed(%Ash.Changeset{} = changeset, path, outer_form_name) do
-    [^outer_form_name, key | path] = decode_path(path)
+  def remove_embed(%Ash.Changeset{} = changeset, original_path, outer_form_name) do
+    [^outer_form_name, key | path] = decode_path(original_path)
 
     cond do
+      match?({x, y} when not is_nil(x) and not is_nil(y), argument_and_manages(changeset, key)) ->
+        {_, changeset} = remove_related(changeset, original_path, outer_form_name)
+        changeset
+
       attr = Ash.Resource.Info.attribute(changeset.resource, key) ->
         current_value = Ash.Changeset.get_attribute(changeset, attr.name)
 
@@ -821,6 +825,10 @@ defmodule AshPhoenix do
     %{key => add_to_path(nil, rest, add)}
   end
 
+  defp add_to_path([item], [key | _] = path, add) when is_binary(key) do
+    [add_to_path(item, path, add)]
+  end
+
   defp add_to_path(_, _, add), do: add
 
   defp last_index(map) do
@@ -900,6 +908,10 @@ defmodule AshPhoenix do
       true ->
         Map.put(value, key, remove_from_path(nil, rest))
     end
+  end
+
+  defp remove_from_path([item], [key | _] = path) when is_binary(key) do
+    [remove_from_path(item, path)]
   end
 
   defp remove_from_path(value, _), do: value
