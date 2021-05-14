@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.21](https://github.com/ash-project/ash_phoenix/compare/v0.4.20...v0.4.21) (2021-05-14)
+
+
+
+
+### Bug Fixes:
+
+* use proper input params for embeds
+
 ## [v0.4.20](https://github.com/ash-project/ash_phoenix/compare/v0.4.19...v0.4.20) (2021-05-14)
 
 
