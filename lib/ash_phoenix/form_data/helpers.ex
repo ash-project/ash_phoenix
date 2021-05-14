@@ -292,7 +292,7 @@ defmodule AshPhoenix.FormData.Helpers do
         if is_struct(data) do
           Ash.Changeset.for_update(data, update_action, params(data), actor: opts[:actor])
         else
-          Ash.Changeset.for_create(resource, create_action, params(data), actor: opts[:actor])
+          Ash.Changeset.for_create(resource, create_action, data, actor: opts[:actor])
         end
       end)
 
