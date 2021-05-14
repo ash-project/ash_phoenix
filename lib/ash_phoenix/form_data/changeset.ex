@@ -50,13 +50,27 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
     id = Keyword.get(opts, :id) || name
 
     hidden =
-      if changeset.action_type in [:update] do
+      if changeset.action_type in [:update, :destroy] do
         changeset.data
         |> Map.take(Ash.Resource.Info.primary_key(changeset.resource))
         |> Enum.to_list()
       else
         []
       end
+
+    hidden =
+      changeset.resource
+      |> Ash.Resource.Info.attributes()
+      |> Enum.filter(&Ash.Type.embedded_type?(&1.type))
+      |> Enum.reduce(hidden, fn attribute, hidden ->
+        case Ash.Changeset.fetch_change(changeset, attribute.name) do
+          {:ok, empty} when empty in [nil, []] ->
+            Keyword.put(hidden, attribute.name, nil)
+
+          _ ->
+            hidden
+        end
+      end)
 
     removed_embed_values =
       changeset.context[:private][:removed_keys]
@@ -195,110 +209,6 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
   defp unwrap([]), do: nil
   defp unwrap([value | _]), do: value
   defp unwrap(value), do: value
-
-  defp relationship_data(changeset, %{cardinality: :one} = rel, use_data?, id) do
-    case get_managed(changeset, rel.name, id) do
-      nil ->
-        if use_data? do
-          changeset_data(changeset, rel)
-        else
-          nil
-        end
-
-      {manage, _opts} ->
-        case manage do
-          [] ->
-            nil
-
-          value ->
-            value =
-              if is_list(value) do
-                List.last(value)
-              else
-                value
-              end
-
-            if use_data? do
-              data = changeset_data(changeset, rel)
-
-              if data do
-                data
-                |> Ash.Changeset.new(take_attributes(value, rel.destination))
-                |> Map.put(:params, value)
-              else
-                value
-              end
-            else
-              value
-            end
-        end
-    end
-  end
-
-  defp relationship_data(changeset, rel, use_data?, id) do
-    case get_managed(changeset, rel.name, id) do
-      nil ->
-        if use_data? do
-          changeset_data(changeset, rel)
-        else
-          []
-        end
-
-      {manage, _opts} ->
-        if use_data? do
-          changeset
-          |> changeset_data(rel)
-          |> zip_changes(manage)
-        else
-          manage
-        end
-    end
-  end
-
-  defp zip_changes([], manage) do
-    manage
-  end
-
-  defp zip_changes([record | rest_data], [manage | rest_manage]) do
-    [
-      Ash.Changeset.new(record, take_attributes(manage, record.__struct__))
-      |> Map.put(:params, manage)
-    ] ++
-      zip_changes(rest_data, rest_manage)
-  end
-
-  defp zip_changes(records, []) do
-    records
-  end
-
-  defp get_managed(changeset, relationship_name, id) do
-    manage = changeset.relationships[relationship_name] || []
-
-    Enum.find(manage, fn {_, opts} -> opts[:meta][:id] == id end)
-  end
-
-  defp changeset_data(changeset, rel) do
-    data = Map.get(changeset.data, rel.name)
-
-    case data do
-      %Ash.NotLoaded{} ->
-        default_data(rel)
-
-      data ->
-        if is_list(data) do
-          Enum.reject(data, &hidden?/1)
-        else
-          if hidden?(data) do
-            nil
-          else
-            data
-          end
-        end
-    end
-  end
-
-  defp default_data(%{cardinality: :many}), do: []
-  defp default_data(%{cardinality: :one}), do: nil
 
   @impl true
   def input_validations(changeset, _, field) do

@@ -68,6 +68,113 @@ defmodule AshPhoenix.FormData.Helpers do
 
   def get_embedded(_), do: nil
 
+  def relationship_data(changeset, %{cardinality: :one} = rel, use_data?, id) do
+    case get_managed(changeset, rel.name, id) do
+      nil ->
+        if use_data? do
+          changeset_data(changeset, rel)
+        else
+          nil
+        end
+
+      {manage, _opts} ->
+        case manage do
+          nil ->
+            nil
+
+          [] ->
+            nil
+
+          value ->
+            value =
+              if is_list(value) do
+                List.last(value)
+              else
+                value
+              end
+
+            if use_data? do
+              data = changeset_data(changeset, rel)
+
+              if data do
+                data
+                |> Ash.Changeset.new()
+                |> Map.put(:params, value)
+              else
+                value
+              end
+            else
+              value
+            end
+        end
+    end
+  end
+
+  def relationship_data(changeset, rel, use_data?, id) do
+    case get_managed(changeset, rel.name, id) do
+      nil ->
+        if use_data? do
+          changeset_data(changeset, rel)
+        else
+          []
+        end
+
+      {manage, _opts} ->
+        if use_data? do
+          changeset
+          |> changeset_data(rel)
+          |> zip_changes(manage)
+        else
+          manage
+        end
+    end
+  end
+
+  defp zip_changes([], manage) do
+    manage
+  end
+
+  defp zip_changes([record | rest_data], [manage | rest_manage]) do
+    [
+      Ash.Changeset.new(record, %{})
+      |> Map.put(:params, manage)
+    ] ++
+      zip_changes(rest_data, rest_manage)
+  end
+
+  defp zip_changes(records, []) do
+    records
+  end
+
+  defp changeset_data(changeset, rel) do
+    data = Map.get(changeset.data, rel.name)
+
+    case data do
+      %Ash.NotLoaded{} ->
+        default_data(rel)
+
+      data ->
+        if is_list(data) do
+          Enum.reject(data, &hidden?/1)
+        else
+          if hidden?(data) do
+            nil
+          else
+            data
+          end
+        end
+    end
+  end
+
+  defp default_data(%{cardinality: :many}), do: []
+  defp default_data(%{cardinality: :one}), do: nil
+
+  defp get_managed(changeset, relationship_name, id) do
+    manage = changeset.relationships[relationship_name] || []
+
+    Enum.find(manage, fn {_, opts} -> opts[:meta][:id] == id end)
+  end
+
   @doc false
   def to_nested_form(
         data,
@@ -156,7 +263,7 @@ defmodule AshPhoenix.FormData.Helpers do
       id: id,
       name: name,
       errors: form_for_errors(changeset, opts),
-      data: data,
+      data: changeset.data,
       params: changeset.params,
       hidden: hidden,
       options: opts
@@ -183,9 +290,9 @@ defmodule AshPhoenix.FormData.Helpers do
       data
       |> Enum.map(fn data ->
         if is_struct(data) do
-          Ash.Changeset.for_update(data, update_action, %{}, actor: opts[:actor])
+          Ash.Changeset.for_update(data, update_action, params(data), actor: opts[:actor])
         else
-          Ash.Changeset.for_create(resource, create_action, data, actor: opts[:actor])
+          Ash.Changeset.for_create(resource, create_action, params(data), actor: opts[:actor])
         end
       end)
 
@@ -241,13 +348,13 @@ defmodule AshPhoenix.FormData.Helpers do
     changeset =
       cond do
         is_struct(data) ->
-          Ash.Changeset.for_update(data, update_action, %{}, actor: opts[:actor])
+          Ash.Changeset.for_update(data, update_action, params(data), actor: opts[:actor])
 
         is_nil(data) ->
           nil
 
         true ->
-          Ash.Changeset.for_create(resource, create_action, data, actor: opts[:actor])
+          Ash.Changeset.for_create(resource, create_action, params(data), actor: opts[:actor])
       end
 
     if changeset do
@@ -273,7 +380,7 @@ defmodule AshPhoenix.FormData.Helpers do
         id: id,
         name: name,
         errors: form_for_errors(changeset, opts),
-        data: data,
+        data: changeset.data,
         params: changeset.params,
         hidden: hidden,
         options: opts
@@ -303,9 +410,15 @@ defmodule AshPhoenix.FormData.Helpers do
         update_action = action!(resource, :update, opts[:update_action])
 
         data
-        |> Ash.Changeset.new()
+        |> case do
+          %Ash.Changeset{} = changeset ->
+            changeset
+
+          other ->
+            Ash.Changeset.new(other)
+        end
         |> set_source_context({relationship, source_changeset})
-        |> Ash.Changeset.for_update(update_action.name, %{}, actor: opts[:actor])
+        |> Ash.Changeset.for_update(update_action.name, params(data), actor: opts[:actor])
       end
     else
       if opts[:create_action] == :_raw do
@@ -323,6 +436,9 @@ defmodule AshPhoenix.FormData.Helpers do
       end
     end
   end
+
+  defp params(%Ash.Changeset{params: params}), do: params
+  defp params(_), do: nil
 
   defp set_source_context(changeset, {relationship, original_changeset}) do
     case original_changeset.context[:manage_relationship_source] do

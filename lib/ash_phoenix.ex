@@ -241,39 +241,43 @@ defmodule AshPhoenix do
       #{Ash.OptionsHelpers.docs(@add_value_opts)}
   """
   @spec add_value(Ash.Changeset.t(), String.t(), String.t(), Keyword.t()) :: Ash.Changeset.t()
-  def add_value(changeset, path, outer_form_name, opts \\ []) do
+  def add_value(changeset, original_path, outer_form_name, opts \\ []) do
     opts = Ash.OptionsHelpers.validate!(opts, @add_value_opts)
     add = opts[:add]
 
-    [^outer_form_name, key | path] = decode_path(path)
+    [^outer_form_name, key | path] = decode_path(original_path)
 
-    attribute_or_argument =
-      Ash.Resource.Info.attribute(changeset.resource, key) ||
-        find_argument(changeset, key)
+    if match?({x, y} when not is_nil(x) and not is_nil(y), argument_and_manages(changeset, key)) do
+      add_related(changeset, original_path, outer_form_name, add: add)
+    else
+      attribute_or_argument =
+        Ash.Resource.Info.attribute(changeset.resource, key) ||
+          find_argument(changeset, key)
 
-    if attribute_or_argument do
-      value =
+      if attribute_or_argument do
+        value =
+          case attribute_or_argument do
+            %Ash.Resource.Actions.Argument{} = argument ->
+              changeset
+              |> Ash.Changeset.get_argument(argument.name)
+
+            attribute ->
+              changeset
+              |> Ash.Changeset.get_attribute(attribute.name)
+          end
+
+        new_value = add_to_path(value, path, add)
+
         case attribute_or_argument do
           %Ash.Resource.Actions.Argument{} = argument ->
-            changeset
-            |> Ash.Changeset.get_argument(argument.name)
+            Ash.Changeset.set_argument(changeset, argument.name, new_value)
 
           attribute ->
-            changeset
-            |> Ash.Changeset.get_attribute(attribute.name)
+            Ash.Changeset.change_attribute(changeset, attribute.name, new_value)
         end
-
-      new_value = add_to_path(value, path, add)
-
-      case attribute_or_argument do
-        %Ash.Resource.Actions.Argument{} = argument ->
-          Ash.Changeset.set_argument(changeset, argument.name, new_value)
-
-        attribute ->
-          Ash.Changeset.change_attribute(changeset, attribute.name, new_value)
+      else
+        changeset
       end
-    else
-      changeset
     end
   end
 
@@ -281,38 +285,43 @@ defmodule AshPhoenix do
   A utility to support "remove" buttons on list attributes and arguments used in forms.
   """
   @spec remove_value(Ash.Changeset.t(), String.t(), String.t()) :: Ash.Changeset.t()
-  def remove_value(changeset, path, outer_form_name) do
-    [^outer_form_name, key | path] = decode_path(path)
+  def remove_value(changeset, original_path, outer_form_name) do
+    [^outer_form_name, key | path] = decode_path(original_path)
 
     attribute_or_argument =
       Ash.Resource.Info.attribute(changeset.resource, key) ||
         find_argument(changeset, key)
 
-    if attribute_or_argument do
-      value =
+    if match?({x, y} when not is_nil(x) and not is_nil(y), argument_and_manages(changeset, key)) do
+      {_, changeset} = remove_related(changeset, original_path, outer_form_name)
+      changeset
+    else
+      if attribute_or_argument do
+        value =
+          case attribute_or_argument do
+            %Ash.Resource.Actions.Argument{} = argument ->
+              changeset
+              |> Ash.Changeset.get_argument(argument.name)
+              |> List.wrap()
+
+            attribute ->
+              changeset
+              |> Ash.Changeset.get_attribute(attribute.name)
+              |> List.wrap()
+          end
+
+        new_value = remove_from_path(value, path)
+
         case attribute_or_argument do
           %Ash.Resource.Actions.Argument{} = argument ->
-            changeset
-            |> Ash.Changeset.get_argument(argument.name)
-            |> List.wrap()
+            Ash.Changeset.set_argument(changeset, argument.name, new_value)
 
           attribute ->
-            changeset
-            |> Ash.Changeset.get_attribute(attribute.name)
-            |> List.wrap()
+            Ash.Changeset.change_attribute(changeset, attribute.name, new_value)
         end
-
-      new_value = remove_from_path(value, path)
-
-      case attribute_or_argument do
-        %Ash.Resource.Actions.Argument{} = argument ->
-          Ash.Changeset.set_argument(changeset, argument.name, new_value)
-
-        attribute ->
-          Ash.Changeset.change_attribute(changeset, attribute.name, new_value)
+      else
+        changeset
       end
-    else
-      changeset
     end
   end
 
@@ -362,9 +371,14 @@ defmodule AshPhoenix do
   @spec add_related(Ash.Changeset.t(), String.t(), String.t(), Keyword.t()) :: Ash.Changeset.t()
   def add_related(changeset, path, outer_form_name, opts \\ []) do
     opts = Ash.OptionsHelpers.validate!(opts, @add_related_opts)
-    add = opts[:add] || %{}
+    add = Keyword.get(opts, :add, %{})
 
-    [^outer_form_name, key | path] = decode_path(path)
+    [^outer_form_name, key | path] =
+      if is_list(path) do
+        path
+      else
+        decode_path(path)
+      end
 
     {argument, argument_manages} = argument_and_manages(changeset, key)
 
@@ -534,14 +548,17 @@ defmodule AshPhoenix do
                        Enum.map(related, &hide/1)
                      end), []}
 
-                  match?([i] when is_integer(i), path) and is_list(value) ->
-                    [i] = path
+                  match?([i | _] when is_integer(i), path) and is_list(value) ->
+                    [i | _] = path
                     new_value = hide_at_not_hidden(Map.get(changeset.data, rel), i)
 
                     {Map.put(changeset.data, rel, new_value), new_value}
 
                   path == [] || match?([i] when is_integer(i), path) ->
                     {Map.update!(changeset.data, rel, &hide/1), nil}
+
+                  true ->
+                    {changeset.data, new_value}
                 end
             end
           else
@@ -770,23 +787,23 @@ defmodule AshPhoenix do
     |> Enum.all?(&hidden?/1)
   end
 
-  defp add_to_path(nil, [], nil) do
+  def add_to_path(nil, [], nil) do
     [nil]
   end
 
-  defp add_to_path(nil, [], add) do
+  def add_to_path(nil, [], add) do
     add
   end
 
-  defp add_to_path(value, [], nil) when is_list(value) do
+  def add_to_path(value, [], nil) when is_list(value) do
     value ++ [nil]
   end
 
-  defp add_to_path(value, [], add) when is_list(value) do
+  def add_to_path(value, [], add) when is_list(value) do
     value ++ List.wrap(add)
   end
 
-  defp add_to_path(value, [], add) when is_map(value) do
+  def add_to_path(value, [], add) when is_map(value) do
     case last_index(value) do
       :error ->
         %{"0" => value, "1" => add}
@@ -796,16 +813,16 @@ defmodule AshPhoenix do
     end
   end
 
-  defp add_to_path(value, [key | rest], add) when is_integer(key) and is_list(value) do
+  def add_to_path(value, [key | rest], add) when is_integer(key) and is_list(value) do
     List.update_at(value, key, &add_to_path(&1, rest, add))
   end
 
-  defp add_to_path(empty, [key | rest], add) when is_integer(key) and empty in [nil, []] do
+  def add_to_path(empty, [key | rest], add) when is_integer(key) and empty in [nil, []] do
     [add_to_path(nil, rest, add)]
   end
 
-  defp add_to_path(value, [key | rest], add)
-       when (is_binary(key) or is_atom(key)) and is_map(value) do
+  def add_to_path(value, [key | rest], add)
+      when (is_binary(key) or is_atom(key)) and is_map(value) do
     cond do
       Map.has_key?(value, key) ->
         Map.update!(value, key, &add_to_path(&1, rest, add))
@@ -821,15 +838,15 @@ defmodule AshPhoenix do
     end
   end
 
-  defp add_to_path(nil, [key | rest], add) when is_binary(key) or is_atom(key) do
+  def add_to_path(nil, [key | rest], add) when is_binary(key) or is_atom(key) do
     %{key => add_to_path(nil, rest, add)}
   end
 
-  defp add_to_path([item], [key | _] = path, add) when is_binary(key) do
+  def add_to_path([item], [key | _] = path, add) when is_binary(key) do
     [add_to_path(item, path, add)]
   end
 
-  defp add_to_path(_, _, add), do: add
+  def add_to_path(_, _, add), do: add
 
   defp last_index(map) do
     {:ok,
