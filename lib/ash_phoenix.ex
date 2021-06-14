@@ -821,6 +821,16 @@ defmodule AshPhoenix do
     [add_to_path(nil, rest, add)]
   end
 
+  def add_to_path(value, [key | rest] = path, add) when is_integer(key) and is_map(value) do
+    case last_index(value) do
+      :error ->
+        add_to_path(%{"0" => value}, path, add)
+
+      _ ->
+        add_to_path(value, [to_string(key) | rest], add)
+    end
+  end
+
   def add_to_path(value, [key | rest], add)
       when (is_binary(key) or is_atom(key)) and is_map(value) do
     cond do
