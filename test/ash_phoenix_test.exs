@@ -33,9 +33,10 @@ defmodule AshPhoenixTest do
       assert add_to_path(%{}, ["key"], %{"foo" => "bar"}) == %{"key" => %{"foo" => "bar"}}
     end
 
-    test "when the 0th index is modified on a list but the value is not yet in a list, it is converted" do
+    test "when the 0th index is modified on a list but the value is not yet in a list, it is modified" do
       assert add_to_path(%{"field_id" => 1}, [0, "value"], %{}) == %{
-               "0" => %{"field_id" => 1, "value" => %{}}
+               "field_id" => 1,
+               "value" => %{}
              }
     end
   end
