@@ -154,6 +154,17 @@ defmodule AshPhoenix.FormData.Helpers do
         default_data(rel)
 
       data ->
+        data =
+          if is_map(data) do
+            case map_input_to_list(data) do
+              :error ->
+                data
+
+              {:ok, data} ->
+                data
+            end
+          end
+
         if is_list(data) do
           Enum.reject(data, &hidden?/1)
         else
@@ -163,6 +174,40 @@ defmodule AshPhoenix.FormData.Helpers do
             data
           end
         end
+    end
+  end
+
+  defp map_input_to_list(input) when input == %{} do
+    :error
+  end
+
+  defp map_input_to_list(input) do
+    input
+    |> Enum.reduce_while({:ok, []}, fn
+      {key, value}, {:ok, acc} when is_integer(key) ->
+        {:cont, {:ok, [{key, value} | acc]}}
+
+      {key, value}, {:ok, acc} when is_binary(key) ->
+        case Integer.parse(key) do
+          {int, ""} ->
+            {:cont, {:ok, [{int, value} | acc]}}
+
+          _ ->
+            {:halt, :error}
+        end
+
+      _, _ ->
+        {:halt, :error}
+    end)
+    |> case do
+      {:ok, value} ->
+        {:ok,
+         value
+         |> Enum.sort_by(&elem(&1, 0))
+         |> Enum.map(&elem(&1, 1))}
+
+      :error ->
+        :error
     end
   end
 
