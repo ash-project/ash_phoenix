@@ -120,6 +120,17 @@ defmodule AshPhoenix.FormData.Helpers do
         end
 
       {manage, _opts} ->
+        manage =
+          if is_map(manage) do
+            case map_input_to_list(manage) do
+              :error ->
+                manage
+
+              {:ok, manage} ->
+                manage
+            end
+          end
+
         if use_data? do
           changeset
           |> changeset_data(rel)
@@ -154,17 +165,6 @@ defmodule AshPhoenix.FormData.Helpers do
         default_data(rel)
 
       data ->
-        data =
-          if is_map(data) do
-            case map_input_to_list(data) do
-              :error ->
-                data
-
-              {:ok, data} ->
-                data
-            end
-          end
-
         if is_list(data) do
           Enum.reject(data, &hidden?/1)
         else
