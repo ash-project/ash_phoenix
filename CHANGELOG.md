@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.22-rc1](https://github.com/ash-project/ash_phoenix/compare/v0.4.22-rc0...v0.4.22-rc1) (2021-06-24)
+
+
+
+
+### Bug Fixes:
+
+* use new ash type primitives
+
+* map_input_to_list on manage
+
+* understand indexed lists in relationship data
+
+* fix case where "lists" weren't properly added to
+
 ## [v0.4.22-rc0](https://github.com/ash-project/ash_phoenix/compare/v0.4.21...v0.4.22-rc0) (2021-06-24)
 
 
