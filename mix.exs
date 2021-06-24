@@ -76,7 +76,7 @@ defmodule AshPhoenix.MixProject do
       {:phoenix, "~> 1.5.6"},
       {:phoenix_html, "~> 2.14"},
       {:phoenix_live_view, "~> 0.15"},
-      {:git_ops, "~> 2.0.1", only: :dev},
+      {:git_ops, "~> 2.4.4", only: :dev},
       {:ex_doc, "~> 0.23", only: :dev, runtime: false},
       {:ex_check, "~> 0.12.0", only: :dev},
       {:credo, ">= 0.0.0", only: :dev, runtime: false},
