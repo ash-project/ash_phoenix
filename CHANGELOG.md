@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.22-rc0](https://github.com/ash-project/ash_phoenix/compare/v0.4.21...v0.4.22-rc0) (2021-06-24)
+
+
+
+
+### Bug Fixes:
+
+* use new ash type primitives
+
 ## [v0.4.21](https://github.com/ash-project/ash_phoenix/compare/v0.4.20...v0.4.21) (2021-05-14)
 
 
