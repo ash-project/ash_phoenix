@@ -5,6 +5,11 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.22-rc2](https://github.com/ash-project/ash_phoenix/compare/v0.4.22-rc1...v0.4.22-rc2) (2021-06-24)
+
+
+
+
 ## [v0.4.22-rc1](https://github.com/ash-project/ash_phoenix/compare/v0.4.22-rc0...v0.4.22-rc1) (2021-06-24)
 
 
