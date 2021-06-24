@@ -36,7 +36,7 @@ defmodule AshPhoenix.FormData.Helpers do
   end
 
   def type_to_form_type(type) do
-    case Ash.Type.ecto_type(type) do
+    case Ash.Type.type(type) do
       :integer -> :number_input
       :boolean -> :checkbox
       :date -> :date_select
