@@ -124,7 +124,7 @@ defmodule AshPhoenix.FormData.Helpers do
           if is_map(manage) do
             case map_input_to_list(manage) do
               :error ->
-                manage
+                List.wrap(manage)
 
               {:ok, manage} ->
                 manage
