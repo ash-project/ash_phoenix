@@ -39,33 +39,35 @@ defmodule AshPhoenix do
 
   Example:
 
-    AshPhoenix.transform_errors(changeset, fn changeset, %MyApp.CustomError{message: message} ->
-      {:id, "Something went wrong while doing the %{thing}", [thing: "request"]}
-    end)
+  ```elixir
+  AshPhoenix.transform_errors(changeset, fn changeset, %MyApp.CustomError{message: message} ->
+    {:id, "Something went wrong while doing the %{thing}", [thing: "request"]}
+  end)
 
-    # Could potentially be used for translation, although not quite ergonomic yet
-    defp translate_error(key, msg, vars) do
-      if vars[:count] do
-        Gettext.dngettext(MyApp.Gettext, "errors", msg, msg, count, opts)
-      else
-        Gettext.dgettext(MyApp.Gettext, "errors", msg, opts)
-      end
+  # Could potentially be used for translation, although not quite ergonomic yet
+  defp translate_error(key, msg, vars) do
+    if vars[:count] do
+      Gettext.dngettext(MyApp.Gettext, "errors", msg, msg, count, opts)
+    else
+      Gettext.dgettext(MyApp.Gettext, "errors", msg, opts)
     end
+  end
 
-    AshPhoenix.transform_errors(changeset, fn
-      changeset, %MyApp.CustomError{message: message, field: field} ->
-        translate_error(field, message, [foo: :bar])
+  AshPhoenix.transform_errors(changeset, fn
+    changeset, %MyApp.CustomError{message: message, field: field} ->
+      translate_error(field, message, [foo: :bar])
 
-      changeset, any_error ->
-        if AshPhoenix.FormData.Error.impl_for(any_error) do
-          any_error
-          |> AshPhoenix.FormData.error.to_form_error()
-          |> List.wrap()
-          |> Enum.map(fn {key, msg, vars} ->
-            translate_error(key, msg, vars)
-          end)
-        end
-    end)
+    changeset, any_error ->
+      if AshPhoenix.FormData.Error.impl_for(any_error) do
+        any_error
+        |> AshPhoenix.FormData.error.to_form_error()
+        |> List.wrap()
+        |> Enum.map(fn {key, msg, vars} ->
+          translate_error(key, msg, vars)
+        end)
+      end
+  end)
+  ```
   """
   @spec transform_errors(
           Ash.Changeset.t() | Ash.Query.t(),
@@ -238,7 +240,8 @@ defmodule AshPhoenix do
   ```
 
   ## Options
-      #{Ash.OptionsHelpers.docs(@add_value_opts)}
+
+  #{Ash.OptionsHelpers.docs(@add_value_opts)}
   """
   @spec add_value(Ash.Changeset.t(), String.t(), String.t(), Keyword.t()) :: Ash.Changeset.t()
   def add_value(changeset, original_path, outer_form_name, opts \\ []) do
@@ -332,7 +335,7 @@ defmodule AshPhoenix do
   @add_related_opts [
     add: [
       type: :any,
-      doc: "the value to add to the relationship, defaults to `%{}`",
+      doc: "the value to add to the relationship",
       default: %{}
     ],
     relationship: [
@@ -366,7 +369,7 @@ defmodule AshPhoenix do
 
   ## Options
 
-    #{Ash.OptionsHelpers.docs(@add_related_opts)}
+  #{Ash.OptionsHelpers.docs(@add_related_opts)}
   """
   @spec add_related(Ash.Changeset.t(), String.t(), String.t(), Keyword.t()) :: Ash.Changeset.t()
   def add_related(changeset, path, outer_form_name, opts \\ []) do
@@ -464,7 +467,7 @@ defmodule AshPhoenix do
 
   ## Options
 
-    #{Ash.OptionsHelpers.docs(@remove_related_opts)}
+  #{Ash.OptionsHelpers.docs(@remove_related_opts)}
   """
 
   @spec remove_related(Ash.Changeset.t(), String.t(), String.t(), Keyword.t()) ::
@@ -951,9 +954,11 @@ defmodule AshPhoenix do
   A utility for decoding the path of a form into a list.
 
   For example:
-    change[posts][0][comments][1]
-    ["change", "posts", 0, "comments", 1]
 
+  ```elixir
+  change[posts][0][comments][1]
+  ["change", "posts", 0, "comments", 1]
+  ```
   """
   def decode_path(path) do
     path = Plug.Conn.Query.decode(path)
