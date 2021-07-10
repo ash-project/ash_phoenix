@@ -55,7 +55,9 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 ## [v0.4.20](https://github.com/ash-project/ash_phoenix/compare/v0.4.19...v0.4.20) (2021-05-14)
 
 
+### Regressions:
 
+* Regression in `AshPhoenix.add_to_path/3` https://github.com/ash-project/ash_phoenix/issues/2
 
 ### Bug Fixes:
 
