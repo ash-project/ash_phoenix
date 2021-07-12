@@ -213,6 +213,10 @@ defmodule AshPhoenix do
     query.context[:private][:ash_phoenix][:hide_errors] == true
   end
 
+  def set_up_relationship_updates(changeset, relationships) when is_list(relationships) do
+    Enum.reduce(relationships, changeset, &set_up_relationship_updates(&2, &1))
+  end
+
   @add_value_opts [
     add: [
       type: :any,
@@ -333,6 +337,11 @@ defmodule AshPhoenix do
   end
 
   @add_related_opts [
+    use_data?: [
+      type: :boolean,
+      doc: "Provide this if you are using `use_data?` with `inputs_for` for this relationship",
+      default: false
+    ],
     add: [
       type: :any,
       doc: "the value to add to the relationship",
@@ -372,15 +381,15 @@ defmodule AshPhoenix do
   #{Ash.OptionsHelpers.docs(@add_related_opts)}
   """
   @spec add_related(Ash.Changeset.t(), String.t(), String.t(), Keyword.t()) :: Ash.Changeset.t()
-  def add_related(changeset, path, outer_form_name, opts \\ []) do
+  def add_related(changeset, original_path, outer_form_name, opts \\ []) do
     opts = Ash.OptionsHelpers.validate!(opts, @add_related_opts)
     add = Keyword.get(opts, :add, %{})
 
     [^outer_form_name, key | path] =
-      if is_list(path) do
-        path
+      if is_list(original_path) do
+        original_path
       else
-        decode_path(path)
+        decode_path(original_path)
       end
 
     {argument, argument_manages} = argument_and_manages(changeset, key)
@@ -408,27 +417,59 @@ defmodule AshPhoenix do
         changeset
 
       {rel, id, nil} ->
-        new_relationships =
-          changeset.relationships
-          |> Map.put_new(rel, [])
-          |> Map.update!(rel, fn manages ->
-            manages ++ [{add_to_path(nil, path, add), [meta: [id: id]]}]
-          end)
+        if Map.has_key?(changeset.relationships, rel) || !opts[:use_data?] ||
+             !loaded?(changeset.data, rel) do
+          new_relationships =
+            changeset.relationships
+            |> Map.put_new(rel, [])
+            |> Map.update!(rel, fn manages ->
+              manages ++ [{add_to_path(nil, path, add), [meta: [id: id]]}]
+            end)
 
-        %{changeset | relationships: new_relationships}
+          %{changeset | relationships: new_relationships}
+        else
+          add_all_related_and_try_again(changeset, rel, original_path, outer_form_name, opts)
+        end
 
       {rel, _id, index} ->
-        new_relationships =
-          changeset.relationships
-          |> Map.put_new(rel, [])
-          |> Map.update!(rel, fn manages ->
-            List.update_at(manages, index, fn {manage, opts} ->
-              {add_to_path(manage, path, add), opts}
+        if Map.has_key?(changeset.relationships, rel) || !opts[:use_data?] ||
+             !loaded?(changeset.data, rel) do
+          new_relationships =
+            changeset.relationships
+            |> Map.put_new(rel, [])
+            |> Map.update!(rel, fn manages ->
+              List.update_at(manages, index, fn {manage, opts} ->
+                {add_to_path(manage, path, add), opts}
+              end)
             end)
-          end)
 
-        %{changeset | relationships: new_relationships}
+          %{changeset | relationships: new_relationships}
+        else
+          add_all_related_and_try_again(changeset, rel, original_path, outer_form_name, opts)
+        end
     end
+  end
+
+  defp loaded?(data, key) do
+    case Map.get(data, key) do
+      %Ash.NotLoaded{} -> false
+      _ -> true
+    end
+  end
+
+  defp add_all_related_and_try_again(changeset, rel, path, outer_form_name, opts) do
+    changeset.data
+    |> Map.get(rel)
+    |> List.wrap()
+    |> Enum.reduce(changeset, fn _, changeset ->
+      add_related(
+        changeset,
+        path,
+        outer_form_name,
+        Keyword.merge(opts, add: %{}, use_data?: false)
+      )
+    end)
+    |> add_related(path, outer_form_name, opts)
   end
 
   @remove_related_opts [
@@ -866,19 +907,24 @@ defmodule AshPhoenix do
   def add_to_path(_, _, add), do: add
 
   defp last_index(map) do
-    {:ok,
-     map
-     |> Map.keys()
-     |> Enum.map(&String.to_integer/1)
-     |> max_plus_one()
-     |> to_string()}
+    map
+    |> Map.keys()
+    |> Enum.map(&String.to_integer/1)
+    |> max_plus_one()
+    |> case do
+      nil ->
+        :error
+
+      value ->
+        {:ok, to_string(value)}
+    end
   rescue
     _ ->
       :error
   end
 
   defp max_plus_one([]) do
-    0
+    nil
   end
 
   defp max_plus_one(list) do

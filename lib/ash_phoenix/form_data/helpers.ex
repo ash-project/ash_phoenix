@@ -141,6 +141,14 @@ defmodule AshPhoenix.FormData.Helpers do
     end
   end
 
+  defp zip_changes(data, manage) when not is_list(data) do
+    zip_changes(List.wrap(data), manage)
+  end
+
+  defp zip_changes(data, manage) when not is_list(manage) do
+    zip_changes(data, List.wrap(manage))
+  end
+
   defp zip_changes([], manage) do
     manage
   end
