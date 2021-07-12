@@ -1,4 +1,5 @@
 defmodule AshPhoenix.Test.PostLink do
+  @moduledoc false
   use Ash.Resource, data_layer: Ash.DataLayer.Ets
 
   ets do
