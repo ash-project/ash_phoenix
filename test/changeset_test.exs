@@ -3,7 +3,7 @@ defmodule AshPhoenix.ChangesetTest do
   import Phoenix.HTML.Form, only: [form_for: 2, inputs_for: 2, inputs_for: 3]
 
   alias Phoenix.HTML.FormData
-  alias AshPhoenix.Test.{Api, Comment, Post, PostLink}
+  alias AshPhoenix.Test.{Api, Comment, Post}
 
   describe "form_for fields" do
     test "it should show simple field values" do

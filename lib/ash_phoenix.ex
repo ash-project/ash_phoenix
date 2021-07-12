@@ -417,36 +417,39 @@ defmodule AshPhoenix do
         changeset
 
       {rel, id, nil} ->
-        if Map.has_key?(changeset.relationships, rel) || !opts[:use_data?] ||
-             !loaded?(changeset.data, rel) do
-          new_relationships =
-            changeset.relationships
-            |> Map.put_new(rel, [])
-            |> Map.update!(rel, fn manages ->
-              manages ++ [{add_to_path(nil, path, add), [meta: [id: id]]}]
-            end)
+        new_relationships =
+          changeset.relationships
+          |> Map.put_new(rel, [])
+          |> Map.update!(rel, fn manages ->
+            to_add =
+              if opts[:use_data?] && loaded?(changeset.data, rel) do
+                changeset.data
+                |> Map.get(rel)
+                |> List.wrap()
+                |> Enum.reduce(nil, fn _, acc ->
+                  add_to_path(acc, path, %{})
+                end)
+                |> add_to_path(path, add)
+              else
+                add_to_path(nil, path, add)
+              end
 
-          %{changeset | relationships: new_relationships}
-        else
-          add_all_related_and_try_again(changeset, rel, original_path, outer_form_name, opts)
-        end
+            manages ++ [{to_add, [meta: [id: id]]}]
+          end)
+
+        %{changeset | relationships: new_relationships}
 
       {rel, _id, index} ->
-        if Map.has_key?(changeset.relationships, rel) || !opts[:use_data?] ||
-             !loaded?(changeset.data, rel) do
-          new_relationships =
-            changeset.relationships
-            |> Map.put_new(rel, [])
-            |> Map.update!(rel, fn manages ->
-              List.update_at(manages, index, fn {manage, opts} ->
-                {add_to_path(manage, path, add), opts}
-              end)
+        new_relationships =
+          changeset.relationships
+          |> Map.put_new(rel, [])
+          |> Map.update!(rel, fn manages ->
+            List.update_at(manages, index, fn {manage, opts} ->
+              {add_to_path(manage, path, add), opts}
             end)
+          end)
 
-          %{changeset | relationships: new_relationships}
-        else
-          add_all_related_and_try_again(changeset, rel, original_path, outer_form_name, opts)
-        end
+        %{changeset | relationships: new_relationships}
     end
   end
 
@@ -455,21 +458,6 @@ defmodule AshPhoenix do
       %Ash.NotLoaded{} -> false
       _ -> true
     end
-  end
-
-  defp add_all_related_and_try_again(changeset, rel, path, outer_form_name, opts) do
-    changeset.data
-    |> Map.get(rel)
-    |> List.wrap()
-    |> Enum.reduce(changeset, fn _, changeset ->
-      add_related(
-        changeset,
-        path,
-        outer_form_name,
-        Keyword.merge(opts, add: %{}, use_data?: false)
-      )
-    end)
-    |> add_related(path, outer_form_name, opts)
   end
 
   @remove_related_opts [
