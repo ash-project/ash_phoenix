@@ -115,27 +115,31 @@ defmodule AshPhoenix.Form do
   def submit(form, api) do
     changeset_opts = Keyword.drop(form.opts, [:forms, :hide_errors?, :id, :method, :for, :as])
 
-    result =
-      case form.type do
-        :create ->
-          form.resource
-          |> Ash.Changeset.for_create(form.source.action.name, params(form), changeset_opts)
-          |> api.create()
+    if form.source.valid? do
+      result =
+        case form.type do
+          :create ->
+            form.resource
+            |> Ash.Changeset.for_create(form.source.action.name, params(form), changeset_opts)
+            |> api.create()
 
-        :update ->
-          form.data
-          |> Ash.Changeset.for_update(form.source.action.name, params(form), changeset_opts)
-          |> api.update()
+          :update ->
+            form.data
+            |> Ash.Changeset.for_update(form.source.action.name, params(form), changeset_opts)
+            |> api.update()
 
-        :destroy ->
-          form.data
-          |> Ash.Changeset.for_destroy(form.source.action.name, params(form), changeset_opts)
-          |> api.destroy()
+          :destroy ->
+            form.data
+            |> Ash.Changeset.for_destroy(form.source.action.name, params(form), changeset_opts)
+            |> api.destroy()
+        end
+
+      case result do
+        {:ok, result} -> {:ok, result}
+        {:error, %{changeset: changeset}} -> {:error, %{form | source: changeset}}
       end
-
-    case result do
-      {:ok, result} -> {:ok, result}
-      {:error, %{changeset: changeset}} -> {:error, %{form | source: changeset}}
+    else
+      {:error, form}
     end
   end
 
@@ -346,7 +350,7 @@ defmodule AshPhoenix.Form do
               else
                 opts[:data]
                 |> List.wrap()
-                |> Enum.zip(List.wrap(form_params))
+                |> Enum.zip(indexed_list(form_params))
                 |> Enum.map(fn {data, form_params} -> opts[:with].(data, form_params) end)
               end
             else
@@ -354,7 +358,7 @@ defmodule AshPhoenix.Form do
                 opts[:with].(form_params)
               else
                 form_params
-                |> List.wrap()
+                |> indexed_list()
                 |> Enum.map(fn form_params ->
                   opts[:with].(form_params)
                 end)
@@ -387,6 +391,19 @@ defmodule AshPhoenix.Form do
       end
     end)
   end
+
+  defp indexed_list(map) when is_map(map) do
+    map
+    |> Map.keys()
+    |> Enum.map(&String.to_integer/1)
+    |> Enum.sort()
+    |> Enum.map(&map[to_string(&1)])
+  rescue
+    _ ->
+      List.wrap(map)
+  end
+
+  defp indexed_list(other), do: List.wrap(other)
 
   defp fetch_key(params, key) do
     case Map.fetch(params, key) do

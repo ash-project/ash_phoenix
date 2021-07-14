@@ -26,7 +26,10 @@ defmodule AshPhoenix.FormTest do
         Comment
         |> Form.for_create(
           :create,
-          %{"text" => "text", "post" => [%{"id" => post1_id}, %{"id" => post2_id}]},
+          %{
+            "text" => "text",
+            "post" => %{"0" => %{"id" => post1_id}, "1" => %{"id" => post2_id}}
+          },
           forms: [
             post: [
               type: :list,
