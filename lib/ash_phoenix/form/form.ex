@@ -393,7 +393,7 @@ defmodule AshPhoenix.Form do
     import AshPhoenix.FormData.Helpers
 
     @impl true
-    def to_form(form, _opts) do
+    def to_form(form, opts) do
       name = form.name || to_string(form_for_name(form.resource))
 
       hidden =
@@ -414,12 +414,12 @@ defmodule AshPhoenix.Form do
         data: form.data,
         params: form.params,
         hidden: hidden,
-        options: [method: form.method]
+        options: Keyword.put_new(opts, :method, form.method)
       }
     end
 
     @impl true
-    def to_form(form, _phoenix_form, field, _opts) do
+    def to_form(form, _phoenix_form, field, opts) do
       unless Keyword.has_key?(form.form_keys, field) do
         raise AshPhoenix.Form.NoFormConfigured, field: field
       end
@@ -428,7 +428,7 @@ defmodule AshPhoenix.Form do
         :single ->
           if form.forms[field] do
             form.forms[field]
-            |> to_form([])
+            |> to_form(opts)
             |> Map.put(:name, form.name <> "[#{field}]")
             |> Map.put(:id, form.id <> "_#{field}")
           end
@@ -439,7 +439,7 @@ defmodule AshPhoenix.Form do
           |> Enum.with_index()
           |> Enum.map(fn {nested_form, index} ->
             nested_form
-            |> to_form([])
+            |> to_form(opts)
             |> Map.put(:name, form.name <> "[#{field}][#{index}]")
             |> Map.put(:id, form.id <> "_#{field}_#{index}")
           end)
