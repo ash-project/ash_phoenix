@@ -84,7 +84,7 @@ defmodule AshPhoenix.Form do
       resource: resource,
       data: data,
       action: action,
-      type: :update,
+      type: :destroy,
       params: params,
       hide_errors?: opts[:hide_errors?] || false,
       forms: forms,
