@@ -126,7 +126,7 @@ defmodule AshPhoenix.Form do
 
     case result do
       {:ok, result} -> {:ok, result}
-      {:error, %{changeset: changeset}} -> {:error, %{form | changeset: changeset}}
+      {:error, %{changeset: changeset}} -> {:error, %{form | source: changeset}}
     end
   end
 
