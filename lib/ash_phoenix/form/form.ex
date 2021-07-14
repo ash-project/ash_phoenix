@@ -20,7 +20,16 @@ defmodule AshPhoenix.Form do
   ]
 
   def validate(form, new_params) do
-    for_create(form.resource, form.action, new_params, form.opts)
+    case form.type do
+      :create ->
+        for_create(form.resource, form.action, new_params, form.opts)
+
+      :update ->
+        for_update(form.data, form.action, new_params, form.opts)
+
+      :destroy ->
+        for_destroy(form.data, form.action, new_params, form.opts)
+    end
   end
 
   def for_create(resource, action, params, opts \\ []) do
