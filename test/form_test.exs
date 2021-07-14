@@ -17,6 +17,43 @@ defmodule AshPhoenix.FormTest do
     end
   end
 
+  describe "data" do
+    test "it uses the provided data to create forms even without input" do
+      post1_id = Ash.UUID.generate()
+      post2_id = Ash.UUID.generate()
+
+      form =
+        Comment
+        |> Form.for_create(
+          :create,
+          %{"text" => "text", "post" => [%{"id" => post1_id}, %{"id" => post2_id}]},
+          forms: [
+            post: [
+              type: :list,
+              data: [%Post{id: post1_id}, %Post{id: post2_id}],
+              with:
+                &Form.for_update(&1, :create, &2,
+                  forms: [
+                    comments: [
+                      type: :list,
+                      with: fn params -> Form.for_create(Comment, :create, params) end
+                    ]
+                  ]
+                )
+            ]
+          ]
+        )
+
+      assert Form.params(form) == %{
+               "post" => [
+                 %{"comments" => [], "id" => post1_id},
+                 %{"comments" => [], "id" => post2_id}
+               ],
+               "text" => "text"
+             }
+    end
+  end
+
   describe "params" do
     test "it includes nested forms, and honors their `for` configuration" do
       form =

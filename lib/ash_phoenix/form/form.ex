@@ -93,7 +93,12 @@ defmodule AshPhoenix.Form do
   end
 
   def params(form) do
-    Enum.reduce(form.form_keys, form.params, fn {key, config}, params ->
+    form_keys =
+      form.form_keys
+      |> Keyword.keys()
+      |> Enum.flat_map(&[&1, to_string(&1)])
+
+    Enum.reduce(form.form_keys, Map.drop(form.params, form_keys), fn {key, config}, params ->
       if form.forms[key] do
         case config[:type] || :single do
           :single ->
@@ -108,6 +113,8 @@ defmodule AshPhoenix.Form do
               current ++ Enum.map(form.forms[key], &params/1)
             end)
         end
+      else
+        params
       end
     end)
   end
@@ -284,25 +291,52 @@ defmodule AshPhoenix.Form do
   defp handle_forms(params, form_keys) do
     Enum.reduce(form_keys, {%{}, params}, fn {key, opts}, {forms, params} ->
       case fetch_key(params, key) do
-        {:ok, params} ->
+        {:ok, form_params} ->
           form_values =
             if Keyword.has_key?(opts, :data) do
-              opts[:data]
-              |> List.wrap()
-              |> Enum.zip(List.wrap(params))
-              |> Enum.map(fn {data, params} -> opts[:with].(data, params) end)
+              if (opts[:type] || :single) == :single do
+                opts[:with].(opts[:data], form_params)
+              else
+                opts[:data]
+                |> List.wrap()
+                |> Enum.zip(List.wrap(form_params))
+                |> Enum.map(fn {data, form_params} -> opts[:with].(data, form_params) end)
+              end
             else
-              params
-              |> List.wrap()
-              |> Enum.map(fn params ->
-                opts[:with].(params)
-              end)
+              if (opts[:type] || :single) == :single do
+                opts[:with].(form_params)
+              else
+                form_params
+                |> List.wrap()
+                |> Enum.map(fn form_params ->
+                  opts[:with].(form_params)
+                end)
+              end
             end
 
           {Map.put(forms, key, form_values), Map.delete(params, [key, to_string(key)])}
 
         :error ->
-          {forms, params}
+          form_values =
+            if Keyword.has_key?(opts, :data) do
+              if opts[:data] do
+                if (opts[:type] || :single) == :single do
+                  opts[:with].(opts[:data], %{})
+                else
+                  Enum.map(opts[:data], &opts[:with].(&1, %{}))
+                end
+              else
+                nil
+              end
+            else
+              if (opts[:type] || :single) == :single do
+                nil
+              else
+                []
+              end
+            end
+
+          {Map.put(forms, key, form_values), params}
       end
     end)
   end
