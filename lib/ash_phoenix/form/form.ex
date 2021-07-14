@@ -1,0 +1,471 @@
+defmodule AshPhoenix.Form do
+  @moduledoc """
+  An experimental new implementation for forms
+  """
+  defstruct [
+    :resource,
+    :action,
+    :type,
+    :fields,
+    :params,
+    :source,
+    :name,
+    :data,
+    :hide_errors?,
+    :form_keys,
+    :forms,
+    :method,
+    :id
+  ]
+
+  def for_create(resource, action, params, opts \\ []) do
+    {forms, params} = handle_forms(params, opts[:forms] || [])
+
+    %__MODULE__{
+      resource: resource,
+      action: action,
+      type: :create,
+      params: params,
+      hide_errors?: opts[:hide_errors?] || false,
+      name: opts[:as] || "form",
+      forms: forms,
+      form_keys: List.wrap(opts[:forms]),
+      id: opts[:id] || "form",
+      method: opts[:method] || form_for_method(:create),
+      source:
+        Ash.Changeset.for_create(
+          resource,
+          action,
+          params,
+          Keyword.drop(opts, [:forms, :hide_errors?, :id, :method, :for, :as])
+        )
+    }
+  end
+
+  def for_update(%resource{} = data, action, params, opts \\ []) do
+    {forms, params} = handle_forms(params, opts[:forms] || [])
+
+    %__MODULE__{
+      resource: resource,
+      data: data,
+      action: action,
+      type: :update,
+      params: params,
+      hide_errors?: opts[:hide_errors?] || false,
+      forms: forms,
+      form_keys: List.wrap(opts[:forms]),
+      method: opts[:method] || form_for_method(:update),
+      id: opts[:id] || "form",
+      name: opts[:as] || "form",
+      source:
+        Ash.Changeset.for_update(
+          data,
+          action,
+          params,
+          Keyword.drop(opts, [:forms, :hide_errors?, :id, :method, :as])
+        )
+    }
+  end
+
+  def for_destroy(%resource{} = data, action, params, opts \\ []) do
+    {forms, params} = handle_forms(params, opts[:forms] || [])
+
+    %__MODULE__{
+      resource: resource,
+      data: data,
+      action: action,
+      type: :update,
+      params: params,
+      hide_errors?: opts[:hide_errors?] || false,
+      forms: forms,
+      name: opts[:as] || "form",
+      id: opts[:id] || "form",
+      method: opts[:method] || form_for_method(:destroy),
+      form_keys: List.wrap(opts[:forms]),
+      source:
+        Ash.Changeset.for_destroy(
+          data,
+          action,
+          params,
+          Keyword.drop(opts, [:forms, :hide_errors?, :id, :method, :as])
+        )
+    }
+  end
+
+  def params(form) do
+    Enum.reduce(form.form_keys, form.params, fn {key, config}, params ->
+      if form.forms[key] do
+        case config[:type] || :single do
+          :single ->
+            Map.put(params, to_string(config[:for] || key), params(form.forms[key]))
+
+          :list ->
+            for_name = to_string(config[:for] || key)
+
+            params
+            |> Map.put_new(for_name, [])
+            |> Map.update!(for_name, fn current ->
+              current ++ Enum.map(form.forms[key], &params/1)
+            end)
+        end
+      end
+    end)
+  end
+
+  def remove_form(form, path) do
+    if is_binary(path) do
+      do_remove_form(form, parse_path!(form, path), [])
+    else
+      do_remove_form(form, List.wrap(path), [])
+    end
+  end
+
+  def do_remove_form(form, [key, i], _trail) when is_integer(i) do
+    unless form.form_keys[key] do
+      raise AshPhoenix.Form.NoFormConfigured, field: key
+    end
+
+    new_forms =
+      form.forms
+      |> Map.put_new(key, [])
+      |> Map.update!(key, fn forms ->
+        List.delete_at(forms, i)
+      end)
+
+    %{form | forms: new_forms}
+  end
+
+  def do_remove_form(form, [key, i | rest], trail) when is_integer(i) do
+    unless form.form_keys[key] do
+      raise AshPhoenix.Form.NoFormConfigured, field: key
+    end
+
+    new_forms =
+      form.forms
+      |> Map.put_new(key, [])
+      |> Map.update!(key, fn forms ->
+        List.update_at(forms, i, &do_remove_form(&1, rest, [i, key | trail]))
+      end)
+
+    %{form | forms: new_forms}
+  end
+
+  def do_remove_form(_form, path, trail) do
+    raise ArgumentError, message: "Invalid Path: #{inspect(Enum.reverse(trail, path))}"
+  end
+
+  def add_form(form, path, opts \\ []) do
+    if is_binary(path) do
+      do_add_form(form, parse_path!(form, path), opts, [])
+    else
+      do_add_form(form, List.wrap(path), opts, [])
+    end
+  end
+
+  def do_add_form(form, [key, i | rest], opts, trail) when is_integer(i) do
+    unless form.form_keys[key] do
+      raise AshPhoenix.Form.NoFormConfigured, field: key
+    end
+
+    new_forms =
+      form.forms
+      |> Map.put_new(key, [])
+      |> Map.update!(key, fn forms ->
+        List.update_at(forms, i, &do_add_form(&1, rest, opts, [i, key | trail]))
+      end)
+
+    %{form | forms: new_forms}
+  end
+
+  def do_add_form(form, [key], opts, _trail) do
+    config = form.form_keys[key] || raise AshPhoenix.Form.NoFormConfigured, field: key
+
+    default =
+      case config[:type] || :single do
+        :single ->
+          nil
+
+        :list ->
+          []
+      end
+
+    new_forms =
+      form.forms
+      |> Map.put_new(key, default)
+      |> Map.update!(key, fn forms ->
+        new_form = config[:with].(opts[:params] || %{})
+
+        case config[:type] || :single do
+          :single ->
+            %{new_form | id: form.id <> "[#{key}]"}
+
+          :list ->
+            if opts[:prepend] do
+              [new_form | forms]
+            else
+              forms ++ [new_form]
+            end
+            |> Enum.with_index()
+            |> Enum.map(fn {nested_form, index} ->
+              %{nested_form | id: form.id <> "[#{key}][#{index}]"}
+            end)
+        end
+      end)
+
+    %{form | forms: new_forms}
+  end
+
+  def do_add_form(_form, path, _opts, trail) do
+    raise ArgumentError, message: "Invalid Path: #{inspect(Enum.reverse(trail, path))}"
+  end
+
+  defp parse_path!(%{id: id} = form, original_path) do
+    path =
+      original_path
+      |> Plug.Conn.Query.decode()
+      |> decoded_to_list()
+
+    case path do
+      [^id | rest] ->
+        do_decode_path(form, original_path, rest)
+
+      _other ->
+        raise ArgumentError,
+              "Form name does not match beginning of path: #{inspect(original_path)}"
+    end
+  end
+
+  defp do_decode_path(_, _, []), do: []
+
+  defp do_decode_path(forms, original_path, [key | rest]) when is_list(forms) do
+    case Integer.parse(key) do
+      {index, ""} ->
+        case Enum.at(forms, index) do
+          nil ->
+            raise "Invalid Path: #{original_path}"
+
+          form ->
+            [index | do_decode_path(form, original_path, rest)]
+        end
+
+      _ ->
+        raise "Invalid Path: #{original_path}"
+    end
+  end
+
+  defp do_decode_path(form, original_path, [key | rest]) do
+    form.form_keys
+    |> Enum.find_value(fn {search_key, value} ->
+      if to_string(search_key) == key do
+        {search_key, value}
+      end
+    end)
+    |> case do
+      nil ->
+        raise "Invalid Path: #{original_path}"
+
+      {key, config} ->
+        if config[:type] || :single == :single do
+          [key | do_decode_path(form.forms[key], original_path, rest)]
+        else
+          [key | do_decode_path(form.forms[key] || [], original_path, rest)]
+        end
+    end
+  end
+
+  defp decoded_to_list(""), do: []
+
+  defp decoded_to_list(value) do
+    {key, rest} = Enum.at(value, 0)
+
+    [key | decoded_to_list(rest)]
+  end
+
+  defp handle_forms(params, form_keys) do
+    Enum.reduce(form_keys, {%{}, params}, fn {key, opts}, {forms, params} ->
+      case fetch_key(params, key) do
+        {:ok, params} ->
+          form_values =
+            if Keyword.has_key?(opts, :data) do
+              opts[:data]
+              |> List.wrap()
+              |> Enum.zip(List.wrap(params))
+              |> Enum.map(fn {data, params} -> opts[:with].(data, params) end)
+            else
+              params
+              |> List.wrap()
+              |> Enum.map(fn params ->
+                opts[:with].(params)
+              end)
+            end
+
+          {Map.put(forms, key, form_values), Map.delete(params, [key, to_string(key)])}
+
+        :error ->
+          {forms, params}
+      end
+    end)
+  end
+
+  defp fetch_key(params, key) do
+    case Map.fetch(params, key) do
+      {:ok, value} -> {:ok, value}
+      :error -> Map.fetch(params, to_string(key))
+    end
+  end
+
+  defp form_for_method(:create), do: "post"
+  defp form_for_method(_), do: "put"
+
+  defimpl Phoenix.HTML.FormData do
+    import AshPhoenix.FormData.Helpers
+
+    @impl true
+    def to_form(form, _opts) do
+      name = form.name || to_string(form_for_name(form.resource))
+
+      hidden =
+        if form.type in [:update, :destroy] do
+          form.data
+          |> Map.take(Ash.Resource.Info.primary_key(form.resource))
+          |> Enum.to_list()
+        else
+          []
+        end
+
+      %Phoenix.HTML.Form{
+        source: form,
+        impl: __MODULE__,
+        id: form.id,
+        name: name,
+        errors: [],
+        data: form.data,
+        params: form.params,
+        hidden: hidden,
+        options: [method: form.method]
+      }
+    end
+
+    @impl true
+    def to_form(form, _phoenix_form, field, _opts) do
+      unless Keyword.has_key?(form.form_keys, field) do
+        raise AshPhoenix.Form.NoFormConfigured, field: field
+      end
+
+      case form.form_keys[field][:type] || :single do
+        :single ->
+          if form.forms[field] do
+            form.forms[field]
+            |> to_form([])
+            |> Map.put(:name, form.name <> "[#{field}]")
+            |> Map.put(:id, form.id <> "_#{field}")
+          end
+
+        :list ->
+          form.forms[field]
+          |> Kernel.||([])
+          |> Enum.with_index()
+          |> Enum.map(fn {nested_form, index} ->
+            nested_form
+            |> to_form([])
+            |> Map.put(:name, form.name <> "[#{field}][#{index}]")
+            |> Map.put(:id, form.id <> "_#{field}_#{index}")
+          end)
+      end
+    end
+
+    @impl true
+    def input_type(%{resource: resource, action: action}, _, field) do
+      attribute = Ash.Resource.Info.attribute(resource, field)
+
+      if attribute do
+        type_to_form_type(attribute.type)
+      else
+        argument = get_argument(action, field)
+
+        if argument do
+          type_to_form_type(argument.type)
+        else
+          :text_input
+        end
+      end
+    end
+
+    @impl true
+    def input_value(%{source: %Ash.Changeset{} = changeset}, _form, field) do
+      case get_changing_value(changeset, field) do
+        {:ok, value} ->
+          value
+
+        :error ->
+          case Map.fetch(changeset.data, field) do
+            {:ok, value} ->
+              value
+
+            _ ->
+              Ash.Changeset.get_argument(changeset, field)
+          end
+      end
+    end
+
+    @impl true
+    def input_validations(%{source: %Ash.Changeset{} = changeset}, _, field) do
+      attribute_or_argument =
+        Ash.Resource.Info.attribute(changeset.resource, field) ||
+          get_argument(changeset.action, field)
+
+      if attribute_or_argument do
+        [required: !attribute_or_argument.allow_nil?] ++ type_validations(attribute_or_argument)
+      else
+        []
+      end
+    end
+
+    defp type_validations(%{type: Ash.Types.Integer, constraints: constraints}) do
+      constraints
+      |> Kernel.||([])
+      |> Keyword.take([:max, :min])
+      |> Keyword.put(:step, 1)
+    end
+
+    defp type_validations(%{type: Ash.Types.Decimal, constraints: constraints}) do
+      constraints
+      |> Kernel.||([])
+      |> Keyword.take([:max, :min])
+      |> Keyword.put(:step, "any")
+    end
+
+    defp type_validations(%{type: Ash.Types.String, constraints: constraints}) do
+      if constraints[:trim?] do
+        # We should consider using the `match` validation here, but we can't
+        # add a title here, so we can't set an error message
+        # min_length = to_string(constraints[:min_length])
+        # max_length = to_string(constraints[:max_length])
+        # [match: "(\S\s*){#{min_length},#{max_length}}"]
+        []
+      else
+        validations =
+          if constraints[:min_length] do
+            [min_length: constraints[:min_length]]
+          else
+            []
+          end
+
+        if constraints[:min_length] do
+          Keyword.put(constraints, :min_length, constraints[:min_length])
+        else
+          validations
+        end
+      end
+    end
+
+    defp type_validations(_), do: []
+
+    defp get_changing_value(changeset, field) do
+      with :error <- Map.fetch(changeset.attributes, field),
+           :error <- Map.fetch(changeset.params, field) do
+        Map.fetch(changeset.params, to_string(field))
+      end
+    end
+  end
+end
