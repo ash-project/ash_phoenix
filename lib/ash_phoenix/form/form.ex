@@ -15,9 +15,13 @@ defmodule AshPhoenix.Form do
     :form_keys,
     :forms,
     :method,
-    :changeset_opts,
+    :opts,
     :id
   ]
+
+  def validate(form, new_params) do
+    for_create(form.resource, form.action, new_params, form.opts)
+  end
 
   def for_create(resource, action, params, opts \\ []) do
     {forms, params} = handle_forms(params, opts[:forms] || [])
@@ -34,7 +38,7 @@ defmodule AshPhoenix.Form do
       form_keys: List.wrap(opts[:forms]),
       id: opts[:id] || "form",
       method: opts[:method] || form_for_method(:create),
-      changeset_opts: changeset_opts,
+      opts: opts,
       source:
         Ash.Changeset.for_create(
           resource,
@@ -59,7 +63,7 @@ defmodule AshPhoenix.Form do
       forms: forms,
       form_keys: List.wrap(opts[:forms]),
       method: opts[:method] || form_for_method(:update),
-      changeset_opts: changeset_opts,
+      opts: opts,
       id: opts[:id] || "form",
       name: opts[:as] || "form",
       source:
@@ -88,7 +92,7 @@ defmodule AshPhoenix.Form do
       id: opts[:id] || "form",
       method: opts[:method] || form_for_method(:destroy),
       form_keys: List.wrap(opts[:forms]),
-      changeset_opts: changeset_opts,
+      opts: opts,
       source:
         Ash.Changeset.for_destroy(
           data,
@@ -100,21 +104,23 @@ defmodule AshPhoenix.Form do
   end
 
   def submit(form, api) do
+    changeset_opts = Keyword.drop(form.opts, [:forms, :hide_errors?, :id, :method, :for, :as])
+
     result =
       case form.type do
         :create ->
           form.resource
-          |> Ash.Changeset.for_create(form.source.action.name, params(form), form.changeset_opts)
+          |> Ash.Changeset.for_create(form.source.action.name, params(form), changeset_opts)
           |> api.create()
 
         :update ->
           form.data
-          |> Ash.Changeset.for_update(form.source.action.name, params(form), form.changeset_opts)
+          |> Ash.Changeset.for_update(form.source.action.name, params(form), changeset_opts)
           |> api.update()
 
         :destroy ->
           form.data
-          |> Ash.Changeset.for_destroy(form.source.action.name, params(form), form.changeset_opts)
+          |> Ash.Changeset.for_destroy(form.source.action.name, params(form), changeset_opts)
           |> api.destroy()
       end
 
