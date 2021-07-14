@@ -11,12 +11,13 @@ defmodule AshPhoenix.Form do
     :source,
     :name,
     :data,
-    :hide_errors?,
     :form_keys,
     :forms,
     :method,
     :opts,
-    :id
+    :id,
+    :transform_errors,
+    errors: :simple
   ]
 
   def validate(form, new_params) do
@@ -34,14 +35,17 @@ defmodule AshPhoenix.Form do
 
   def for_create(resource, action, params, opts \\ []) do
     {forms, params} = handle_forms(params, opts[:forms] || [])
-    changeset_opts = Keyword.drop(opts, [:forms, :hide_errors?, :id, :method, :for, :as])
+
+    changeset_opts =
+      Keyword.drop(opts, [:forms, :transform_errors, :errors, :id, :method, :for, :as])
 
     %__MODULE__{
       resource: resource,
       action: action,
       type: :create,
       params: params,
-      hide_errors?: opts[:hide_errors?] || false,
+      errors: opts[:errors] || :simple,
+      transform_errors: opts[:transform_errors],
       name: opts[:as] || "form",
       forms: forms,
       form_keys: List.wrap(opts[:forms]),
@@ -60,7 +64,9 @@ defmodule AshPhoenix.Form do
 
   def for_update(%resource{} = data, action, params, opts \\ []) do
     {forms, params} = handle_forms(params, opts[:forms] || [])
-    changeset_opts = Keyword.drop(opts, [:forms, :hide_errors?, :id, :method, :for, :as])
+
+    changeset_opts =
+      Keyword.drop(opts, [:forms, :transform_errors, :errors, :id, :method, :for, :as])
 
     %__MODULE__{
       resource: resource,
@@ -68,7 +74,8 @@ defmodule AshPhoenix.Form do
       action: action,
       type: :update,
       params: params,
-      hide_errors?: opts[:hide_errors?] || false,
+      errors: opts[:errors] || :simple,
+      transform_errors: opts[:transform_errors],
       forms: forms,
       form_keys: List.wrap(opts[:forms]),
       method: opts[:method] || form_for_method(:update),
@@ -87,7 +94,9 @@ defmodule AshPhoenix.Form do
 
   def for_destroy(%resource{} = data, action, params, opts \\ []) do
     {forms, params} = handle_forms(params, opts[:forms] || [])
-    changeset_opts = Keyword.drop(opts, [:forms, :hide_errors?, :id, :method, :for, :as])
+
+    changeset_opts =
+      Keyword.drop(opts, [:forms, :transform_errors, :errors, :id, :method, :for, :as])
 
     %__MODULE__{
       resource: resource,
@@ -95,7 +104,8 @@ defmodule AshPhoenix.Form do
       action: action,
       type: :destroy,
       params: params,
-      hide_errors?: opts[:hide_errors?] || false,
+      errors: opts[:errors] || :simple,
+      transform_errors: opts[:transform_errors],
       forms: forms,
       name: opts[:as] || "form",
       id: opts[:id] || "form",
@@ -431,12 +441,49 @@ defmodule AshPhoenix.Form do
           []
         end
 
+      errors =
+        if form.errors == :hide do
+          []
+        else
+          form.source.errors
+          |> Enum.flat_map(&transform_error(form, &1))
+          |> Enum.filter(fn
+            error when is_exception(error) ->
+              AshPhoenix.FormData.Error.impl_for(error)
+
+            {_key, _value, _vars} ->
+              true
+
+            _ ->
+              false
+          end)
+          |> Enum.map(fn {field, message, vars} ->
+            vars =
+              vars
+              |> List.wrap()
+              |> Enum.flat_map(fn {key, value} ->
+                try do
+                  if is_integer(value) do
+                    [{key, value}]
+                  else
+                    [{key, to_string(value)}]
+                  end
+                rescue
+                  _ ->
+                    []
+                end
+              end)
+
+            {field, {message || "", vars}}
+          end)
+        end
+
       %Phoenix.HTML.Form{
         source: form,
         impl: __MODULE__,
         id: form.id,
         name: name,
-        errors: [],
+        errors: errors,
         data: form.data,
         params: form.params,
         hidden: hidden,
@@ -516,6 +563,45 @@ defmodule AshPhoenix.Form do
         [required: !attribute_or_argument.allow_nil?] ++ type_validations(attribute_or_argument)
       else
         []
+      end
+    end
+
+    defp transform_error(_form, {_key, _value, _vars} = error), do: error
+
+    defp transform_error(form, error) do
+      case form.transform_errors do
+        transformer when is_function(transformer, 2) ->
+          case transformer.(form.source, error) do
+            error when is_exception(error) ->
+              if AshPhoenix.FormData.Error.impl_for(error) do
+                List.wrap(AshPhoenix.to_form_error(error))
+              else
+                []
+              end
+
+            {key, value, vars} ->
+              [{key, value, vars}]
+
+            list when is_list(list) ->
+              Enum.flat_map(list, fn
+                error when is_exception(error) ->
+                  if AshPhoenix.FormData.Error.impl_for(error) do
+                    List.wrap(AshPhoenix.to_form_error(error))
+                  else
+                    []
+                  end
+
+                {key, value, vars} ->
+                  [{key, value, vars}]
+              end)
+          end
+
+        nil ->
+          if AshPhoenix.FormData.Error.impl_for(error) do
+            List.wrap(AshPhoenix.to_form_error(error))
+          else
+            []
+          end
       end
     end
 

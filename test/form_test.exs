@@ -17,6 +17,17 @@ defmodule AshPhoenix.FormTest do
     end
   end
 
+  describe "errors" do
+    test "errors are set on the form according to changeset errors" do
+      form =
+        Post
+        |> Form.for_create(:create, %{})
+        |> form_for("action")
+
+      assert form.errors == [{:text, {"is required", []}}]
+    end
+  end
+
   describe "data" do
     test "it uses the provided data to create forms even without input" do
       post1_id = Ash.UUID.generate()
