@@ -4,7 +4,7 @@ defmodule AshPhoenix.FormTest do
 
   alias AshPhoenix.Form
   alias Phoenix.HTML.FormData
-  alias AshPhoenix.Test.{Comment, Post}
+  alias AshPhoenix.Test.{Api, Comment, Post}
 
   describe "form_for fields" do
     test "it should show simple field values" do
@@ -51,6 +51,15 @@ defmodule AshPhoenix.FormTest do
                ],
                "text" => "text"
              }
+    end
+  end
+
+  describe "submit" do
+    test "it runs the action with the params" do
+      assert {:ok, %{text: "text"}} =
+               Post
+               |> Form.for_create(:create, %{text: "text"})
+               |> Form.submit(Api)
     end
   end
 

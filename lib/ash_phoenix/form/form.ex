@@ -15,11 +15,13 @@ defmodule AshPhoenix.Form do
     :form_keys,
     :forms,
     :method,
+    :changeset_opts,
     :id
   ]
 
   def for_create(resource, action, params, opts \\ []) do
     {forms, params} = handle_forms(params, opts[:forms] || [])
+    changeset_opts = Keyword.drop(opts, [:forms, :hide_errors?, :id, :method, :for, :as])
 
     %__MODULE__{
       resource: resource,
@@ -32,18 +34,20 @@ defmodule AshPhoenix.Form do
       form_keys: List.wrap(opts[:forms]),
       id: opts[:id] || "form",
       method: opts[:method] || form_for_method(:create),
+      changeset_opts: changeset_opts,
       source:
         Ash.Changeset.for_create(
           resource,
           action,
           params,
-          Keyword.drop(opts, [:forms, :hide_errors?, :id, :method, :for, :as])
+          changeset_opts
         )
     }
   end
 
   def for_update(%resource{} = data, action, params, opts \\ []) do
     {forms, params} = handle_forms(params, opts[:forms] || [])
+    changeset_opts = Keyword.drop(opts, [:forms, :hide_errors?, :id, :method, :for, :as])
 
     %__MODULE__{
       resource: resource,
@@ -55,6 +59,7 @@ defmodule AshPhoenix.Form do
       forms: forms,
       form_keys: List.wrap(opts[:forms]),
       method: opts[:method] || form_for_method(:update),
+      changeset_opts: changeset_opts,
       id: opts[:id] || "form",
       name: opts[:as] || "form",
       source:
@@ -62,13 +67,14 @@ defmodule AshPhoenix.Form do
           data,
           action,
           params,
-          Keyword.drop(opts, [:forms, :hide_errors?, :id, :method, :as])
+          changeset_opts
         )
     }
   end
 
   def for_destroy(%resource{} = data, action, params, opts \\ []) do
     {forms, params} = handle_forms(params, opts[:forms] || [])
+    changeset_opts = Keyword.drop(opts, [:forms, :hide_errors?, :id, :method, :for, :as])
 
     %__MODULE__{
       resource: resource,
@@ -82,14 +88,40 @@ defmodule AshPhoenix.Form do
       id: opts[:id] || "form",
       method: opts[:method] || form_for_method(:destroy),
       form_keys: List.wrap(opts[:forms]),
+      changeset_opts: changeset_opts,
       source:
         Ash.Changeset.for_destroy(
           data,
           action,
           params,
-          Keyword.drop(opts, [:forms, :hide_errors?, :id, :method, :as])
+          changeset_opts
         )
     }
+  end
+
+  def submit(form, api) do
+    result =
+      case form.type do
+        :create ->
+          form.resource
+          |> Ash.Changeset.for_create(form.source.action.name, params(form), form.changeset_opts)
+          |> api.create()
+
+        :update ->
+          form.data
+          |> Ash.Changeset.for_update(form.source.action.name, params(form), form.changeset_opts)
+          |> api.update()
+
+        :destroy ->
+          form.data
+          |> Ash.Changeset.for_destroy(form.source.action.name, params(form), form.changeset_opts)
+          |> api.destroy()
+      end
+
+    case result do
+      {:ok, result} -> {:ok, result}
+      {:error, %{changeset: changeset}} -> {:error, %{form | changeset: changeset}}
+    end
   end
 
   def params(form) do
