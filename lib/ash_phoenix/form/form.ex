@@ -198,23 +198,27 @@ defmodule AshPhoenix.Form do
     ],
     forms: [
       type: :keyword_list,
-      doc: "Forms nested inside the current nesting level",
+      doc: "Forms nested inside the current nesting level"
     ],
     for: [
       type: :atom,
-      doc: "When creating parameters for the action, the key that the forms should be gathered into. Defaults to the key used to configure the nested form."
+      doc:
+        "When creating parameters for the action, the key that the forms should be gathered into. Defaults to the key used to configure the nested form."
     ],
     resource: [
       type: :atom,
-      doc: "The resource of the nested forms. Unnecessary if you are providing the `data` key, and not adding additional forms to this path."
+      doc:
+        "The resource of the nested forms. Unnecessary if you are providing the `data` key, and not adding additional forms to this path."
     ],
     create_action: [
       type: :atom,
-      doc: "The create action to use when building new forms. Only necessary if you want to use `add_form/3` with this path."
+      doc:
+        "The create action to use when building new forms. Only necessary if you want to use `add_form/3` with this path."
     ],
     update_action: [
       type: :atom,
-      doc: "The update action to use when building forms for data. Only necessary if you supply the `data` key."
+      doc:
+        "The update action to use when building forms for data. Only necessary if you supply the `data` key."
     ],
     data: [
       type: :any,
