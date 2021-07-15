@@ -48,6 +48,28 @@ defmodule AshPhoenix.FormTest do
       assert inputs_for(form, :post).errors == [{:text, {"is required", []}}]
     end
 
+    test "nested errors are set on the appropriate form after validate and submit" do
+      form =
+        Comment
+        |> Form.for_create(:create, %{"text" => "text"},
+          forms: [
+            post: [
+              resource: Post,
+              create_action: :create
+            ]
+          ]
+        )
+        |> Form.add_form(:post, params: %{})
+        |> Form.validate(%{})
+        |> Form.submit(Api, force?: true)
+        |> elem(1)
+        |> form_for("action")
+
+      assert form.errors == []
+
+      assert inputs_for(form, :post).errors == [{:text, {"is required", []}}]
+    end
+
     test "nested errors are set on the appropriate form after submit for many to many relationships" do
       form =
         Post
@@ -62,6 +84,31 @@ defmodule AshPhoenix.FormTest do
           ]
         )
         |> Form.add_form(:post, params: %{})
+        |> Form.submit(Api, force?: true)
+        |> elem(1)
+        |> form_for("action")
+
+      assert form.errors == []
+
+      assert [nested_form] = inputs_for(form, :post)
+      assert nested_form.errors == [{:text, {"is required", []}}]
+    end
+
+    test "nested errors are set on the appropriate form after validate and submit for many to many relationships" do
+      form =
+        Post
+        |> Form.for_create(:create, %{"text" => "text"},
+          forms: [
+            post: [
+              type: :list,
+              for: :linked_posts,
+              resource: Post,
+              create_action: :create
+            ]
+          ]
+        )
+        |> Form.add_form(:post, params: %{})
+        |> Form.validate(%{})
         |> Form.submit(Api, force?: true)
         |> elem(1)
         |> form_for("action")
