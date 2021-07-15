@@ -5,9 +5,9 @@ defmodule AshPhoenix.Form.NoActionConfigured do
     %__MODULE__{action: opts[:action], path: opts[:path]}
   end
 
-  def message(%{action: :update, path: path}) do
+  def message(%{action: :create, path: path}) do
     """
-    Attempted to add a form at path: #{inspect(path)}, but no `update_action` was configured.
+    Attempted to add a form at path: #{inspect(path)}, but no `create_action` was configured.
 
     For example:
         Form.for_create(
@@ -27,7 +27,7 @@ defmodule AshPhoenix.Form.NoActionConfigured do
     """
   end
 
-  def message(%{action: :create, path: path}) do
+  def message(%{action: :update, path: path}) do
     """
     The `data` key was configured for #{inspect(path)}, but no `update_action` was configured. Please configure one.
 
