@@ -236,7 +236,7 @@ defmodule AshPhoenix.FormTest do
             ],
             other_post: [
               type: :single,
-              for: "for_posts",
+              for: :for_posts,
               resource: Post,
               create_action: :create
             ]
