@@ -18,26 +18,33 @@ defmodule AshPhoenix.Form do
     :opts,
     :id,
     :transform_errors,
-    errors: :simple
+    errors: false
   ]
 
   import AshPhoenix.FormData.Helpers
 
-  def validate(form, new_params) do
+  def validate(form, new_params, opts \\ []) do
+    new_form_opts =
+      if Keyword.has_key?(opts, :errors) do
+        Keyword.put(Keyword.put(form.opts, :skip_data?, true), :errors, opts[:errors])
+      else
+        Keyword.put(Keyword.put(form.opts, :skip_data?, true), :errors, true)
+      end
+
     case form.type do
       :create ->
         for_create(
           form.resource,
           form.action,
           new_params,
-          Keyword.put(form.opts, :skip_data?, true)
+          new_form_opts
         )
 
       :update ->
-        for_update(form.data, form.action, new_params, Keyword.put(form.opts, :skip_data?, true))
+        for_update(form.data, form.action, new_params, new_form_opts)
 
       :destroy ->
-        for_destroy(form.data, form.action, new_params, Keyword.put(form.opts, :skip_data?, true))
+        for_destroy(form.data, form.action, new_params, new_form_opts)
     end
   end
 
@@ -61,7 +68,7 @@ defmodule AshPhoenix.Form do
       action: action,
       type: :create,
       params: params,
-      errors: opts[:errors] || :simple,
+      errors: opts[:errors],
       transform_errors: opts[:transform_errors],
       name: opts[:as] || "form",
       forms: forms,
@@ -91,7 +98,7 @@ defmodule AshPhoenix.Form do
       action: action,
       type: :update,
       params: params,
-      errors: opts[:errors] || :simple,
+      errors: opts[:errors],
       transform_errors: opts[:transform_errors],
       forms: forms,
       form_keys: List.wrap(opts[:forms]),
@@ -121,7 +128,7 @@ defmodule AshPhoenix.Form do
       action: action,
       type: :destroy,
       params: params,
-      errors: opts[:errors] || :simple,
+      errors: opts[:errors],
       transform_errors: opts[:transform_errors],
       forms: forms,
       name: opts[:as] || "form",
@@ -140,7 +147,7 @@ defmodule AshPhoenix.Form do
   end
 
   def submit(form, api, opts \\ []) do
-    changeset_opts = Keyword.drop(form.opts, [:forms, :hide_errors?, :id, :method, :for, :as])
+    changeset_opts = Keyword.drop(form.opts, [:forms, :errors, :id, :method, :for, :as])
 
     form = clear_errors(form)
 
@@ -220,7 +227,7 @@ defmodule AshPhoenix.Form do
   end
 
   def submit!(form, api, opts \\ []) do
-    changeset_opts = Keyword.drop(form.opts, [:forms, :hide_errors?, :id, :method, :for, :as])
+    changeset_opts = Keyword.drop(form.opts, [:forms, :errors, :id, :method, :for, :as])
 
     form = clear_errors(form)
 
@@ -246,6 +253,8 @@ defmodule AshPhoenix.Form do
     end
   end
 
+  def params(nil), do: nil
+
   def params(form) do
     form_keys =
       form.form_keys
@@ -253,22 +262,18 @@ defmodule AshPhoenix.Form do
       |> Enum.flat_map(&[&1, to_string(&1)])
 
     Enum.reduce(form.form_keys, Map.drop(form.params, form_keys), fn {key, config}, params ->
-      if form.forms[key] do
-        case config[:type] || :single do
-          :single ->
-            Map.put(params, to_string(config[:for] || key), params(form.forms[key]))
+      case config[:type] || :single do
+        :single ->
+          Map.put(params, to_string(config[:for] || key), params(form.forms[key]))
 
-          :list ->
-            for_name = to_string(config[:for] || key)
+        :list ->
+          for_name = to_string(config[:for] || key)
 
-            params
-            |> Map.put_new(for_name, [])
-            |> Map.update!(for_name, fn current ->
-              current ++ Enum.map(form.forms[key], &params/1)
-            end)
-        end
-      else
-        params
+          params
+          |> Map.put_new(for_name, [])
+          |> Map.update!(for_name, fn current ->
+            current ++ Enum.map(form.forms[key] || [], &params(&1 || []))
+          end)
       end
     end)
   end
@@ -662,7 +667,7 @@ defmodule AshPhoenix.Form do
         end
 
       errors =
-        if form.errors == :hide do
+        if form.errors do
           []
         else
           form.submit_errors ||

@@ -48,7 +48,7 @@ defmodule AshPhoenix.FormTest do
       assert inputs_for(form, :post).errors == [{:text, {"is required", []}}]
     end
 
-    test "nested errors are set on the appropriate form after validate and submit" do
+    test "nested forms submit empty values when not present in input params" do
       form =
         Comment
         |> Form.for_create(:create, %{"text" => "text"},
@@ -60,14 +60,27 @@ defmodule AshPhoenix.FormTest do
           ]
         )
         |> Form.add_form(:post, params: %{})
-        |> Form.validate(%{})
-        |> Form.submit(Api, force?: true)
-        |> elem(1)
-        |> form_for("action")
+        |> Form.validate(%{"text" => "text"})
 
-      assert form.errors == []
+      assert Form.params(form) == %{"text" => "text", "post" => nil}
+    end
 
-      assert inputs_for(form, :post).errors == [{:text, {"is required", []}}]
+    test "nested forms submit empty list values when not present in input params" do
+      form =
+        Comment
+        |> Form.for_create(:create, %{"text" => "text"},
+          forms: [
+            post: [
+              type: :list,
+              resource: Post,
+              create_action: :create
+            ]
+          ]
+        )
+        |> Form.add_form(:post, params: %{})
+        |> Form.validate(%{"text" => "text"})
+
+      assert Form.params(form) == %{"text" => "text", "post" => []}
     end
 
     test "nested errors are set on the appropriate form after submit for many to many relationships" do
@@ -84,31 +97,6 @@ defmodule AshPhoenix.FormTest do
           ]
         )
         |> Form.add_form(:post, params: %{})
-        |> Form.submit(Api, force?: true)
-        |> elem(1)
-        |> form_for("action")
-
-      assert form.errors == []
-
-      assert [nested_form] = inputs_for(form, :post)
-      assert nested_form.errors == [{:text, {"is required", []}}]
-    end
-
-    test "nested errors are set on the appropriate form after validate and submit for many to many relationships" do
-      form =
-        Post
-        |> Form.for_create(:create, %{"text" => "text"},
-          forms: [
-            post: [
-              type: :list,
-              for: :linked_posts,
-              resource: Post,
-              create_action: :create
-            ]
-          ]
-        )
-        |> Form.add_form(:post, params: %{})
-        |> Form.validate(%{})
         |> Form.submit(Api, force?: true)
         |> elem(1)
         |> form_for("action")
