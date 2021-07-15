@@ -418,5 +418,74 @@ defmodule AshPhoenix.FormTest do
 
       assert FormData.input_value(related_form.source, related_form, :text) == "post_text1"
     end
+
+    test "when all values have been removed from a relationship, the empty list remains" do
+      form =
+        Comment
+        |> Form.for_create(:create, %{"text" => "text"},
+          forms: [
+            post: [
+              type: :list,
+              resource: Post,
+              create_action: :create
+            ]
+          ]
+        )
+        |> Form.add_form(:post, params: %{text: "post_text0"})
+        |> Form.add_form(:post, params: %{text: "post_text1"})
+        |> Form.add_form(:post, params: %{text: "post_text2"})
+
+      assert [
+               %Phoenix.HTML.Form{source: %AshPhoenix.Form{resource: AshPhoenix.Test.Post}},
+               %Phoenix.HTML.Form{source: %AshPhoenix.Form{resource: AshPhoenix.Test.Post}},
+               %Phoenix.HTML.Form{source: %AshPhoenix.Form{resource: AshPhoenix.Test.Post}}
+             ] = inputs_for(form_for(form, "action"), :post)
+
+      form =
+        form
+        |> Form.remove_form([:post, 0])
+        |> Form.remove_form([:post, 0])
+        |> Form.remove_form([:post, 0])
+        |> Form.validate(%{})
+
+      assert [] = inputs_for(form_for(form, "action"), :post)
+      assert Form.params(form) == %{"post" => []}
+    end
+
+    test "when all values have been removed from an existing relationship, the empty list remains" do
+      post1_id = Ash.UUID.generate()
+      post2_id = Ash.UUID.generate()
+      comment = %Comment{text: "text", post: [%Post{id: post1_id}, %Post{id: post2_id}]}
+
+      form =
+        comment
+        |> Form.for_update(:create, %{},
+          forms: [
+            post: [
+              data: comment.post,
+              type: :list,
+              resource: Post,
+              create_action: :create,
+              update_action: :update
+            ]
+          ]
+        )
+        |> Form.add_form(:post, params: %{text: "post_text3"})
+
+      assert [
+               %Phoenix.HTML.Form{source: %AshPhoenix.Form{resource: AshPhoenix.Test.Post}},
+               %Phoenix.HTML.Form{source: %AshPhoenix.Form{resource: AshPhoenix.Test.Post}},
+               %Phoenix.HTML.Form{source: %AshPhoenix.Form{resource: AshPhoenix.Test.Post}}
+             ] = inputs_for(form_for(form, "action"), :post)
+
+      form =
+        form
+        |> Form.remove_form([:post, 0])
+        |> Form.remove_form([:post, 0])
+        |> Form.remove_form([:post, 0])
+        |> Form.validate(%{})
+
+      assert Form.params(form) == %{"post" => []}
+    end
   end
 end
