@@ -26,9 +26,9 @@ defmodule AshPhoenix.Form do
   def validate(form, new_params, opts \\ []) do
     new_form_opts =
       if Keyword.has_key?(opts, :errors) do
-        Keyword.put(Keyword.put(form.opts, :skip_data?, true), :errors, opts[:errors])
+        Keyword.put(form.opts, :errors, opts[:errors])
       else
-        Keyword.put(Keyword.put(form.opts, :skip_data?, true), :errors, true)
+        Keyword.put(form.opts, :errors, true)
       end
 
     case form.type do
@@ -49,7 +49,7 @@ defmodule AshPhoenix.Form do
   end
 
   def for_create(resource, action, params, opts \\ []) do
-    {forms, params} = handle_forms(params, opts[:forms] || [], opts[:skip_data?], nil)
+    {forms, params} = handle_forms(params, opts[:forms] || [], nil)
 
     changeset_opts =
       Keyword.drop(opts, [
@@ -59,9 +59,10 @@ defmodule AshPhoenix.Form do
         :id,
         :method,
         :for,
-        :as,
-        :skip_data?
+        :as
       ])
+
+    opts = remove_data(opts)
 
     %__MODULE__{
       resource: resource,
@@ -87,10 +88,12 @@ defmodule AshPhoenix.Form do
   end
 
   def for_update(%resource{} = data, action, params, opts \\ []) do
-    {forms, params} = handle_forms(params, opts[:forms] || [], opts[:skip_data?], data)
+    {forms, params} = handle_forms(params, opts[:forms] || [], data)
 
     changeset_opts =
       Keyword.drop(opts, [:forms, :transform_errors, :errors, :id, :method, :for, :as])
+
+    opts = remove_data(opts)
 
     %__MODULE__{
       resource: resource,
@@ -117,10 +120,12 @@ defmodule AshPhoenix.Form do
   end
 
   def for_destroy(%resource{} = data, action, params, opts \\ []) do
-    {forms, params} = handle_forms(params, opts[:forms] || [], opts[:skip_data?], data)
+    {forms, params} = handle_forms(params, opts[:forms] || [], data)
 
     changeset_opts =
       Keyword.drop(opts, [:forms, :transform_errors, :errors, :id, :method, :for, :as])
+
+    opts = remove_data(opts)
 
     %__MODULE__{
       resource: resource,
@@ -144,6 +149,20 @@ defmodule AshPhoenix.Form do
           changeset_opts
         )
     }
+  end
+
+  defp remove_data(opts) do
+    if opts[:forms] do
+      Keyword.update!(opts, :forms, &do_remove_data(&1))
+    else
+      opts
+    end
+  end
+
+  defp do_remove_data(forms) do
+    Enum.map(forms, fn {k, v} ->
+      {k, remove_data(Keyword.delete(v, :data))}
+    end)
   end
 
   def submit(form, api, opts \\ []) do
@@ -488,12 +507,12 @@ defmodule AshPhoenix.Form do
     [key | decoded_to_list(rest)]
   end
 
-  defp handle_forms(params, form_keys, skip_data?, prev_data, trail \\ []) do
+  defp handle_forms(params, form_keys, prev_data, trail \\ []) do
     Enum.reduce(form_keys, {%{}, params}, fn {key, opts}, {forms, params} ->
       case fetch_key(params, key) do
         {:ok, form_params} ->
           form_values =
-            if Keyword.has_key?(opts, :data) && !skip_data? do
+            if Keyword.has_key?(opts, :data) do
               data =
                 if is_function(opts[:data]) do
                   if prev_data do

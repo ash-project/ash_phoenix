@@ -7,7 +7,7 @@ defmodule AshPhoenix.Form.NoActionConfigured do
 
   def message(%{action: :update, path: path}) do
     """
-    Attempted to add a form at path: #{inspect(path)}, but no `create_action` was configured.
+    Attempted to add a form at path: #{inspect(path)}, but no `update_action` was configured.
 
     For example:
         Form.for_create(
