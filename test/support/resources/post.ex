@@ -8,18 +8,20 @@ defmodule AshPhoenix.Test.Post do
 
   attributes do
     uuid_primary_key(:id)
-    attribute(:text, :string)
+    attribute(:text, :string, allow_nil?: false)
   end
 
   actions do
     create :create do
       argument(:comments, {:array, :map})
-      change(manage_relationship(:comments, type: :replace))
+      argument(:linked_posts, {:array, :map})
+      change(manage_relationship(:comments, type: :direct_control))
+      change(manage_relationship(:linked_posts, type: :direct_control))
     end
 
     update :update do
       argument(:comments, {:array, :map})
-      change(manage_relationship(:comments, type: :replace))
+      change(manage_relationship(:comments, type: :direct_control))
     end
   end
 
