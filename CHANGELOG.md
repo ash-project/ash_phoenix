@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.23-rc.0](https://github.com/ash-project/ash_phoenix/compare/v0.4.23...v0.4.23-rc.0) (2021-07-15)
+
+
+
+
+### Bug Fixes:
+
+* don't assume an empty map is an indexed map
+
+### Improvements:
+
+* refactor forms with new data structure `AshPhoenix.Form` (#6)
+
+* add `use_data?` opt to `add_related`
+
 ## [v0.4.23](https://github.com/ash-project/ash_phoenix/compare/v0.4.22-rc2...v0.4.23) (2021-07-02)
 
 
