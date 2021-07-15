@@ -26,6 +26,51 @@ defmodule AshPhoenix.FormTest do
 
       assert form.errors == [{:text, {"is required", []}}]
     end
+
+    test "nested errors are set on the appropriate form after submit" do
+      form =
+        Comment
+        |> Form.for_create(:create, %{"text" => "text"},
+          forms: [
+            post: [
+              resource: Post,
+              create_action: :create
+            ]
+          ]
+        )
+        |> Form.add_form(:post, params: %{})
+        |> Form.submit(Api, force?: true)
+        |> elem(1)
+        |> form_for("action")
+
+      assert form.errors == []
+
+      assert inputs_for(form, :post).errors == [{:text, {"is required", []}}]
+    end
+
+    test "nested errors are set on the appropriate form after submit for many to many relationships" do
+      form =
+        Post
+        |> Form.for_create(:create, %{"text" => "text"},
+          forms: [
+            post: [
+              type: :list,
+              for: :linked_posts,
+              resource: Post,
+              create_action: :create
+            ]
+          ]
+        )
+        |> Form.add_form(:post, params: %{})
+        |> Form.submit(Api, force?: true)
+        |> elem(1)
+        |> form_for("action")
+
+      assert form.errors == []
+
+      assert [nested_form] = inputs_for(form, :post)
+      assert nested_form.errors == [{:text, {"is required", []}}]
+    end
   end
 
   describe "data" do
@@ -45,15 +90,14 @@ defmodule AshPhoenix.FormTest do
             post: [
               type: :list,
               data: [%Post{id: post1_id}, %Post{id: post2_id}],
-              with:
-                &Form.for_update(&1, :create, &2,
-                  forms: [
-                    comments: [
-                      type: :list,
-                      with: fn params -> Form.for_create(Comment, :create, params) end
-                    ]
-                  ]
-                )
+              update_action: :update,
+              forms: [
+                comments: [
+                  type: :list,
+                  resource: Comment,
+                  create_action: :create
+                ]
+              ]
             ]
           ]
         )
@@ -61,6 +105,52 @@ defmodule AshPhoenix.FormTest do
       assert Form.params(form) == %{
                "post" => [
                  %{"comments" => [], "id" => post1_id},
+                 %{"comments" => [], "id" => post2_id}
+               ],
+               "text" => "text"
+             }
+    end
+
+    test "a function can be used to derive the data from the data of the parent form" do
+      post1_id = Ash.UUID.generate()
+      post2_id = Ash.UUID.generate()
+      comment_id = Ash.UUID.generate()
+
+      form =
+        Comment
+        |> Form.for_create(
+          :create,
+          %{
+            "text" => "text",
+            "post" => %{
+              "0" => %{"id" => post1_id, "comments" => %{"0" => %{"id" => comment_id}}},
+              "1" => %{"id" => post2_id}
+            }
+          },
+          forms: [
+            post: [
+              type: :list,
+              data: [
+                %Post{id: post1_id, comments: [%Comment{id: comment_id}]},
+                %Post{id: post2_id, comments: []}
+              ],
+              update_action: :update,
+              forms: [
+                comments: [
+                  data: &(&1.comments || []),
+                  type: :list,
+                  resource: Comment,
+                  create_action: :create,
+                  update_action: :update
+                ]
+              ]
+            ]
+          ]
+        )
+
+      assert Form.params(form) == %{
+               "post" => [
+                 %{"comments" => [%{"id" => comment_id}], "id" => post1_id},
                  %{"comments" => [], "id" => post2_id}
                ],
                "text" => "text"
@@ -85,20 +175,21 @@ defmodule AshPhoenix.FormTest do
           forms: [
             post: [
               type: :list,
-              with:
-                &Form.for_create(Post, :create, &1,
-                  forms: [
-                    comments: [
-                      type: :list,
-                      with: fn params -> Form.for_create(Comment, :create, params) end
-                    ]
-                  ]
-                )
+              resource: Post,
+              create_action: :create,
+              forms: [
+                comments: [
+                  type: :list,
+                  resource: Comment,
+                  create_action: :create
+                ]
+              ]
             ],
             other_post: [
               type: :single,
               for: "for_posts",
-              with: &Form.for_create(Post, :create, &1)
+              resource: Post,
+              create_action: :create
             ]
           ]
         )
@@ -134,7 +225,8 @@ defmodule AshPhoenix.FormTest do
         |> Form.for_create(:create, %{text: "text"},
           forms: [
             post: [
-              with: &Form.for_create(Post, :create, &1)
+              resource: Post,
+              create_action: :create
             ]
           ]
         )
@@ -156,7 +248,8 @@ defmodule AshPhoenix.FormTest do
           forms: [
             post: [
               type: :list,
-              with: &Form.for_create(Post, :create, &1)
+              resource: Post,
+              create_action: :create
             ]
           ]
         )
@@ -172,7 +265,8 @@ defmodule AshPhoenix.FormTest do
           forms: [
             post: [
               type: :list,
-              with: &Form.for_create(Post, :create, &1)
+              resource: Post,
+              create_action: :create
             ]
           ]
         )
@@ -194,15 +288,15 @@ defmodule AshPhoenix.FormTest do
           forms: [
             post: [
               type: :list,
-              with:
-                &Form.for_create(Post, :create, &1,
-                  forms: [
-                    comments: [
-                      type: :list,
-                      with: fn params -> Form.for_create(Comment, :create, params) end
-                    ]
-                  ]
-                )
+              resource: Post,
+              create_action: :create,
+              forms: [
+                comments: [
+                  type: :list,
+                  resource: Comment,
+                  create_action: :create
+                ]
+              ]
             ]
           ]
         )
@@ -227,7 +321,8 @@ defmodule AshPhoenix.FormTest do
           forms: [
             post: [
               type: :list,
-              with: &Form.for_create(Post, :create, &1)
+              resource: Post,
+              create_action: :create
             ]
           ]
         )
@@ -261,7 +356,8 @@ defmodule AshPhoenix.FormTest do
           forms: [
             post: [
               type: :list,
-              with: &Form.for_create(Post, :create, &1)
+              resource: Post,
+              create_action: :create
             ]
           ]
         )

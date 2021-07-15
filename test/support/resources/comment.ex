@@ -15,19 +15,19 @@ defmodule AshPhoenix.Test.Comment do
 
     create :create do
       argument(:post, :map)
-      change(manage_relationship(:post, type: :replace))
+      change(manage_relationship(:post, type: :direct_control))
     end
 
     update :update do
       argument(:post, :map)
-      change(manage_relationship(:post, type: :replace))
+      change(manage_relationship(:post, type: :direct_control))
     end
   end
 
   attributes do
     uuid_primary_key(:id)
     attribute(:featured, :boolean, default: false)
-    attribute(:text, :string)
+    attribute(:text, :string, allow_nil?: false)
   end
 
   relationships do

@@ -58,6 +58,82 @@ defmodule AshPhoenix.FormData.Helpers do
     |> Macro.underscore()
   end
 
+  def transform_errors(form, errors, path_filter \\ []) do
+    errors
+    |> Enum.reject(fn error ->
+      Map.has_key?(error, :path) && error.path != path_filter
+    end)
+    |> Enum.flat_map(&transform_error(form, &1))
+    |> Enum.filter(fn
+      error when is_exception(error) ->
+        AshPhoenix.FormData.Error.impl_for(error)
+
+      {_key, _value, _vars} ->
+        true
+
+      _ ->
+        false
+    end)
+    |> Enum.map(fn {field, message, vars} ->
+      vars =
+        vars
+        |> List.wrap()
+        |> Enum.flat_map(fn {key, value} ->
+          try do
+            if is_integer(value) do
+              [{key, value}]
+            else
+              [{key, to_string(value)}]
+            end
+          rescue
+            _ ->
+              []
+          end
+        end)
+
+      {field, {message || "", vars}}
+    end)
+  end
+
+  defp transform_error(_form, {_key, _value, _vars} = error), do: error
+
+  defp transform_error(form, error) do
+    case form.transform_errors do
+      transformer when is_function(transformer, 2) ->
+        case transformer.(form.source, error) do
+          error when is_exception(error) ->
+            if AshPhoenix.FormData.Error.impl_for(error) do
+              List.wrap(AshPhoenix.to_form_error(error))
+            else
+              []
+            end
+
+          {key, value, vars} ->
+            [{key, value, vars}]
+
+          list when is_list(list) ->
+            Enum.flat_map(list, fn
+              error when is_exception(error) ->
+                if AshPhoenix.FormData.Error.impl_for(error) do
+                  List.wrap(AshPhoenix.to_form_error(error))
+                else
+                  []
+                end
+
+              {key, value, vars} ->
+                [{key, value, vars}]
+            end)
+        end
+
+      nil ->
+        if AshPhoenix.FormData.Error.impl_for(error) do
+          List.wrap(AshPhoenix.to_form_error(error))
+        else
+          []
+        end
+    end
+  end
+
   def get_embedded({:array, type}), do: get_embedded(type)
 
   def get_embedded(type) when is_atom(type) do
