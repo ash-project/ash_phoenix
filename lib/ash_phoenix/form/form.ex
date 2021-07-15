@@ -35,6 +35,88 @@ defmodule AshPhoenix.Form do
       ]
     ])
   ```
+
+  ## LiveView
+  `AshPhoenix.Form` (unlike ecto changeset based forms) expects to be reused throughout the lifecycle of the liveview.
+
+  You can use phoenix events to add and remove form entries and `submit/2` to submit the form, like so:
+
+  ```elixir
+  alias MyApp.MyApi.{Comment, Post}
+
+  def render(assigns) do
+    ~L\"\"\"
+    <%= f = form_for @form, "#", [phx_change: :validate, phx_submit: :save] %>
+      <%= label f, :text %>
+      <%= text_input f, :text %>
+      <%= error_tag f, :text %>
+
+      <%= for comment_form <- inputs_for(f, :comments) do %>
+        <%= hidden_inputs_for(comment_form) %>
+        <%= text_input comment_form, :text %>
+
+        <%= for sub_comment_form <- inputs_for(comment_form, :sub_comments) do %>
+          <%= hidden_inputs_for(sub_comment_form) %>
+          <%= text_input sub_comment_form, :text %>
+          <button phx-click="remove_form" phx-value-path="<%= sub_comment_form.name %>">Add Comment</button>
+        <% end %>
+
+        <button phx-click="remove_form" phx-value-path="<%= comment_form.name %>">Add Comment</button>
+        <button phx-click="add_form" phx-value-path="<%= comment_form.name %>">Add Comment</button>
+      <% end %>
+
+      <button phx-click="add_form" phx-value-path="<%= comment_form.name %>">Add Comment</button>
+
+      <%= submit "Save" %>
+    </form>
+    \"\"\"
+  end
+
+  def mount(%{"post_id" => post_id}, _session, socket) do
+    post =
+      Post
+      |> MyApp.MyApi.get!(post_id)
+      |> MyApi.load!(comments: [:sub_comments])
+
+    form = AshPhoenix.Form.for_update(post, forms: [
+      comments: [
+        resource: Comment,
+        data: post.comments,
+        create_action: :create,
+        update_action: :update
+        forms: [
+          sub_comments: [
+            resource: Comment,
+            data: &(&1.sub_comments),
+            create_action: :create,
+            update_action: :update
+          ]
+        ]
+      ]
+    ])
+
+    {:ok, assign(socket, form: form)}
+  end
+
+  def handle_event("save", _params, socket) do
+    case AshPhoenix.Form.submit(socket.assigns.form) do
+      {:ok, result} ->
+        # Do something with the result, like redirect
+      {:error, form} ->
+        assign(socket, :form, form)
+    end
+  end
+
+  def handle_event("add_form", %{"path" => path}, socket) do
+    form = AshPhoenix.Form.add_form(socket.assigns.form, path)
+    {:noreply, assign(socket, :form, form)}
+  end
+
+  def handle_event("remove_form", %{"path" => path}) do
+    form = AshPhoenix.Form.remove_form(socket.assigns.form, path)
+    {:noreply, assign(socket, :form, form)}
+  end
+  ```
   """
   defstruct [
     :resource,
@@ -108,6 +190,48 @@ defmodule AshPhoenix.Form do
     ]
   ]
 
+  @nested_form_opts [
+    type: [
+      type: {:one_of, [:list, :single]},
+      default: :single,
+      doc: "The cardinality of the nested form."
+    ],
+    forms: [
+      type: :keyword_list,
+      doc: "Forms nested inside the current nesting level"
+    ],
+    for: [
+      type: :atom,
+      doc:
+        "When creating parameters for the action, the key that the forms should be gathered into. Defaults to the key used to configure the nested form."
+    ],
+    resource: [
+      type: :atom,
+      doc:
+        "The resource of the nested forms. Unnecessary if you are providing the `data` key, and not adding additional forms to this path."
+    ],
+    create_action: [
+      type: :atom,
+      doc:
+        "The create action to use when building new forms. Only necessary if you want to use `add_form/3` with this path."
+    ],
+    update_action: [
+      type: :atom,
+      doc:
+        "The update action to use when building forms for data. Only necessary if you supply the `data` key."
+    ],
+    data: [
+      type: :any,
+      doc: """
+      The current value or values that should have update forms built by default.
+
+      You can also provide a single argument function that will return the data based on the
+      data of the parent form. This is important for multiple nesting levels of `:list` type
+      forms, because the data depends on which parent is being rendered.
+      """
+    ]
+  ]
+
   @doc false
   defp validate_opts_with_extra_keys(opts, schema) do
     keys = Keyword.keys(schema)
@@ -129,6 +253,10 @@ defmodule AshPhoenix.Form do
 
   Any *additional* options will be passed to the underlying call to `Ash.Changeset.for_create/4`. This means
   you can set things like the tenant/actor. These will be retained, and provided again when `Form.submit/3` is called.
+
+  ## Nested Form Options
+
+  #{Ash.OptionsHelpers.docs(@nested_form_opts)}
   """
   @spec for_create(Ash.Resource.t(), action :: atom, opts :: Keyword.t()) :: t()
   def for_create(resource, action, opts \\ []) when is_atom(resource) do
@@ -704,7 +832,18 @@ defmodule AshPhoenix.Form do
     }
   end
 
-  defp parse_path!(%{name: name} = form, original_path) do
+  @doc """
+  A utility for parsing paths of nested forms in query encoded format.
+
+  For example:
+
+  ```elixir
+  parse_path!(form, "post[comments][0][sub_comments][0])
+
+  [:comments, 0, :sub_comments, 0]
+  ```
+  """
+  def parse_path!(%{name: name} = form, original_path) do
     path =
       original_path
       |> Plug.Conn.Query.decode()
