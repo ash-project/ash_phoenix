@@ -10,7 +10,8 @@ defmodule AshPhoenix.FormTest do
     test "it should show simple field values" do
       form =
         Post
-        |> Form.for_create(:create, %{text: "text"})
+        |> Form.for_create(:create)
+        |> Form.validate(%{"text" => "text"})
         |> form_for("action")
 
       assert FormData.input_value(form.source, form, :text) == "text"
@@ -18,10 +19,20 @@ defmodule AshPhoenix.FormTest do
   end
 
   describe "errors" do
-    test "errors are set on the form according to changeset errors" do
+    test "errors are not set on the form without validating" do
       form =
         Post
-        |> Form.for_create(:create, %{})
+        |> Form.for_create(:create)
+        |> form_for("action")
+
+      assert form.errors == []
+    end
+
+    test "errors are set on the form according to changeset errors on validate" do
+      form =
+        Post
+        |> Form.for_create(:create)
+        |> Form.validate(%{})
         |> form_for("action")
 
       assert form.errors == [{:text, {"is required", []}}]
@@ -30,7 +41,7 @@ defmodule AshPhoenix.FormTest do
     test "nested errors are set on the appropriate form after submit" do
       form =
         Comment
-        |> Form.for_create(:create, %{"text" => "text"},
+        |> Form.for_create(:create,
           forms: [
             post: [
               resource: Post,
@@ -39,6 +50,7 @@ defmodule AshPhoenix.FormTest do
           ]
         )
         |> Form.add_form(:post, params: %{})
+        |> Form.validate(%{"text" => "text", "post" => %{}})
         |> Form.submit(Api, force?: true)
         |> elem(1)
         |> form_for("action")
@@ -51,7 +63,7 @@ defmodule AshPhoenix.FormTest do
     test "nested forms submit empty values when not present in input params" do
       form =
         Comment
-        |> Form.for_create(:create, %{"text" => "text"},
+        |> Form.for_create(:create,
           forms: [
             post: [
               resource: Post,
@@ -68,7 +80,7 @@ defmodule AshPhoenix.FormTest do
     test "nested forms submit empty list values when not present in input params" do
       form =
         Comment
-        |> Form.for_create(:create, %{"text" => "text"},
+        |> Form.for_create(:create,
           forms: [
             post: [
               type: :list,
@@ -86,7 +98,7 @@ defmodule AshPhoenix.FormTest do
     test "nested errors are set on the appropriate form after submit for many to many relationships" do
       form =
         Post
-        |> Form.for_create(:create, %{"text" => "text"},
+        |> Form.for_create(:create,
           forms: [
             post: [
               type: :list,
@@ -97,6 +109,7 @@ defmodule AshPhoenix.FormTest do
           ]
         )
         |> Form.add_form(:post, params: %{})
+        |> Form.validate(%{"text" => "text", "post" => [%{}]})
         |> Form.submit(Api, force?: true)
         |> elem(1)
         |> form_for("action")
@@ -117,10 +130,6 @@ defmodule AshPhoenix.FormTest do
         Comment
         |> Form.for_create(
           :create,
-          %{
-            "text" => "text",
-            "post" => %{"0" => %{"id" => post1_id}, "1" => %{"id" => post2_id}}
-          },
           forms: [
             post: [
               type: :list,
@@ -136,6 +145,10 @@ defmodule AshPhoenix.FormTest do
             ]
           ]
         )
+        |> Form.validate(%{
+          "text" => "text",
+          "post" => %{"0" => %{"id" => post1_id}, "1" => %{"id" => post2_id}}
+        })
 
       assert Form.params(form) == %{
                "post" => [
@@ -155,13 +168,6 @@ defmodule AshPhoenix.FormTest do
         Comment
         |> Form.for_create(
           :create,
-          %{
-            "text" => "text",
-            "post" => %{
-              "0" => %{"id" => post1_id, "comments" => %{"0" => %{"id" => comment_id}}},
-              "1" => %{"id" => post2_id}
-            }
-          },
           forms: [
             post: [
               type: :list,
@@ -182,6 +188,13 @@ defmodule AshPhoenix.FormTest do
             ]
           ]
         )
+        |> Form.validate(%{
+          "text" => "text",
+          "post" => %{
+            "0" => %{"id" => post1_id, "comments" => %{"0" => %{"id" => comment_id}}},
+            "1" => %{"id" => post2_id}
+          }
+        })
 
       assert Form.params(form) == %{
                "post" => [
@@ -197,7 +210,8 @@ defmodule AshPhoenix.FormTest do
     test "it runs the action with the params" do
       assert {:ok, %{text: "text"}} =
                Post
-               |> Form.for_create(:create, %{text: "text"})
+               |> Form.for_create(:create)
+               |> Form.validate(%{text: "text"})
                |> Form.submit(Api)
     end
   end
@@ -206,7 +220,7 @@ defmodule AshPhoenix.FormTest do
     test "it includes nested forms, and honors their `for` configuration" do
       form =
         Comment
-        |> Form.for_create(:create, %{"text" => "text"},
+        |> Form.for_create(:create,
           forms: [
             post: [
               type: :list,
@@ -231,6 +245,11 @@ defmodule AshPhoenix.FormTest do
         |> Form.add_form("form[post]", params: %{"text" => "post_text"})
         |> Form.add_form("form[other_post]", params: %{"text" => "post_text"})
         |> Form.add_form("form[post][0][comments]", params: %{"text" => "post_text"})
+        |> Form.validate(%{
+          "text" => "text",
+          "post" => [%{"comments" => [%{"text" => "post_text"}], "text" => "post_text"}],
+          "other_post" => %{"text" => "post_text"}
+        })
 
       assert Form.params(form) == %{
                "text" => "text",
@@ -244,7 +263,8 @@ defmodule AshPhoenix.FormTest do
     test "it should raise an error" do
       form =
         Post
-        |> Form.for_create(:create, %{text: "text"})
+        |> Form.for_create(:create)
+        |> Form.validate(%{text: "text"})
         |> form_for("action")
 
       assert_raise AshPhoenix.Form.NoFormConfigured, fn ->
@@ -257,7 +277,7 @@ defmodule AshPhoenix.FormTest do
     test "the `type: :single` option should create a form without integer paths" do
       form =
         Comment
-        |> Form.for_create(:create, %{text: "text"},
+        |> Form.for_create(:create,
           forms: [
             post: [
               resource: Post,
@@ -266,6 +286,7 @@ defmodule AshPhoenix.FormTest do
           ]
         )
         |> Form.add_form(:post, params: %{text: "post_text"})
+        |> Form.validate(%{"text" => "text", "post" => %{"text" => "post_text"}})
         |> form_for("action")
 
       assert %Phoenix.HTML.Form{source: %AshPhoenix.Form{resource: AshPhoenix.Test.Post}} =
@@ -279,7 +300,7 @@ defmodule AshPhoenix.FormTest do
     test "it should show nothing in `inputs_for` by default" do
       form =
         Comment
-        |> Form.for_create(:create, %{text: "text"},
+        |> Form.for_create(:create,
           forms: [
             post: [
               type: :list,
@@ -288,6 +309,7 @@ defmodule AshPhoenix.FormTest do
             ]
           ]
         )
+        |> Form.validate(%{"text" => "text"})
         |> form_for("action")
 
       assert inputs_for(form, :post) == []
@@ -296,7 +318,7 @@ defmodule AshPhoenix.FormTest do
     test "when a value has been appended to the relationship, a form is created" do
       form =
         Comment
-        |> Form.for_create(:create, %{text: "text"},
+        |> Form.for_create(:create,
           forms: [
             post: [
               type: :list,
@@ -319,7 +341,7 @@ defmodule AshPhoenix.FormTest do
     test "a query path can be used when manipulating forms" do
       form =
         Comment
-        |> Form.for_create(:create, %{text: "text"},
+        |> Form.for_create(:create,
           forms: [
             post: [
               type: :list,
@@ -352,7 +374,7 @@ defmodule AshPhoenix.FormTest do
     test "list values get an index in their name and id" do
       form =
         Comment
-        |> Form.for_create(:create, %{text: "text"},
+        |> Form.for_create(:create,
           forms: [
             post: [
               type: :list,
@@ -387,7 +409,7 @@ defmodule AshPhoenix.FormTest do
     test "when a value has been removed from the relationship, the form is removed" do
       form =
         Comment
-        |> Form.for_create(:create, %{text: "text"},
+        |> Form.for_create(:create,
           forms: [
             post: [
               type: :list,
@@ -422,7 +444,7 @@ defmodule AshPhoenix.FormTest do
     test "when all values have been removed from a relationship, the empty list remains" do
       form =
         Comment
-        |> Form.for_create(:create, %{"text" => "text"},
+        |> Form.for_create(:create,
           forms: [
             post: [
               type: :list,
@@ -459,7 +481,7 @@ defmodule AshPhoenix.FormTest do
 
       form =
         comment
-        |> Form.for_update(:create, %{},
+        |> Form.for_update(:create,
           forms: [
             post: [
               data: comment.post,

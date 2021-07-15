@@ -26,9 +26,15 @@ defmodule AshPhoenix.Form do
   def validate(form, new_params, opts \\ []) do
     new_form_opts =
       if Keyword.has_key?(opts, :errors) do
-        Keyword.put(form.opts, :errors, opts[:errors])
+        form.opts
+        |> Keyword.put(:errors, opts[:errors])
+        |> Keyword.put(:params, new_params)
+        |> Keyword.put(:forms, form.form_keys)
       else
-        Keyword.put(form.opts, :errors, true)
+        form.opts
+        |> Keyword.put(:errors, true)
+        |> Keyword.put(:params, new_params)
+        |> Keyword.put(:forms, form.form_keys)
       end
 
     case form.type do
@@ -36,20 +42,19 @@ defmodule AshPhoenix.Form do
         for_create(
           form.resource,
           form.action,
-          new_params,
           new_form_opts
         )
 
       :update ->
-        for_update(form.data, form.action, new_params, new_form_opts)
+        for_update(form.data, form.action, new_form_opts)
 
       :destroy ->
-        for_destroy(form.data, form.action, new_params, new_form_opts)
+        for_destroy(form.data, form.action, new_form_opts)
     end
   end
 
-  def for_create(resource, action, params, opts \\ []) do
-    {forms, params} = handle_forms(params, opts[:forms] || [], nil)
+  def for_create(resource, action, opts \\ []) do
+    {forms, params} = handle_forms(opts[:params] || %{}, opts[:forms] || [], !!opts[:errors], nil)
 
     changeset_opts =
       Keyword.drop(opts, [
@@ -61,8 +66,6 @@ defmodule AshPhoenix.Form do
         :for,
         :as
       ])
-
-    opts = remove_data(opts)
 
     %__MODULE__{
       resource: resource,
@@ -81,19 +84,18 @@ defmodule AshPhoenix.Form do
         Ash.Changeset.for_create(
           resource,
           action,
-          params,
+          opts[:params] || %{},
           changeset_opts
         )
     }
   end
 
-  def for_update(%resource{} = data, action, params, opts \\ []) do
-    {forms, params} = handle_forms(params, opts[:forms] || [], data)
+  def for_update(%resource{} = data, action, opts \\ []) do
+    {forms, params} =
+      handle_forms(opts[:params] || %{}, opts[:forms] || [], !!opts[:errors], data)
 
     changeset_opts =
       Keyword.drop(opts, [:forms, :transform_errors, :errors, :id, :method, :for, :as])
-
-    opts = remove_data(opts)
 
     %__MODULE__{
       resource: resource,
@@ -119,13 +121,12 @@ defmodule AshPhoenix.Form do
     }
   end
 
-  def for_destroy(%resource{} = data, action, params, opts \\ []) do
-    {forms, params} = handle_forms(params, opts[:forms] || [], data)
+  def for_destroy(%resource{} = data, action, opts \\ []) do
+    {forms, params} =
+      handle_forms(opts[:params] || %{}, opts[:forms] || [], !!opts[:errors], data)
 
     changeset_opts =
       Keyword.drop(opts, [:forms, :transform_errors, :errors, :id, :method, :for, :as])
-
-    opts = remove_data(opts)
 
     %__MODULE__{
       resource: resource,
@@ -149,20 +150,6 @@ defmodule AshPhoenix.Form do
           changeset_opts
         )
     }
-  end
-
-  defp remove_data(opts) do
-    if opts[:forms] do
-      Keyword.update!(opts, :forms, &do_remove_data(&1))
-    else
-      opts
-    end
-  end
-
-  defp do_remove_data(forms) do
-    Enum.map(forms, fn {k, v} ->
-      {k, remove_data(Keyword.delete(v, :data))}
-    end)
   end
 
   def submit(form, api, opts \\ []) do
@@ -305,6 +292,26 @@ defmodule AshPhoenix.Form do
     end
   end
 
+  defp do_remove_form(form, [key], _trail) when not is_integer(key) do
+    unless form.form_keys[key] do
+      raise AshPhoenix.Form.NoFormConfigured, field: key
+    end
+
+    new_config =
+      form.form_keys
+      |> Keyword.update!(key, fn config ->
+        if config[:data] do
+          Keyword.put(config, :data, nil)
+        else
+          config
+        end
+      end)
+
+    new_forms = Map.put(form.forms, key, nil)
+
+    %{form | forms: new_forms, form_keys: new_config}
+  end
+
   defp do_remove_form(form, [key, i], _trail) when is_integer(i) do
     unless form.form_keys[key] do
       raise AshPhoenix.Form.NoFormConfigured, field: key
@@ -314,7 +321,13 @@ defmodule AshPhoenix.Form do
       form.form_keys
       |> Keyword.update!(key, fn config ->
         if config[:data] do
-          Keyword.update!(config, :data, &List.delete_at(&1, i))
+          Keyword.update!(config, :data, fn data ->
+            if is_function(data) do
+              fn original_data -> List.delete_at(data.(original_data), i) end
+            else
+              List.delete_at(data, i)
+            end
+          end)
         else
           config
         end
@@ -399,7 +412,10 @@ defmodule AshPhoenix.Form do
             raise AshPhoenix.Form.NoResourceConfigured, path: Enum.reverse(trail, [key])
 
         new_form =
-          for_create(resource, create_action, opts[:params] || %{}, forms: config[:forms] || [])
+          for_create(resource, create_action,
+            params: opts[:params] || %{},
+            forms: config[:forms] || []
+          )
 
         case config[:type] || :single do
           :single ->
@@ -507,7 +523,7 @@ defmodule AshPhoenix.Form do
     [key | decoded_to_list(rest)]
   end
 
-  defp handle_forms(params, form_keys, prev_data, trail \\ []) do
+  defp handle_forms(params, form_keys, error?, prev_data, trail \\ []) do
     Enum.reduce(form_keys, {%{}, params}, fn {key, opts}, {forms, params} ->
       case fetch_key(params, key) do
         {:ok, form_params} ->
@@ -531,7 +547,11 @@ defmodule AshPhoenix.Form do
                       path: Enum.reverse(trail, Enum.reverse(trail, [key])),
                       action: :update
 
-                for_update(data, update_action, form_params, forms: opts[:forms] || [])
+                for_update(data, update_action,
+                  params: form_params,
+                  forms: opts[:forms] || [],
+                  errors: error?
+                )
               else
                 form_params
                 |> indexed_list()
@@ -545,7 +565,11 @@ defmodule AshPhoenix.Form do
                             action: :update
 
                       form =
-                        for_update(data, update_action, form_params, forms: opts[:forms] || [])
+                        for_update(data, update_action,
+                          params: form_params,
+                          forms: opts[:forms] || [],
+                          errors: error?
+                        )
 
                       {[form | forms], rest}
 
@@ -562,7 +586,11 @@ defmodule AshPhoenix.Form do
                             action: :create
 
                       form =
-                        for_create(resource, create_action, form_params, forms: opts[:forms] || [])
+                        for_create(resource, create_action,
+                          params: form_params,
+                          forms: opts[:forms] || [],
+                          errors: error?
+                        )
 
                       {[form | forms], []}
                   end
@@ -583,12 +611,20 @@ defmodule AshPhoenix.Form do
                     path: Enum.reverse(trail, [key])
 
               if (opts[:type] || :single) == :single do
-                for_create(resource, create_action, form_params, forms: opts[:forms] || [])
+                for_create(resource, create_action,
+                  params: form_params,
+                  forms: opts[:forms] || [],
+                  errors: error?
+                )
               else
                 form_params
                 |> indexed_list()
                 |> Enum.map(fn form_params ->
-                  for_create(resource, create_action, form_params, forms: opts[:forms] || [])
+                  for_create(resource, create_action,
+                    params: form_params,
+                    forms: opts[:forms] || [],
+                    errors: error?
+                  )
                 end)
               end
             end
@@ -626,9 +662,9 @@ defmodule AshPhoenix.Form do
 
               if data do
                 if (opts[:type] || :single) == :single do
-                  for_update(data, update_action, %{})
+                  for_update(data, update_action, errors: error?)
                 else
-                  Enum.map(data, &for_update(&1, update_action, %{}))
+                  Enum.map(data, &for_update(&1, update_action, errors: error?))
                 end
               else
                 nil
@@ -687,10 +723,10 @@ defmodule AshPhoenix.Form do
 
       errors =
         if form.errors do
-          []
-        else
           form.submit_errors ||
             transform_errors(form, form.source.errors)
+        else
+          []
         end
 
       %Phoenix.HTML.Form{
