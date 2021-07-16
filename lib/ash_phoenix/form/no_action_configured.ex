@@ -19,9 +19,9 @@ defmodule AshPhoenix.Form.NoActionConfigured do
             nested_form: [
               type: :list,
               as: "form_name",
-              read_action: :read_action_name,
+              read_action: :read,
               resource: RelatedResource,
-              update_action: :create_action_name
+              update_action: :update
             ]
           ]
         )
@@ -43,7 +43,7 @@ defmodule AshPhoenix.Form.NoActionConfigured do
               type: :list,
               as: "form_name",
               resource: RelatedResource,
-              update_action: :create_action_name
+              update_action: :create
             ]
           ]
         )
@@ -66,7 +66,30 @@ defmodule AshPhoenix.Form.NoActionConfigured do
               as: "form_name",
               data: data,
               resource: RelatedResource,
-              update_action: :update_or_destroy_action_name
+              update_action: :update
+            ]
+          ]
+        )
+    """
+  end
+
+  def message(%{action: :destroy, path: path}) do
+    """
+    The `data` key was configured for #{inspect(path)}, but no `destroy_action` was configured when a destroy form was added. Please configure one.
+
+    For example:
+        Form.for_create(
+          Resource,
+          :action,
+          params,
+          forms: [
+            # For forms over existing data
+            form_name: [
+              type: :list,
+              as: "form_name",
+              data: data,
+              resource: RelatedResource,
+              destroy_action: :destroy
             ]
           ]
         )
