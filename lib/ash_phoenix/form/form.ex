@@ -1665,6 +1665,7 @@ defmodule AshPhoenix.Form do
             |> to_form(opts)
             |> Map.put(:name, form.name <> "[#{field}]")
             |> Map.put(:id, form.id <> "_#{field}")
+            |> List.wrap()
           end
 
         :list ->
