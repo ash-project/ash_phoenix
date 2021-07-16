@@ -60,6 +60,28 @@ defmodule AshPhoenix.FormTest do
       assert hd(inputs_for(form, :post)).errors == [{:text, {"is required", []}}]
     end
 
+    test "nested errors are set on the appropriate form after submit, even if no submit actually happens" do
+      form =
+        Comment
+        |> Form.for_create(:create,
+          forms: [
+            post: [
+              resource: Post,
+              create_action: :create
+            ]
+          ]
+        )
+        |> Form.add_form(:post, params: %{})
+        |> Form.validate(%{"text" => "text", "post" => %{}})
+        |> Form.submit(Api)
+        |> elem(1)
+        |> form_for("action")
+
+      assert form.errors == []
+
+      assert hd(inputs_for(form, :post)).errors == [{:text, {"is required", []}}]
+    end
+
     test "nested forms submit empty values when not present in input params" do
       form =
         Comment
