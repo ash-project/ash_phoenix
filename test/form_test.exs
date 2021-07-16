@@ -57,7 +57,7 @@ defmodule AshPhoenix.FormTest do
 
       assert form.errors == []
 
-      assert inputs_for(form, :post).errors == [{:text, {"is required", []}}]
+      assert hd(inputs_for(form, :post)).errors == [{:text, {"is required", []}}]
     end
 
     test "nested forms submit empty values when not present in input params" do
@@ -290,7 +290,7 @@ defmodule AshPhoenix.FormTest do
         |> form_for("action")
 
       assert %Phoenix.HTML.Form{source: %AshPhoenix.Form{resource: AshPhoenix.Test.Post}} =
-               related_form = inputs_for(form, :post)
+               related_form = hd(inputs_for(form, :post))
 
       assert related_form.name == "form[post]"
 
@@ -508,6 +508,27 @@ defmodule AshPhoenix.FormTest do
         |> Form.validate(%{})
 
       assert Form.params(form) == %{"post" => []}
+    end
+
+    test "when `:single`, `inputs_for` generates a list of one single item" do
+      post_id = Ash.UUID.generate()
+      comment = %Comment{text: "text", post: %Post{id: post_id, text: "Some text"}}
+
+      form =
+        comment
+        |> Form.for_update(:update,
+          forms: [
+            post: [
+              data: comment.post,
+              type: :single,
+              resource: Post,
+              update_action: :update
+            ]
+          ]
+        )
+
+      assert [%Phoenix.HTML.Form{source: %AshPhoenix.Form{resource: AshPhoenix.Test.Post}}] =
+               inputs_for(form_for(form, "action"), :post)
     end
   end
 end
