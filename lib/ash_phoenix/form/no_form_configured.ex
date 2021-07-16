@@ -1,13 +1,19 @@
 defmodule AshPhoenix.Form.NoFormConfigured do
-  defexception [:field]
+  defexception [:field, :available]
 
   def exception(opts) do
-    %__MODULE__{field: opts[:field]}
+    %__MODULE__{field: opts[:field], available: opts[:available]}
   end
 
-  def message(%{field: field}) do
+  def message(%{field: field, available: available}) do
     """
     #{field} must be configured in the form to be used with `inputs_for`. For example:
+
+    Available forms:
+
+    #{available |> Enum.map(&"* #{&1}") |> Enum.join("\n")}
+
+    Example Setup:
 
         Form.for_create(
           Resource,

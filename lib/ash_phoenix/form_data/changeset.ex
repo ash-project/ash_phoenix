@@ -58,28 +58,6 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
         []
       end
 
-    hidden =
-      changeset.resource
-      |> Ash.Resource.Info.attributes()
-      |> Enum.filter(&Ash.Type.embedded_type?(&1.type))
-      |> Enum.reduce(hidden, fn attribute, hidden ->
-        case Ash.Changeset.fetch_change(changeset, attribute.name) do
-          {:ok, empty} when empty in [nil, []] ->
-            Keyword.put(hidden, attribute.name, nil)
-
-          _ ->
-            hidden
-        end
-      end)
-
-    removed_embed_values =
-      changeset.context[:private][:removed_keys]
-      |> Kernel.||(%{})
-      |> Enum.filter(&elem(&1, 1))
-      |> Enum.map(fn {name, _} -> {name, nil} end)
-
-    hidden = hidden ++ removed_embed_values
-
     %Phoenix.HTML.Form{
       source: changeset,
       impl: __MODULE__,
@@ -94,121 +72,12 @@ defimpl Phoenix.HTML.FormData, for: Ash.Changeset do
   end
 
   @impl true
-  def to_form(changeset, form, field, opts) do
-    {name, opts} = Keyword.pop(opts, :as)
-    {id, opts} = Keyword.pop(opts, :id)
-    {prepend, opts} = Keyword.pop(opts, :prepend, [])
-    {append, opts} = Keyword.pop(opts, :append, [])
-    {use_data?, opts} = Keyword.pop(opts, :use_data?, false)
-    id = to_string(id || form.id <> "_#{field}")
-    name = to_string(name || form.name <> "[#{field}]")
-
-    {source, resource, data} =
-      cond do
-        arg = changeset.action && get_argument(changeset.action, field) ->
-          case argument_and_manages(changeset, arg.name) do
-            {nil, _} ->
-              case get_embedded(arg.type) do
-                nil ->
-                  raise "Cannot use `form_for` with an argument unless the type is an embedded resource or that argument manages a relationship"
-
-                resource ->
-                  data = Ash.Changeset.get_argument(changeset, arg.name)
-
-                  data =
-                    case arg.type do
-                      {:array, _} ->
-                        List.wrap(data)
-
-                      _ ->
-                        data
-                    end
-
-                  {arg, resource, data}
-              end
-
-            {argument, rel} ->
-              if rel do
-                rel = Ash.Resource.Info.relationship(changeset.resource, rel)
-
-                data =
-                  relationship_data(
-                    changeset,
-                    rel,
-                    use_data?,
-                    opts[:id] || argument.name || rel.name
-                  )
-
-                data =
-                  case argument.type do
-                    {:array, _} ->
-                      List.wrap(data)
-
-                    _ ->
-                      if is_list(data) do
-                        List.last(data)
-                      else
-                        data
-                      end
-                  end
-
-                {rel, rel.destination, data}
-              else
-                raise "Cannot use `form_for` with an argument unless the type is an embedded resource or that argument manages a relationship"
-              end
-          end
-
-        rel = Ash.Resource.Info.relationship(changeset.resource, field) ->
-          data = relationship_data(changeset, rel, use_data?, opts[:id] || rel.name)
-
-          data =
-            if rel.cardinality == :many && data do
-              List.wrap(data)
-            else
-              data
-            end
-
-          {rel, rel.destination, data}
-
-        attr = Ash.Resource.Info.attribute(changeset.resource, field) ->
-          case get_embedded(attr.type) do
-            nil ->
-              raise "Cannot use `form_for` with an attribute unless the type is an embedded resource"
-
-            resource ->
-              data = Ash.Changeset.get_attribute(changeset, attr.name)
-
-              data =
-                case attr.type do
-                  {:array, _} ->
-                    List.wrap(data)
-
-                  _ ->
-                    data
-                end
-
-              {attr, resource, data}
-          end
-
-        true ->
-          raise "Cannot use `form_for` with anything except embedded resources in attributes/arguments"
-      end
-
-    data =
-      if is_list(data) do
-        prepend ++ data ++ append
-      else
-        unwrap(prepend) || unwrap(append) || data
-      end
-
-    data
-    |> to_nested_form(changeset, source, resource, id, name, opts)
-    |> List.wrap()
+  def to_form(_changeset, _form, _field, _opts) do
+    raise """
+    Using `inputs_for` with an `Ash.Query` is no longer supported.
+    See the documentation for `AshPhoenix.Form` for more information on the new implementation.
+    """
   end
-
-  defp unwrap([]), do: nil
-  defp unwrap([value | _]), do: value
-  defp unwrap(value), do: value
 
   @impl true
   def input_validations(changeset, _, field) do
