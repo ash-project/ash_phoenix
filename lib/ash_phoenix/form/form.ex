@@ -480,6 +480,7 @@ defmodule AshPhoenix.Form do
     AshPhoenix.Form.Auto.accepted_attributes(form.resource, form.source.action)
   end
 
+  @doc "A utility to get the list of arguments the action underlying the form accepts"
   def arguments(form) do
     Enum.reject(form.source.action.arguments, & &1.private?)
   end
