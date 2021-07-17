@@ -555,7 +555,16 @@ defmodule AshPhoenix.FormTest do
 
     test "failing single intermediate form" do
       post_id = Ash.UUID.generate()
-      comment = %Comment{text: "text", post: %Post{id: post_id, text: "Some text"}}
+      comment_id = Ash.UUID.generate()
+
+      comment = %Comment{
+        text: "text",
+        post: %Post{
+          id: post_id,
+          text: "Some text",
+          comments: [%Comment{id: comment_id}]
+        }
+      }
 
       form =
         comment
@@ -580,7 +589,7 @@ defmodule AshPhoenix.FormTest do
           ]
         )
 
-      assert [%Phoenix.HTML.Form{source: %AshPhoenix.Form{resource: AshPhoenix.Test.Post}}] =
+      assert [%Phoenix.HTML.Form{source: %AshPhoenix.Form{resource: AshPhoenix.Test.Comment}}] =
                form
                |> form_for("action")
                |> inputs_for(:post)

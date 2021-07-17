@@ -1317,11 +1317,19 @@ defmodule AshPhoenix.Form do
 
         if data do
           if (opts[:type] || :single) == :single do
-            for_update(data, update_action, errors: error?, prev_data_trail: prev_data_trail)
+            for_update(data, update_action,
+              errors: error?,
+              prev_data_trail: prev_data_trail,
+              forms: opts[:forms] || []
+            )
           else
             Enum.map(
               data,
-              &for_update(&1, update_action, errors: error?, prev_data_trail: prev_data_trail)
+              &for_update(&1, update_action,
+                errors: error?,
+                prev_data_trail: prev_data_trail,
+                forms: opts[:forms] || []
+              )
             )
           end
         else
