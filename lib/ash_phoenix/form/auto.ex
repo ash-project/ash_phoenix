@@ -71,10 +71,11 @@ defmodule AshPhoenix.Form.Auto do
       end)
       |> Enum.map(fn {arg, manage_opts} ->
         relationship = Ash.Resource.Info.relationship(resource, manage_opts[:relationship])
+        manage_opts = manage_opts[:opts]
 
         defaults =
-          if manage_opts[:opts][:type] do
-            Ash.Changeset.manage_relationship_opts(manage_opts[:opts][:type])
+          if manage_opts[:type] do
+            Ash.Changeset.manage_relationship_opts(manage_opts[:type])
           else
             []
           end
