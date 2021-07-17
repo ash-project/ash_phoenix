@@ -2,7 +2,7 @@ defmodule AshPhoenix.AutoFormTest do
   use ExUnit.Case
 
   alias AshPhoenix.Form.Auto
-  alias AshPhoenix.Test.{Api, Post}
+  alias AshPhoenix.Test.Post
   import AshPhoenix.Form, only: [update_opts: 1]
 
   test "it works for simple relationships" do

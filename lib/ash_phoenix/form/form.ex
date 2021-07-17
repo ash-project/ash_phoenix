@@ -205,10 +205,16 @@ defmodule AshPhoenix.Form do
       doc:
         "What action types the form applies for. Leave blank for it to apply to all action types."
     ],
+    merge?: [
+      type: :boolean,
+      default: false,
+      doc:
+        "When building parameters, this input will be merged with its parent input. This allows for combining multiple forms into a single input."
+    ],
     for: [
       type: :atom,
       doc:
-        "When creating parameters for the action, the key that the forms should be gathered into. Defaults to the key used to configure the nested form."
+        "When creating parameters for the action, the key that the forms should be gathered into. Defaults to the key used to configure the nested form. Ignored if `merge?` is `true`."
     ],
     resource: [
       type: :atom,
@@ -260,6 +266,12 @@ defmodule AshPhoenix.Form do
   you can set things like the tenant/actor. These will be retained, and provided again when `Form.submit/3` is called.
 
   ## Nested Form Options
+
+  To automatically determine the nested forms available for a given form, use `forms: [auto?: true]`.
+  You can add additional nested forms by including them in the `forms` config alongside `auto?: true`.
+  See the module documentation of `AshPhoenix.Forms.Auto` for more information. If you want to do some
+  manipulation of the auto forms, you can also call `AshPhoenix.Forms.Auto.auto/2`, and then manipulate the
+  result and pass it to the `forms` option.
 
   #{Ash.OptionsHelpers.docs(@nested_form_opts)}
   """
@@ -642,6 +654,42 @@ defmodule AshPhoenix.Form do
       end
     else
       {:error, form}
+    end
+  end
+
+  @spec update_form(t(), list(atom | integer) | String.t(), (t() -> t())) :: t()
+  def update_form(form, path, func) do
+    path =
+      case path do
+        [] ->
+          []
+
+        path when is_list(path) ->
+          path
+
+        path ->
+          parse_path!(form, path)
+      end
+
+    case path do
+      [] ->
+        func.(form)
+
+      [atom, integer | rest] when is_atom(atom) and is_integer(integer) ->
+        new_forms =
+          form.forms
+          |> Map.update!(atom, fn nested_forms ->
+            List.update_at(nested_forms, integer, &update_form(&1, rest, func))
+          end)
+
+        %{form | forms: new_forms}
+
+      [atom | rest] ->
+        new_forms =
+          form.forms
+          |> Map.update!(atom, &update_form(&1, rest, func))
+
+        %{form | forms: new_forms}
     end
   end
 

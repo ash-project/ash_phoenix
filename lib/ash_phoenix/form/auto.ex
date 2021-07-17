@@ -1,6 +1,8 @@
 defmodule AshPhoenix.Form.Auto do
   @moduledoc """
-  An experimental tool to automatically generate available nested forms based on a resource and action.
+  A (slightly) experimental tool to automatically generate available nested forms based on a resource and action.
+
+  To use this, specify `forms: [auto?: true]` when creating the form.
 
   There are two things that this builds forms for:
 
@@ -35,6 +37,24 @@ defmodule AshPhoenix.Form.Auto do
   to allow them to search for a record (e.g in a liveview), and you had an `on_lookup` read action, you could
   render a search form for that read action, and once they've selected a record, you could render the fields
   to update that record (in the case of `on_lookup: :relate_and_update` configurations).
+
+  ## Special Considerations
+
+  ### `on_lookup: :relate_and_update`
+
+  For `on_lookup: :relate_and_update` configurations, the "read" form for that relationship will use the appropriate read action.
+  However, you may also want to include the relevant fields for the update that would subsequently occur. To that end, a special
+  nested form called `:_update` is created, that uses an empty instance of that resource as the base of its changeset. This may require
+  some manual manipulation of that data before rendering the relevant form because it assumes all the default values. To solve for this,
+  if you are using liveview, you could actually look up the record using the input from the read action, and then use `AshPhoenix.update_form/3`
+  to set that looked up record as the data of the `_update` form.
+
+  ### Many to Many Relationshisp
+
+  In the case that a manage_change option points to a join relationship, that form is presented via a special nested form called
+  `_join`. So the first form in `inputs_for(form, :relationship)` would be for the destination, and then inside of that you could say
+  `inputs_for(nested_form, :_join)`. The parameters are merged together during submission.
+
   """
 
   @dialyzer {:nowarn_function, rel_to_resource: 2}
