@@ -295,7 +295,7 @@ defmodule AshPhoenix.Form do
       name: opts[:as] || "form",
       forms: forms,
       form_keys: List.wrap(opts[:forms]),
-      id: opts[:id] || "form",
+      id: opts[:id] || opts[:as] || "form",
       method: opts[:method] || form_for_method(:create),
       opts: opts,
       source:
@@ -347,7 +347,7 @@ defmodule AshPhoenix.Form do
       form_keys: List.wrap(opts[:forms]),
       method: opts[:method] || form_for_method(:update),
       opts: opts,
-      id: opts[:id] || "form",
+      id: opts[:id] || opts[:as] || "form",
       name: opts[:as] || "form",
       source:
         Ash.Changeset.for_update(
@@ -396,7 +396,7 @@ defmodule AshPhoenix.Form do
       transform_errors: opts[:transform_errors],
       forms: forms,
       name: opts[:as] || "form",
-      id: opts[:id] || "form",
+      id: opts[:id] || opts[:as] || "form",
       method: opts[:method] || form_for_method(:destroy),
       form_keys: List.wrap(opts[:forms]),
       opts: opts,
@@ -464,7 +464,7 @@ defmodule AshPhoenix.Form do
         name: opts[:as] || "form",
         forms: forms,
         form_keys: List.wrap(opts[:forms]),
-        id: opts[:id] || "form",
+        id: opts[:id] || opts[:as] || "form",
         method: opts[:method] || form_for_method(:create),
         opts: opts,
         source:
