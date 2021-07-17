@@ -171,6 +171,13 @@ defmodule AshPhoenix.Form.Auto do
     manage_opts
     |> Ash.Changeset.ManagedRelationshipHelpers.on_lookup_read_action(relationship)
     |> case do
+      {:join, action, _} ->
+        {:join, action}
+
+      other ->
+        other
+    end
+    |> case do
       nil ->
         opts
 
@@ -192,6 +199,21 @@ defmodule AshPhoenix.Form.Auto do
 
               {source_dest_or_join, update_action} ->
                 resource = rel_to_resource(source_dest_or_join, relationship)
+
+                forms ++
+                  related(resource, action_name, cycle_preventer) ++
+                  [
+                    {:_update,
+                     [
+                       resource: resource,
+                       type: :single,
+                       data: resource.__struct__(),
+                       update_action: update_action
+                     ]}
+                  ]
+
+              {:join, update_action, _} ->
+                resource = relationship.through
 
                 forms ++
                   related(resource, action_name, cycle_preventer) ++

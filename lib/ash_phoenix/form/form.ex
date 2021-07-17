@@ -1464,55 +1464,82 @@ defmodule AshPhoenix.Form do
       end
 
     if (opts[:type] || :single) == :single do
-      case form_params["_form_type"] || "update" do
-        "read" ->
-          resource =
-            opts[:read_resource] || opts[:resource] ||
-              raise AshPhoenix.Form.NoResourceConfigured,
-                path: Enum.reverse(trail, [key])
+      if data || form_params["_form_type"] == "read" do
+        case form_params["_form_type"] || "update" do
+          # "read" ->
 
-          read_action =
-            opts[:read_action] ||
-              raise AshPhoenix.Form.NoActionConfigured,
-                path: Enum.reverse(trail, Enum.reverse(trail, [key])),
-                action: :read
+          "update" ->
+            update_action =
+              opts[:update_action] ||
+                raise AshPhoenix.Form.NoActionConfigured,
+                  path: Enum.reverse(trail, Enum.reverse(trail, [key])),
+                  action: :update
 
-          for_read(resource, read_action,
-            params: form_params,
-            forms: opts[:forms] || [],
-            errors: error?,
-            prev_data_trail: prev_data_trail
-          )
+            for_update(data, update_action,
+              params: form_params,
+              forms: opts[:forms] || [],
+              errors: error?,
+              prev_data_trail: prev_data_trail
+            )
 
-        "update" ->
-          update_action =
-            opts[:update_action] ||
-              raise AshPhoenix.Form.NoActionConfigured,
-                path: Enum.reverse(trail, Enum.reverse(trail, [key])),
-                action: :update
+          "destroy" ->
+            destroy_action =
+              opts[:destroy_action] ||
+                raise AshPhoenix.Form.NoActionConfigured,
+                  path: Enum.reverse(trail, Enum.reverse(trail, [key])),
+                  action: :destroy
 
-          for_update(data, update_action,
-            params: form_params,
-            forms: opts[:forms] || [],
-            errors: error?,
-            prev_data_trail: prev_data_trail
-          )
+            for_destroy(data, destroy_action,
+              params: form_params,
+              forms: opts[:forms] || [],
+              errors: error?,
+              prev_data_trail: prev_data_trail
+            )
+        end
+      else
+        case form_params["_form_type"] || "create" do
+          "create" ->
+            create_action =
+              opts[:create_action] ||
+                raise AshPhoenix.Form.NoActionConfigured,
+                  path: Enum.reverse(trail, Enum.reverse(trail, [key])),
+                  action: :create_action
 
-        "destroy" ->
-          destroy_action =
-            opts[:destroy_action] ||
-              raise AshPhoenix.Form.NoActionConfigured,
-                path: Enum.reverse(trail, Enum.reverse(trail, [key])),
-                action: :destroy
+            resource =
+              opts[:create_resource] || opts[:resource] ||
+                raise AshPhoenix.Form.NoResourceConfigured,
+                  path: Enum.reverse(trail, [key])
 
-          for_destroy(data, destroy_action,
-            params: form_params,
-            forms: opts[:forms] || [],
-            errors: error?,
-            prev_data_trail: prev_data_trail
-          )
+            for_create(resource, create_action,
+              params: form_params,
+              forms: opts[:forms] || [],
+              errors: error?,
+              prev_data_trail: prev_data_trail
+            )
+
+          "read" ->
+            resource =
+              opts[:read_resource] || opts[:resource] ||
+                raise AshPhoenix.Form.NoResourceConfigured,
+                  path: Enum.reverse(trail, [key])
+
+            read_action =
+              opts[:read_action] ||
+                raise AshPhoenix.Form.NoActionConfigured,
+                  path: Enum.reverse(trail, Enum.reverse(trail, [key])),
+                  action: :read
+
+            for_read(resource, read_action,
+              params: form_params,
+              forms: opts[:forms] || [],
+              errors: error?,
+              prev_data_trail: prev_data_trail
+            )
+        end
       end
     else
+      data = List.wrap(data)
+
       form_params
       |> indexed_list()
       |> Enum.reduce({[], List.wrap(data)}, fn form_params, {forms, data} ->
@@ -1705,7 +1732,6 @@ defmodule AshPhoenix.Form do
             |> to_form(opts)
             |> Map.put(:name, form.name <> "[#{field}]")
             |> Map.put(:id, form.id <> "_#{field}")
-            |> List.wrap()
           end
 
         :list ->
@@ -1719,6 +1745,7 @@ defmodule AshPhoenix.Form do
             |> Map.put(:id, form.id <> "_#{field}_#{index}")
           end)
       end
+      |> List.wrap()
     end
 
     @impl true
