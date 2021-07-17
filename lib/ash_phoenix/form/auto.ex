@@ -1,7 +1,44 @@
 defmodule AshPhoenix.Form.Auto do
   @moduledoc """
   An experimental tool to automatically generate available nested forms based on a resource and action.
+
+  There are two things that this builds forms for:
+
+  1. Attributes/arguments who's type is an embedded resource.
+  2. Arguments that have a corresponding `change manage_relationship(..)` configured.
+
+  For more on relationships see the documentation for `Ash.Changeset.manage_relationship/4`.
+
+  When building forms, you can switch on the action type and/or resource of the form, in order to have different
+  fields depending on the form. For example, if you have a simple relationship called `:comments` with
+  `on_match: :update` and `on_no_match: :create`, there are two types of forms that can be in `inputs_for(form, :comments)`.
+
+  In which case you may have something like this:
+
+  ```elixir
+  <%= for comment_form <- inputs_for(f, :comments) do %>
+    <%= hidden_inputs_for(comment_form) %>
+    <%= if comment_form.source.type == :create do %>
+      <%= text_input comment_form, :text %>
+      <%= text_input comment_form, :on_create_field %>
+    <% else %>
+      <%= text_input comment_form, :text %>
+      <%= text_input comment_form, :on_create_field %>
+    <% end %>
+
+    <button phx-click="remove_form" phx-value-path="<%= comment_form.name %>">Add Comment</button>
+    <button phx-click="add_form" phx-value-path="<%= comment_form.name %>">Add Comment</button>
+  <% end %>
+  ```
+
+  This also applies to adding forms of different types manually. For instance, if you had a "search" field
+  to allow them to search for a record (e.g in a liveview), and you had an `on_lookup` read action, you could
+  render a search form for that read action, and once they've selected a record, you could render the fields
+  to update that record (in the case of `on_lookup: :relate_and_update` configurations).
   """
+
+  @dialyzer {:nowarn_function, rel_to_resource: 2}
+
   def auto(resource, action) do
     related(resource, action) ++ embedded(resource, action)
   end
@@ -50,14 +87,20 @@ defmodule AshPhoenix.Form.Auto do
 
         opts = [
           type: cardinality_to_type(relationship.cardinality),
-          data: relationship_fetcher(relationship),
           forms: [],
           updater: fn opts ->
-            opts
-            |> add_create_action(manage_opts, relationship, cycle_preventer)
-            |> add_read_action(manage_opts, relationship, cycle_preventer)
-            |> add_update_action(manage_opts, relationship, cycle_preventer)
-            |> add_nested_forms()
+            opts =
+              opts
+              |> add_create_action(manage_opts, relationship, cycle_preventer)
+              |> add_read_action(manage_opts, relationship, cycle_preventer)
+              |> add_update_action(manage_opts, relationship, cycle_preventer)
+              |> add_nested_forms()
+
+            if opts[:update_action] || opts[:destroy_action] do
+              Keyword.put(opts, :data, relationship_fetcher(relationship))
+            else
+              opts
+            end
           end
         ]
 
@@ -105,35 +148,44 @@ defmodule AshPhoenix.Form.Auto do
 
   defp add_read_action(opts, manage_opts, relationship, cycle_preventer) do
     manage_opts
-    |> Ash.Changeset.ManagedRelationshipHelpers.on_lookup_update_action(relationship)
-    |> List.wrap()
-    |> Enum.sort_by(&(elem(&1, 0) == :join))
+    |> Ash.Changeset.ManagedRelationshipHelpers.on_lookup_read_action(relationship)
     |> case do
-      [] ->
+      nil ->
         opts
 
-      [{source_dest_or_join, action_name} | rest] ->
-        resource =
-          case source_dest_or_join do
-            :source ->
-              relationship.source
-
-            :destination ->
-              relationship.destination
-
-            :join ->
-              relationship.through
-          end
+      {source_dest_or_join, action_name} ->
+        resource = rel_to_resource(source_dest_or_join, relationship)
 
         opts
         |> Keyword.put(:read_resource, resource)
         |> Keyword.put(:read_action, action_name)
         |> Keyword.update!(
           :forms,
-          &(&1 ++
-              related(resource, action_name, cycle_preventer))
+          fn forms ->
+            case Ash.Changeset.ManagedRelationshipHelpers.on_lookup_read_action(
+                   manage_opts,
+                   relationship
+                 ) do
+              nil ->
+                forms ++ related(resource, action_name, cycle_preventer)
+
+              {source_dest_or_join, update_action} ->
+                resource = rel_to_resource(source_dest_or_join, relationship)
+
+                forms ++
+                  related(resource, action_name, cycle_preventer) ++
+                  [
+                    {:_update,
+                     [
+                       resource: resource,
+                       type: :single,
+                       data: resource.__struct__(),
+                       update_action: update_action
+                     ]}
+                  ]
+            end
+          end
         )
-        |> add_join_form(relationship, rest)
     end
   end
 
@@ -147,17 +199,7 @@ defmodule AshPhoenix.Form.Auto do
         opts
 
       [{source_dest_or_join, action_name} | rest] ->
-        resource =
-          case source_dest_or_join do
-            :source ->
-              relationship.source
-
-            :destination ->
-              relationship.destination
-
-            :join ->
-              relationship.through
-          end
+        resource = rel_to_resource(source_dest_or_join, relationship)
 
         opts
         |> Keyword.put(:create_resource, resource)
@@ -181,17 +223,7 @@ defmodule AshPhoenix.Form.Auto do
         opts
 
       [{source_dest_or_join, action_name} | rest] ->
-        resource =
-          case source_dest_or_join do
-            :source ->
-              relationship.source
-
-            :destination ->
-              relationship.destination
-
-            :join ->
-              relationship.through
-          end
+        resource = rel_to_resource(source_dest_or_join, relationship)
 
         opts
         |> Keyword.put(:update_resource, resource)
@@ -215,6 +247,7 @@ defmodule AshPhoenix.Form.Auto do
         Keyword.update!(opts, :forms, fn forms ->
           Keyword.put(forms, :_join,
             resource: relationship.through,
+            type: :single,
             data: &get_join(&1, &2, relationship),
             update_action: action.name
           )
@@ -232,8 +265,9 @@ defmodule AshPhoenix.Form.Auto do
         Keyword.update!(opts, :forms, fn forms ->
           Keyword.put(forms, :_join,
             resource: relationship.through,
+            type: :single,
             data: &get_join(&1, &2, relationship),
-            create_action: action.name,
+            destroy_action: action.name,
             merge?: true
           )
         end)
@@ -270,6 +304,19 @@ defmodule AshPhoenix.Form.Auto do
         value ->
           value
       end
+    end
+  end
+
+  defp rel_to_resource(source_dest_or_join, relationship) do
+    case source_dest_or_join do
+      :source ->
+        relationship.source
+
+      :destination ->
+        relationship.destination
+
+      :join ->
+        relationship.through
     end
   end
 
