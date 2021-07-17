@@ -2,7 +2,7 @@ defmodule AshPhoenix.AutoFormTest do
   use ExUnit.Case
 
   alias AshPhoenix.Form.Auto
-  alias AshPhoenix.Test.{Api, Comment, Post}
+  alias AshPhoenix.Test.{Api, Post}
   import AshPhoenix.Form, only: [update_opts: 1]
 
   test "it works for simple relationships" do
@@ -11,6 +11,18 @@ defmodule AshPhoenix.AutoFormTest do
       |> auto_forms(:create)
       |> update_opts()
       |> Keyword.get(:forms)
+
+    assert forms[:comments][:update_action] == :update
+    assert forms[:comments][:create_action] == :create
+    assert forms[:linked_posts][:update_action] == :update
+    assert forms[:linked_posts][:create_action] == :create
+  end
+
+  test "it works for simple relationships when toggled" do
+    forms =
+      Post
+      |> AshPhoenix.Form.for_create(:create, forms: [auto?: true])
+      |> Map.get(:form_keys)
 
     assert forms[:comments][:update_action] == :update
     assert forms[:comments][:create_action] == :create

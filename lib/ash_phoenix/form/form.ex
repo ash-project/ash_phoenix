@@ -267,6 +267,7 @@ defmodule AshPhoenix.Form do
   def for_create(resource, action, opts \\ []) when is_atom(resource) do
     opts =
       opts
+      |> add_auto(resource, action)
       |> update_opts()
       |> validate_opts_with_extra_keys(@for_opts)
       |> forms_for_type(:create)
@@ -321,6 +322,7 @@ defmodule AshPhoenix.Form do
   def for_update(%resource{} = data, action, opts \\ []) do
     opts =
       opts
+      |> add_auto(resource, action)
       |> update_opts()
       |> validate_opts_with_extra_keys(@for_opts)
       |> forms_for_type(:update)
@@ -371,6 +373,7 @@ defmodule AshPhoenix.Form do
   def for_destroy(%resource{} = data, action, opts \\ []) do
     opts =
       opts
+      |> add_auto(resource, action)
       |> update_opts()
       |> validate_opts_with_extra_keys(@for_opts)
       |> forms_for_type(:destroy)
@@ -432,6 +435,7 @@ defmodule AshPhoenix.Form do
     else
       opts =
         opts
+        |> add_auto(resource, action)
         |> update_opts()
         |> validate_opts_with_extra_keys(@for_opts)
         |> forms_for_type(:read)
@@ -854,12 +858,16 @@ defmodule AshPhoenix.Form do
   def update_opts(opts) do
     if opts[:forms] do
       Keyword.update!(opts, :forms, fn forms ->
-        Enum.map(forms, fn {key, opts} ->
-          if opts[:updater] do
-            {key, Keyword.delete(opts[:updater].(opts), :updater)}
-          else
-            {key, opts}
-          end
+        Enum.map(forms, fn
+          {:auto?, value} ->
+            {:auto?, value}
+
+          {key, opts} ->
+            if opts[:updater] do
+              {key, Keyword.delete(opts[:updater].(opts), :updater)}
+            else
+              {key, opts}
+            end
         end)
       end)
     else
@@ -1044,6 +1052,23 @@ defmodule AshPhoenix.Form do
 
   defp do_add_form(_form, path, _opts, trail) do
     raise ArgumentError, message: "Invalid Path: #{inspect(Enum.reverse(trail, path))}"
+  end
+
+  defp add_auto(opts, resource, action) do
+    if opts[:forms][:auto?] do
+      Keyword.update!(opts, :forms, fn forms ->
+        auto =
+          resource
+          |> AshPhoenix.Form.Auto.auto(action)
+          |> Enum.reject(fn {key, _} -> Keyword.has_key?(forms, key) end)
+
+        forms
+        |> Keyword.delete(:auto?)
+        |> Enum.concat(auto)
+      end)
+    else
+      opts
+    end
   end
 
   @spec set_validity(t()) :: t()
@@ -1376,39 +1401,6 @@ defmodule AshPhoenix.Form do
         end
       end)
     end
-
-    # else
-    #   create_action =
-    #     opts[:create_action] ||
-    #       raise AshPhoenix.Form.NoActionConfigured,
-    #         path: Enum.reverse(trail, Enum.reverse(trail, [key])),
-    #         action: :create
-
-    #   resource =
-    #     opts[:create_resource] || opts[:resource] ||
-    #       raise AshPhoenix.Form.NoResourceConfigured,
-    #         path: Enum.reverse(trail, [key])
-
-    #   if (opts[:type] || :single) == :single do
-    #     for_create(resource, create_action,
-    #       params: form_params,
-    #       forms: opts[:forms] || [],
-    #       errors: error?,
-    #       prev_data_trail: prev_data_trail
-    #     )
-    #   else
-    #     form_params
-    #     |> indexed_list()
-    #     |> Enum.map(fn form_params ->
-    #       for_create(resource, create_action,
-    #         params: form_params,
-    #         forms: opts[:forms] || [],
-    #         errors: error?,
-    #         prev_data_trail: prev_data_trail
-    #       )
-    #     end)
-    #   end
-    # end
   end
 
   defp handle_form_with_params_and_data(opts, form_params, key, trail, prev_data_trail, error?) do
