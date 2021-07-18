@@ -1209,6 +1209,8 @@ defmodule AshPhoenix.Form do
             %{new_form | id: form.id <> "[#{key}]"}
 
           :list ->
+            forms = List.wrap(forms)
+
             if opts[:prepend] do
               [new_form | forms]
             else
