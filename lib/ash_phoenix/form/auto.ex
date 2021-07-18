@@ -46,7 +46,7 @@ defmodule AshPhoenix.Form.Auto do
   However, you may also want to include the relevant fields for the update that would subsequently occur. To that end, a special
   nested form called `:_update` is created, that uses an empty instance of that resource as the base of its changeset. This may require
   some manual manipulation of that data before rendering the relevant form because it assumes all the default values. To solve for this,
-  if you are using liveview, you could actually look up the record using the input from the read action, and then use `AshPhoenix.update_form/3`
+  if you are using liveview, you could actually look up the record using the input from the read action, and then use `AshPhoenix.Form.update_form/3`
   to set that looked up record as the data of the `_update` form.
 
   ### Many to Many Relationshisp

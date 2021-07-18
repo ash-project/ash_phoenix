@@ -77,8 +77,7 @@ defmodule AshPhoenix.FormTest do
           ]
         )
         |> Form.add_form(:post, params: %{})
-        |> Form.validate(%{"text" => "text", "post" => %{}})
-        |> Form.submit(Api)
+        |> Form.submit(Api, params: %{"text" => "text", "post" => %{}})
         |> elem(1)
         |> form_for("action")
 

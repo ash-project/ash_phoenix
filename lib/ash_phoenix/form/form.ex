@@ -601,7 +601,26 @@ defmodule AshPhoenix.Form do
     ],
     params: [
       type: :any,
-      doc: "Override the params used for submit. Defaults to `AshPhoenix.Form.params(form)`"
+      doc: """
+      If specified, `validate/3` is called with the new params before submitting the form.
+
+      This is a shortcut to avoid needing to explicitly validate before every submit.
+
+      For example:
+
+      ```elixir
+      form
+      |> AshPhoenix.Form.validate(params)
+      |> AshPhoenix.Form.submit(Api)
+      ```
+
+      Is the same as:
+
+      ```elixir
+      form
+      |> AshPhoenix.Form.submit(Api, params: params)
+      ```
+      """
     ],
     before_submit: [
       type: {:fun, 1},
@@ -626,6 +645,17 @@ defmodule AshPhoenix.Form do
   @spec submit(t(), Ash.Api.t(), Keyword.t()) ::
           {:ok, Ash.Resource.record()} | :ok | {:error, t()}
   def submit(form, api, opts \\ []) do
+    form =
+      if opts[:params] do
+        AshPhoenix.Form.validate(
+          form,
+          opts[:params],
+          Keyword.take(opts, Keyword.keys(@validate_opts))
+        )
+      else
+        form
+      end
+
     opts = validate_opts_with_extra_keys(opts, @submit_opts)
     changeset_opts = Keyword.drop(form.opts, [:forms, :errors, :id, :method, :for, :as])
     before_submit = opts[:before_submit] || (& &1)
@@ -639,7 +669,7 @@ defmodule AshPhoenix.Form do
             form.resource
             |> Ash.Changeset.for_create(
               form.source.action.name,
-              opts[:params] || params(form),
+              params(form),
               changeset_opts
             )
             |> before_submit.()
@@ -649,7 +679,7 @@ defmodule AshPhoenix.Form do
             form.data
             |> Ash.Changeset.for_update(
               form.source.action.name,
-              opts[:params] || params(form),
+              params(form),
               changeset_opts
             )
             |> before_submit.()
@@ -659,7 +689,7 @@ defmodule AshPhoenix.Form do
             form.data
             |> Ash.Changeset.for_destroy(
               form.source.action.name,
-              opts[:params] || params(form),
+              params(form),
               changeset_opts
             )
             |> before_submit.()
@@ -669,7 +699,7 @@ defmodule AshPhoenix.Form do
             form.resource
             |> Ash.Query.for_read(
               form.source.action.name,
-              opts[:params] || params(form),
+              params(form),
               changeset_opts
             )
             |> before_submit.()
@@ -843,6 +873,22 @@ defmodule AshPhoenix.Form do
       end
     else
       raise Ash.Error.to_ash_error(form.source.errors)
+    end
+  end
+
+  @doc """
+  Sets the data of the form, in addition to the data of the underlying source, if applicable.
+
+  Queries do not track data (because that wouldn't make sense), so this will not update the data
+  for read actions
+  """
+  def set_data(form, data) do
+    case form.source do
+      %Ash.Changeset{} = source ->
+        %{form | data: data, source: %{source | data: data}}
+
+      %Ash.Query{} ->
+        %{form | data: data}
     end
   end
 
