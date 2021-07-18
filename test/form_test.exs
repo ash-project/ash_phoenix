@@ -16,6 +16,11 @@ defmodule AshPhoenix.FormTest do
 
       assert FormData.input_value(form.source, form, :text) == "text"
     end
+
+    test "it sets the default id of a form" do
+      assert Form.for_create(Post, :create).id == "form"
+      assert Form.for_create(Post, :create, as: "post").id == "post"
+    end
   end
 
   describe "errors" do

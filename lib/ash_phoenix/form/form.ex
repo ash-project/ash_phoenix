@@ -174,8 +174,8 @@ defmodule AshPhoenix.Form do
     ],
     id: [
       type: :string,
-      default: "form",
-      doc: "The html id of the form."
+      doc:
+        "The html id of the form. Defaults to the value of `:as` if provided, otherwise \"form\""
     ],
     transform_errors: [
       type: {:fun, 2},
