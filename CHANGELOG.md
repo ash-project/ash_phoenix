@@ -5,6 +5,57 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.24](https://github.com/ash-project/ash_phoenix/compare/v0.4.23-rc.1...v0.4.24) (2021-07-18)
+
+
+
+
+### Bug Fixes:
+
+* Fix default form id when :as provided (#12)
+
+* various auto form fixes
+
+* always pass forms down
+
+* show forms on single
+
+* always List.wrap() forms
+
+* set manage_opts properly
+
+* don't set data unless necessary
+
+* Wrap single items on to_form (#8)
+
+* don't assume an empty map is an indexed map
+
+### Improvements:
+
+* alter behavior of `params` option to submit
+
+* add `set_data/2`
+
+* lots of improvements around errors
+
+* track submission states
+
+* add `AshPhoenix.update_form/3`
+
+* id defaults to name
+
+* add `auto?: true` flag
+
+* update to latest ash
+
+* add destroy error message
+
+* first edition of auto forms
+
+* refactor forms with new data structure `AshPhoenix.Form` (#6)
+
+* add `use_data?` opt to `add_related`
+
 ## [v0.4.23-rc.1](https://github.com/ash-project/ash_phoenix/compare/v0.4.23-rc.0...v0.4.23-rc.1) (2021-07-18)
 
 
