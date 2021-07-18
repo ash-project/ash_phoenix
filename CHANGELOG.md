@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.5.1](https://github.com/ash-project/ash_phoenix/compare/v0.5.0...v0.5.1) (2021-07-18)
+
+
+
+
+### Bug Fixes:
+
+* set form aliases properly
+
+* ensure existing forms is a list before adding
+
+### Improvements:
+
+* move `api` to initial form creation option
+
 ## [v0.5.0](https://github.com/ash-project/ash_phoenix/compare/v0.4.24...v0.5.0) (2021-07-18)
 ### Breaking Changes:
 
