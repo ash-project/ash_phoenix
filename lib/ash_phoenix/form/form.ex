@@ -128,6 +128,7 @@ defmodule AshPhoenix.Form do
     :data,
     :form_keys,
     :forms,
+    :api,
     :method,
     :submit_errors,
     :opts,
@@ -165,6 +166,11 @@ defmodule AshPhoenix.Form do
     forms: [
       type: :keyword_list,
       doc: "Nested form configurations. See for_create/3 docs for more."
+    ],
+    api: [
+      type: :atom,
+      doc:
+        "The api module to use for form submission. If not set, calls to `Form.submit/2` will fail"
     ],
     as: [
       type: :string,
@@ -318,8 +324,6 @@ defmodule AshPhoenix.Form do
       |> validate_opts_with_extra_keys(@for_opts)
       |> forms_for_type(:create)
 
-    {forms, params} = handle_forms(opts[:params] || %{}, opts[:forms] || [], !!opts[:errors], [])
-
     changeset_opts =
       Keyword.drop(opts, [
         :forms,
@@ -331,24 +335,55 @@ defmodule AshPhoenix.Form do
         :as
       ])
 
+    manage_relationship_source_changeset =
+      if Enum.any?(opts[:forms] || [], fn {_, config} ->
+           config[:managed_relationship]
+         end) do
+        resource
+        |> Ash.Changeset.new()
+        |> set_managed_relationship_context(opts)
+        |> Ash.Changeset.for_create(
+          action,
+          opts[:params] || %{},
+          changeset_opts
+        )
+      end
+
+    name = opts[:as] || "form"
+    id = opts[:id] || opts[:as] || "form"
+
+    {forms, params} =
+      handle_forms(
+        opts[:params] || %{},
+        opts[:forms] || [],
+        !!opts[:errors],
+        [],
+        manage_relationship_source_changeset,
+        name,
+        id
+      )
+
     %__MODULE__{
       resource: resource,
       action: action,
       type: :create,
+      api: opts[:api],
       params: params,
       errors: opts[:errors],
       transform_errors: opts[:transform_errors],
-      name: opts[:as] || "form",
+      name: name,
       forms: forms,
       form_keys: List.wrap(opts[:forms]),
-      id: opts[:id] || opts[:as] || "form",
+      id: id,
       method: opts[:method] || form_for_method(:create),
       opts: opts,
       source:
-        Ash.Changeset.for_create(
-          resource,
+        resource
+        |> Ash.Changeset.new()
+        |> set_managed_relationship_context(opts)
+        |> Ash.Changeset.for_create(
           action,
-          opts[:params] || %{},
+          params,
           changeset_opts
         )
     }
@@ -373,19 +408,45 @@ defmodule AshPhoenix.Form do
       |> validate_opts_with_extra_keys(@for_opts)
       |> forms_for_type(:update)
 
-    {forms, params} =
-      handle_forms(opts[:params] || %{}, opts[:forms] || [], !!opts[:errors], [
-        data | opts[:prev_data_trail] || []
-      ])
-
     changeset_opts =
       Keyword.drop(opts, [:forms, :transform_errors, :errors, :id, :method, :for, :as])
+
+    manage_relationship_source_changeset =
+      if Enum.any?(opts[:forms] || [], fn {_, config} ->
+           config[:managed_relationship]
+         end) do
+        data
+        |> Ash.Changeset.new()
+        |> set_managed_relationship_context(opts)
+        |> Ash.Changeset.for_update(
+          action,
+          opts[:params] || %{},
+          changeset_opts
+        )
+      end
+
+    name = opts[:as] || "form"
+    id = opts[:id] || opts[:as] || "form"
+
+    {forms, params} =
+      handle_forms(
+        opts[:params] || %{},
+        opts[:forms] || [],
+        !!opts[:errors],
+        [
+          data | opts[:prev_data_trail] || []
+        ],
+        manage_relationship_source_changeset,
+        name,
+        id
+      )
 
     %__MODULE__{
       resource: resource,
       data: data,
       action: action,
       type: :update,
+      api: opts[:api],
       params: params,
       errors: opts[:errors],
       transform_errors: opts[:transform_errors],
@@ -393,11 +454,13 @@ defmodule AshPhoenix.Form do
       form_keys: List.wrap(opts[:forms]),
       method: opts[:method] || form_for_method(:update),
       opts: opts,
-      id: opts[:id] || opts[:as] || "form",
-      name: opts[:as] || "form",
+      id: id,
+      name: name,
       source:
-        Ash.Changeset.for_update(
-          data,
+        data
+        |> Ash.Changeset.new()
+        |> set_managed_relationship_context(opts)
+        |> Ash.Changeset.for_update(
           action,
           params,
           changeset_opts
@@ -424,13 +487,38 @@ defmodule AshPhoenix.Form do
       |> validate_opts_with_extra_keys(@for_opts)
       |> forms_for_type(:destroy)
 
-    {forms, params} =
-      handle_forms(opts[:params] || %{}, opts[:forms] || [], !!opts[:errors], [
-        data | opts[:prev_data_trail] || []
-      ])
-
     changeset_opts =
       Keyword.drop(opts, [:forms, :transform_errors, :errors, :id, :method, :for, :as])
+
+    manage_relationship_source_changeset =
+      if Enum.any?(opts[:forms] || [], fn {_, config} ->
+           config[:managed_relationship]
+         end) do
+        data
+        |> Ash.Changeset.new()
+        |> set_managed_relationship_context(opts)
+        |> Ash.Changeset.for_update(
+          action,
+          opts[:params] || %{},
+          changeset_opts
+        )
+      end
+
+    name = opts[:as] || "form"
+    id = opts[:id] || opts[:as] || "form"
+
+    {forms, params} =
+      handle_forms(
+        opts[:params] || %{},
+        opts[:forms] || [],
+        !!opts[:errors],
+        [
+          data | opts[:prev_data_trail] || []
+        ],
+        manage_relationship_source_changeset,
+        name,
+        id
+      )
 
     %__MODULE__{
       resource: resource,
@@ -441,14 +529,17 @@ defmodule AshPhoenix.Form do
       errors: opts[:errors],
       transform_errors: opts[:transform_errors],
       forms: forms,
-      name: opts[:as] || "form",
-      id: opts[:id] || opts[:as] || "form",
+      name: name,
+      id: id,
+      api: opts[:api],
       method: opts[:method] || form_for_method(:destroy),
       form_keys: List.wrap(opts[:forms]),
       opts: opts,
       source:
-        Ash.Changeset.for_destroy(
-          data,
+        data
+        |> Ash.Changeset.new()
+        |> set_managed_relationship_context(opts)
+        |> Ash.Changeset.for_destroy(
           action,
           params,
           changeset_opts
@@ -483,7 +574,11 @@ defmodule AshPhoenix.Form do
       |> validate_opts_with_extra_keys(@for_opts)
       |> forms_for_type(:read)
 
-    {forms, params} = handle_forms(opts[:params] || %{}, opts[:forms] || [], !!opts[:errors], [])
+    name = opts[:as] || "form"
+    id = opts[:id] || opts[:as] || "form"
+
+    {forms, params} =
+      handle_forms(opts[:params] || %{}, opts[:forms] || [], !!opts[:errors], [], nil, name, id)
 
     query_opts =
       Keyword.drop(opts, [
@@ -503,10 +598,11 @@ defmodule AshPhoenix.Form do
       params: params,
       errors: opts[:errors],
       transform_errors: opts[:transform_errors],
-      name: opts[:as] || "form",
+      name: name,
       forms: forms,
       form_keys: List.wrap(opts[:forms]),
-      id: opts[:id] || opts[:as] || "form",
+      id: id,
+      api: opts[:api],
       method: opts[:method] || form_for_method(:create),
       opts: opts,
       source:
@@ -611,14 +707,14 @@ defmodule AshPhoenix.Form do
       ```elixir
       form
       |> AshPhoenix.Form.validate(params)
-      |> AshPhoenix.Form.submit(Api)
+      |> AshPhoenix.Form.submit()
       ```
 
       Is the same as:
 
       ```elixir
       form
-      |> AshPhoenix.Form.submit(Api, params: params)
+      |> AshPhoenix.Form.submit(params: params)
       ```
       """
     ],
@@ -630,7 +726,7 @@ defmodule AshPhoenix.Form do
   ]
 
   @doc """
-  Submits the form by calling the appropriate function on the provided api.
+  Submits the form by calling the appropriate function on the configured api.
 
   For example, a form created with `for_update/3` will call `api.update(changeset)`, where
   changeset is the result of passing the `Form.params/3` into `Ash.Changeset.for_update/4`.
@@ -642,9 +738,9 @@ defmodule AshPhoenix.Form do
 
   #{Ash.OptionsHelpers.docs(@submit_opts)}
   """
-  @spec submit(t(), Ash.Api.t(), Keyword.t()) ::
+  @spec submit(t(), Keyword.t()) ::
           {:ok, Ash.Resource.record()} | :ok | {:error, t()}
-  def submit(form, api, opts \\ []) do
+  def submit(form, opts \\ []) do
     form =
       if opts[:params] do
         AshPhoenix.Form.validate(
@@ -663,6 +759,17 @@ defmodule AshPhoenix.Form do
     if form.valid? || opts[:force?] do
       form = clear_errors(form)
 
+      unless form.api do
+        raise """
+        No Api configured, but one is required to submit the form.
+
+        For example:
+
+
+            Form.for_create(Resource, :action, api: MyApp.MyApi)
+        """
+      end
+
       result =
         case form.type do
           :create ->
@@ -673,7 +780,7 @@ defmodule AshPhoenix.Form do
               changeset_opts
             )
             |> before_submit.()
-            |> api.create()
+            |> form.api.create()
 
           :update ->
             form.data
@@ -683,7 +790,7 @@ defmodule AshPhoenix.Form do
               changeset_opts
             )
             |> before_submit.()
-            |> api.update()
+            |> form.api.update()
 
           :destroy ->
             form.data
@@ -693,7 +800,7 @@ defmodule AshPhoenix.Form do
               changeset_opts
             )
             |> before_submit.()
-            |> api.destroy()
+            |> form.api.destroy()
 
           :read ->
             form.resource
@@ -703,7 +810,7 @@ defmodule AshPhoenix.Form do
               changeset_opts
             )
             |> before_submit.()
-            |> api.create()
+            |> form.api.create()
         end
 
       case result do
@@ -1201,12 +1308,13 @@ defmodule AshPhoenix.Form do
         new_form =
           for_action(resource, action,
             params: opts[:params] || %{},
-            forms: config[:forms] || []
+            forms: config[:forms] || [],
+            manage_relationship_source: manage_relationship_source(form, config)
           )
 
         case config[:type] || :single do
           :single ->
-            %{new_form | id: form.id <> "[#{key}]"}
+            %{new_form | name: form.name <> "[#{key}]", id: form.id <> "_#{key}"}
 
           :list ->
             forms = List.wrap(forms)
@@ -1218,7 +1326,11 @@ defmodule AshPhoenix.Form do
             end
             |> Enum.with_index()
             |> Enum.map(fn {nested_form, index} ->
-              %{nested_form | id: form.id <> "[#{key}][#{index}]"}
+              %{
+                nested_form
+                | name: form.name <> "[#{key}][#{index}]",
+                  id: form.id <> "_#{key}_#{index}"
+              }
             end)
         end
       end)
@@ -1228,6 +1340,38 @@ defmodule AshPhoenix.Form do
 
   defp do_add_form(_form, path, _opts, trail) do
     raise ArgumentError, message: "Invalid Path: #{inspect(Enum.reverse(trail, path))}"
+  end
+
+  defp manage_relationship_source(%Ash.Changeset{} = changeset, config) do
+    case config[:managed_relationship] do
+      {source, relationship} ->
+        (changeset.context[:manage_relationship_source] || []) ++
+          [{source, relationship, changeset}]
+
+      _ ->
+        nil
+    end
+  end
+
+  defp manage_relationship_source(form, config) do
+    case config[:managed_relationship] do
+      {source, relationship} when form.type != :read ->
+        (form.source.context[:manage_relationship_source] || []) ++
+          [{source, relationship, form.source}]
+
+      _ ->
+        nil
+    end
+  end
+
+  defp set_managed_relationship_context(changeset, opts) do
+    if opts[:manage_relationship_source] do
+      Ash.Changeset.set_context(changeset, %{
+        manage_relationship_source: opts[:manage_relationship_source]
+      })
+    else
+      changeset
+    end
   end
 
   defp add_form_resource_and_action(opts, config, key, trail) do
@@ -1469,7 +1613,16 @@ defmodule AshPhoenix.Form do
     [key | decoded_to_list(rest)]
   end
 
-  defp handle_forms(params, form_keys, error?, prev_data_trail, trail \\ []) do
+  defp handle_forms(
+         params,
+         form_keys,
+         error?,
+         prev_data_trail,
+         source_changeset,
+         name,
+         id,
+         trail \\ []
+       ) do
     Enum.reduce(form_keys, {%{}, params}, fn {key, opts}, {forms, params} ->
       case fetch_key(params, key) do
         {:ok, form_params} ->
@@ -1481,16 +1634,41 @@ defmodule AshPhoenix.Form do
             key,
             trail,
             prev_data_trail,
-            error?
+            error?,
+            source_changeset,
+            name,
+            id
           )
 
         :error ->
-          handle_form_without_params(forms, params, opts, key, trail, prev_data_trail, error?)
+          handle_form_without_params(
+            forms,
+            params,
+            opts,
+            key,
+            trail,
+            prev_data_trail,
+            error?,
+            source_changeset,
+            name,
+            id
+          )
       end
     end)
   end
 
-  defp handle_form_without_params(forms, params, opts, key, trail, prev_data_trail, error?) do
+  defp handle_form_without_params(
+         forms,
+         params,
+         opts,
+         key,
+         trail,
+         prev_data_trail,
+         error?,
+         source_changeset,
+         name,
+         id
+       ) do
     form_values =
       if Keyword.has_key?(opts, :data) do
         update_action =
@@ -1524,17 +1702,24 @@ defmodule AshPhoenix.Form do
             for_action(data, update_action,
               errors: error?,
               prev_data_trail: prev_data_trail,
-              forms: opts[:forms] || []
+              forms: opts[:forms] || [],
+              manage_relationship_source: manage_relationship_source(source_changeset, opts),
+              as: name <> "[#{key}]",
+              id: id <> "_#{key}"
             )
           else
-            Enum.map(
-              data,
-              &for_action(&1, update_action,
+            data
+            |> Enum.with_index()
+            |> Enum.map(fn {data, index} ->
+              for_action(data, update_action,
                 errors: error?,
                 prev_data_trail: prev_data_trail,
-                forms: opts[:forms] || []
+                forms: opts[:forms] || [],
+                manage_relationship_source: manage_relationship_source(source_changeset, opts),
+                as: name <> "#{key}][#{index}][",
+                id: id <> "_#{key}_#{index}"
               )
-            )
+            end)
           end
         else
           nil
@@ -1558,13 +1743,26 @@ defmodule AshPhoenix.Form do
          key,
          trail,
          prev_data_trail,
-         error?
+         error?,
+         source_changeset,
+         name,
+         id
        ) do
     # if form type is destroy, then we should destroy instead of update
     # merge?: true option on forms that tells it to merge params w/ the parent
     form_values =
       if Keyword.has_key?(opts, :data) do
-        handle_form_with_params_and_data(opts, form_params, key, trail, prev_data_trail, error?)
+        handle_form_with_params_and_data(
+          opts,
+          form_params,
+          key,
+          trail,
+          prev_data_trail,
+          error?,
+          source_changeset,
+          name,
+          id
+        )
       else
         handle_form_with_params_and_no_data(
           opts,
@@ -1572,16 +1770,29 @@ defmodule AshPhoenix.Form do
           key,
           trail,
           prev_data_trail,
-          error?
+          error?,
+          source_changeset,
+          name,
+          id
         )
       end
 
     {Map.put(forms, key, form_values), Map.delete(params, [key, to_string(key)])}
   end
 
-  defp handle_form_with_params_and_no_data(opts, form_params, key, trail, prev_data_trail, error?) do
+  defp handle_form_with_params_and_no_data(
+         opts,
+         form_params,
+         key,
+         trail,
+         prev_data_trail,
+         error?,
+         source_changeset,
+         name,
+         id
+       ) do
     if (opts[:type] || :single) == :single do
-      if form_params["_form_type"] == "read" do
+      if map(form_params)["_form_type"] == "read" do
         read_action =
           opts[:read_action] ||
             raise AshPhoenix.Form.NoActionConfigured,
@@ -1597,7 +1808,10 @@ defmodule AshPhoenix.Form do
           params: form_params,
           forms: opts[:forms] || [],
           errors: error?,
-          prev_data_trail: prev_data_trail
+          prev_data_trail: prev_data_trail,
+          manage_relationship_source: manage_relationship_source(source_changeset, opts),
+          as: name <> "[#{key}]",
+          id: id <> "_#{key}"
         )
       else
         create_action =
@@ -1615,14 +1829,18 @@ defmodule AshPhoenix.Form do
           params: form_params,
           forms: opts[:forms] || [],
           errors: error?,
-          prev_data_trail: prev_data_trail
+          prev_data_trail: prev_data_trail,
+          manage_relationship_source: manage_relationship_source(source_changeset, opts),
+          as: name <> "[#{key}]",
+          id: id <> "_#{key}"
         )
       end
     else
       form_params
       |> indexed_list()
-      |> Enum.map(fn form_params ->
-        if form_params["_form_type"] == "read" do
+      |> Enum.with_index()
+      |> Enum.map(fn {form_params, index} ->
+        if map(form_params)["_form_type"] == "read" do
           read_action =
             opts[:read_action] ||
               raise AshPhoenix.Form.NoActionConfigured,
@@ -1638,7 +1856,10 @@ defmodule AshPhoenix.Form do
             params: form_params,
             forms: opts[:forms] || [],
             errors: error?,
-            prev_data_trail: prev_data_trail
+            prev_data_trail: prev_data_trail,
+            manage_relationship_source: manage_relationship_source(source_changeset, opts),
+            as: name <> "[#{key}][#{index}]",
+            id: id <> "_#{key}_#{index}"
           )
         else
           create_action =
@@ -1656,14 +1877,27 @@ defmodule AshPhoenix.Form do
             params: form_params,
             forms: opts[:forms] || [],
             errors: error?,
-            prev_data_trail: prev_data_trail
+            prev_data_trail: prev_data_trail,
+            manage_relationship_source: manage_relationship_source(source_changeset, opts),
+            as: name <> "[#{key}][#{index}]",
+            id: id <> "_#{key}_#{index}"
           )
         end
       end)
     end
   end
 
-  defp handle_form_with_params_and_data(opts, form_params, key, trail, prev_data_trail, error?) do
+  defp handle_form_with_params_and_data(
+         opts,
+         form_params,
+         key,
+         trail,
+         prev_data_trail,
+         error?,
+         source_changeset,
+         name,
+         id
+       ) do
     data =
       if is_function(opts[:data]) do
         if Enum.at(prev_data_trail, 0) do
@@ -1676,8 +1910,8 @@ defmodule AshPhoenix.Form do
       end
 
     if (opts[:type] || :single) == :single do
-      if data || form_params["_form_type"] == "read" do
-        case form_params["_form_type"] || "update" do
+      if data || map(form_params)["_form_type"] == "read" do
+        case map(form_params)["_form_type"] || "update" do
           # "read" ->
 
           "update" ->
@@ -1691,7 +1925,10 @@ defmodule AshPhoenix.Form do
               params: form_params,
               forms: opts[:forms] || [],
               errors: error?,
-              prev_data_trail: prev_data_trail
+              prev_data_trail: prev_data_trail,
+              manage_relationship_source: manage_relationship_source(source_changeset, opts),
+              as: name <> "[#{key}]",
+              id: id <> "_#{key}"
             )
 
           "destroy" ->
@@ -1705,11 +1942,14 @@ defmodule AshPhoenix.Form do
               params: form_params,
               forms: opts[:forms] || [],
               errors: error?,
-              prev_data_trail: prev_data_trail
+              prev_data_trail: prev_data_trail,
+              manage_relationship_source: manage_relationship_source(source_changeset, opts),
+              as: name <> "[#{key}]",
+              id: id <> "_#{key}"
             )
         end
       else
-        case form_params["_form_type"] || "create" do
+        case map(form_params)["_form_type"] || "create" do
           "create" ->
             create_action =
               opts[:create_action] ||
@@ -1726,7 +1966,10 @@ defmodule AshPhoenix.Form do
               params: form_params,
               forms: opts[:forms] || [],
               errors: error?,
-              prev_data_trail: prev_data_trail
+              prev_data_trail: prev_data_trail,
+              manage_relationship_source: manage_relationship_source(source_changeset, opts),
+              as: name <> "[#{key}]",
+              id: id <> "_#{key}"
             )
 
           "read" ->
@@ -1745,7 +1988,10 @@ defmodule AshPhoenix.Form do
               params: form_params,
               forms: opts[:forms] || [],
               errors: error?,
-              prev_data_trail: prev_data_trail
+              prev_data_trail: prev_data_trail,
+              manage_relationship_source: manage_relationship_source(source_changeset, opts),
+              as: name <> "[#{key}]",
+              id: id <> "_#{key}"
             )
         end
       end
@@ -1754,8 +2000,9 @@ defmodule AshPhoenix.Form do
 
       form_params
       |> indexed_list()
-      |> Enum.reduce({[], List.wrap(data)}, fn form_params, {forms, data} ->
-        if form_params["_form_type"] == "read" do
+      |> Enum.with_index()
+      |> Enum.reduce({[], List.wrap(data)}, fn {form_params, index}, {forms, data} ->
+        if map(form_params)["_form_type"] == "read" do
           resource =
             opts[:read_resource] || opts[:resource] ||
               raise AshPhoenix.Form.NoResourceConfigured,
@@ -1772,7 +2019,10 @@ defmodule AshPhoenix.Form do
               params: form_params,
               forms: opts[:forms] || [],
               errors: error?,
-              prev_data_trail: prev_data_trail
+              prev_data_trail: prev_data_trail,
+              manage_relationship_source: manage_relationship_source(source_changeset, opts),
+              as: name <> "[#{key}][#{index}]",
+              id: id <> "_#{key}_#{index}"
             )
 
           {[form | forms], data}
@@ -1795,14 +2045,17 @@ defmodule AshPhoenix.Form do
                   params: form_params,
                   forms: opts[:forms] || [],
                   errors: error?,
-                  prev_data_trail: prev_data_trail
+                  prev_data_trail: prev_data_trail,
+                  manage_relationship_source: manage_relationship_source(source_changeset, opts),
+                  as: name <> "[#{key}][#{index}]",
+                  id: id <> "_#{key}_#{index}"
                 )
 
               {[form | forms], rest}
 
             [data | rest] ->
               form =
-                if form_params["_form_type"] == "destroy" do
+                if map(form_params)["_form_type"] == "destroy" do
                   destroy_action =
                     opts[:destroy_action] ||
                       raise AshPhoenix.Form.NoActionConfigured,
@@ -1813,7 +2066,11 @@ defmodule AshPhoenix.Form do
                     params: form_params,
                     forms: opts[:forms] || [],
                     errors: error?,
-                    prev_data_trail: prev_data_trail
+                    prev_data_trail: prev_data_trail,
+                    manage_relationship_source:
+                      manage_relationship_source(source_changeset, opts),
+                    as: name <> "[#{key}][#{index}]",
+                    id: id <> "_#{key}_#{index}"
                   )
                 else
                   update_action =
@@ -1826,7 +2083,11 @@ defmodule AshPhoenix.Form do
                     params: form_params,
                     forms: opts[:forms] || [],
                     errors: error?,
-                    prev_data_trail: prev_data_trail
+                    prev_data_trail: prev_data_trail,
+                    manage_relationship_source:
+                      manage_relationship_source(source_changeset, opts),
+                    as: name <> "[#{key}][#{index}]",
+                    id: id <> "_#{key}_#{index}"
                   )
                 end
 
@@ -1849,7 +2110,10 @@ defmodule AshPhoenix.Form do
                   params: form_params,
                   forms: opts[:forms] || [],
                   errors: error?,
-                  prev_data_trail: prev_data_trail
+                  prev_data_trail: prev_data_trail,
+                  manage_relationship_source: manage_relationship_source(source_changeset, opts),
+                  as: name <> "[#{key}][#{index}]",
+                  id: id <> "_#{key}_#{index}"
                 )
 
               {[form | forms], []}
@@ -1860,6 +2124,9 @@ defmodule AshPhoenix.Form do
       |> Enum.reverse()
     end
   end
+
+  defp map(map) when is_map(map), do: map
+  defp map(_), do: %{}
 
   defp call_data(func, prev_data_trail) do
     if is_function(func, 1) do
@@ -1943,22 +2210,13 @@ defmodule AshPhoenix.Form do
       case form.form_keys[field][:type] || :single do
         :single ->
           if form.forms[field] do
-            form.forms[field]
-            |> to_form(opts)
-            |> Map.put(:name, form.name <> "[#{field}]")
-            |> Map.put(:id, form.id <> "_#{field}")
+            to_form(form.forms[field], opts)
           end
 
         :list ->
           form.forms[field]
           |> Kernel.||([])
-          |> Enum.with_index()
-          |> Enum.map(fn {nested_form, index} ->
-            nested_form
-            |> to_form(opts)
-            |> Map.put(:name, form.name <> "[#{field}][#{index}]")
-            |> Map.put(:id, form.id <> "_#{field}_#{index}")
-          end)
+          |> Enum.map(&to_form(&1, opts))
       end
       |> List.wrap()
     end

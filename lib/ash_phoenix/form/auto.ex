@@ -63,7 +63,7 @@ defmodule AshPhoenix.Form.Auto do
     related(resource, action) ++ embedded(resource, action)
   end
 
-  def related(resource, action, cycle_preventer \\ nil) do
+  def related(resource, action) do
     action =
       if is_atom(action) do
         Ash.Resource.Info.action(resource, action)
@@ -71,63 +71,64 @@ defmodule AshPhoenix.Form.Auto do
         action
       end
 
-    cycle_preventer = cycle_preventer || MapSet.new()
+    action.arguments
+    |> Enum.reject(& &1.private?)
+    |> Enum.filter(&(&1.type in [{:array, :map}, :map, Ash.Type.Map, {:array, Ash.Type.Map}]))
+    |> Enum.flat_map(fn arg ->
+      case find_manage_change(arg, action) do
+        nil ->
+          []
 
-    if MapSet.member?(cycle_preventer, [resource, action]) do
-      []
-    else
-      cycle_preventer = MapSet.put(cycle_preventer, [resource, action])
+        manage_opts ->
+          [{arg, manage_opts}]
+      end
+    end)
+    |> Enum.map(fn {arg, manage_opts} ->
+      relationship = Ash.Resource.Info.relationship(resource, manage_opts[:relationship])
 
-      action.arguments
-      |> Enum.reject(& &1.private?)
-      |> Enum.flat_map(fn arg ->
-        case find_manage_change(arg, action) do
-          nil ->
-            []
+      manage_opts = manage_opts[:opts]
 
-          manage_opts ->
-            [{arg, manage_opts}]
+      defaults =
+        if manage_opts[:type] do
+          Ash.Changeset.manage_relationship_opts(manage_opts[:type])
+        else
+          []
         end
-      end)
-      |> Enum.map(fn {arg, manage_opts} ->
-        relationship = Ash.Resource.Info.relationship(resource, manage_opts[:relationship])
-        manage_opts = manage_opts[:opts]
 
-        defaults =
-          if manage_opts[:type] do
-            Ash.Changeset.manage_relationship_opts(manage_opts[:type])
+      manage_opts =
+        Ash.Changeset.ManagedRelationshipHelpers.sanitize_opts(
+          relationship,
+          Keyword.merge(defaults, manage_opts)
+        )
+
+      type =
+        case arg.type do
+          {:array, _} -> :list
+          _ -> :single
+        end
+
+      opts = [
+        type: type,
+        forms: [],
+        managed_relationship: {relationship.source, relationship.name},
+        updater: fn opts ->
+          opts =
+            opts
+            |> add_create_action(manage_opts, relationship)
+            |> add_read_action(manage_opts, relationship)
+            |> add_update_action(manage_opts, relationship)
+            |> add_nested_forms()
+
+          if opts[:update_action] || opts[:destroy_action] do
+            Keyword.put(opts, :data, relationship_fetcher(relationship))
           else
-            []
+            opts
           end
+        end
+      ]
 
-        manage_opts =
-          Ash.Changeset.ManagedRelationshipHelpers.sanitize_opts(
-            relationship,
-            Keyword.merge(defaults, manage_opts)
-          )
-
-        opts = [
-          type: cardinality_to_type(relationship.cardinality),
-          forms: [],
-          updater: fn opts ->
-            opts =
-              opts
-              |> add_create_action(manage_opts, relationship, cycle_preventer)
-              |> add_read_action(manage_opts, relationship, cycle_preventer)
-              |> add_update_action(manage_opts, relationship, cycle_preventer)
-              |> add_nested_forms()
-
-            if opts[:update_action] || opts[:destroy_action] do
-              Keyword.put(opts, :data, relationship_fetcher(relationship))
-            else
-              opts
-            end
-          end
-        ]
-
-        {arg.name, opts}
-      end)
-    end
+      {arg.name, opts}
+    end)
   end
 
   defp add_nested_forms(opts) do
@@ -167,7 +168,7 @@ defmodule AshPhoenix.Form.Auto do
     end)
   end
 
-  defp add_read_action(opts, manage_opts, relationship, cycle_preventer) do
+  defp add_read_action(opts, manage_opts, relationship) do
     manage_opts
     |> Ash.Changeset.ManagedRelationshipHelpers.on_lookup_read_action(relationship)
     |> case do
@@ -188,17 +189,19 @@ defmodule AshPhoenix.Form.Auto do
                    relationship
                  ) do
               nil ->
-                forms ++ related(resource, action_name, cycle_preventer)
+                forms ++
+                  auto(resource, action_name)
 
               {source_dest_or_join, update_action} ->
                 resource = rel_to_resource(source_dest_or_join, relationship)
 
                 forms ++
-                  related(resource, action_name, cycle_preventer) ++
+                  auto(resource, action_name) ++
                   [
                     {:_update,
                      [
                        resource: resource,
+                       managed_relationship: {relationship.source, relationship.name},
                        type: :single,
                        data: resource.__struct__(),
                        update_action: update_action
@@ -209,11 +212,12 @@ defmodule AshPhoenix.Form.Auto do
                 resource = relationship.through
 
                 forms ++
-                  related(resource, action_name, cycle_preventer) ++
+                  auto(resource, action_name) ++
                   [
                     {:_update,
                      [
                        resource: resource,
+                       managed_relationship: {relationship.source, relationship.name},
                        type: :single,
                        data: resource.__struct__(),
                        update_action: update_action
@@ -225,7 +229,7 @@ defmodule AshPhoenix.Form.Auto do
     end
   end
 
-  defp add_create_action(opts, manage_opts, relationship, cycle_preventer) do
+  defp add_create_action(opts, manage_opts, relationship) do
     manage_opts
     |> Ash.Changeset.ManagedRelationshipHelpers.on_no_match_destination_actions(relationship)
     |> List.wrap()
@@ -243,13 +247,13 @@ defmodule AshPhoenix.Form.Auto do
         |> Keyword.update!(
           :forms,
           &(&1 ++
-              related(resource, action_name, cycle_preventer))
+              auto(resource, action_name))
         )
         |> add_join_form(relationship, rest)
     end
   end
 
-  defp add_update_action(opts, manage_opts, relationship, cycle_preventer) do
+  defp add_update_action(opts, manage_opts, relationship) do
     manage_opts
     |> Ash.Changeset.ManagedRelationshipHelpers.on_match_destination_actions(relationship)
     |> List.wrap()
@@ -267,7 +271,7 @@ defmodule AshPhoenix.Form.Auto do
         |> Keyword.update!(
           :forms,
           &(&1 ++
-              related(resource, action_name, cycle_preventer))
+              auto(resource, action_name))
         )
         |> add_join_form(relationship, rest)
     end
@@ -283,6 +287,7 @@ defmodule AshPhoenix.Form.Auto do
         Keyword.update!(opts, :forms, fn forms ->
           Keyword.put(forms, :_join,
             resource: relationship.through,
+            managed_relationship: {relationship.source, relationship.name},
             type: :single,
             data: &get_join(&1, &2, relationship),
             update_action: action.name
@@ -293,6 +298,7 @@ defmodule AshPhoenix.Form.Auto do
         Keyword.update!(opts, :forms, fn forms ->
           Keyword.put(forms, :_join,
             resource: relationship.through,
+            managed_relationship: {relationship.source, relationship.name},
             create_action: action.name
           )
         end)
@@ -301,6 +307,7 @@ defmodule AshPhoenix.Form.Auto do
         Keyword.update!(opts, :forms, fn forms ->
           Keyword.put(forms, :_join,
             resource: relationship.through,
+            managed_relationship: {relationship.source, relationship.name},
             type: :single,
             data: &get_join(&1, &2, relationship),
             destroy_action: action.name,
@@ -356,10 +363,7 @@ defmodule AshPhoenix.Form.Auto do
     end
   end
 
-  defp cardinality_to_type(:many), do: :list
-  defp cardinality_to_type(:one), do: :single
-
-  def embedded(resource, action, cycle_preventer \\ nil) do
+  def embedded(resource, action) do
     action =
       if is_atom(action) do
         Ash.Resource.Info.action(resource, action)
@@ -367,76 +371,73 @@ defmodule AshPhoenix.Form.Auto do
         action
       end
 
-    cycle_preventer = cycle_preventer || MapSet.new()
+    resource
+    |> accepted_attributes(action)
+    |> Enum.concat(action.arguments)
+    |> Enum.filter(&Ash.Type.embedded_type?(&1.type))
+    |> Enum.reject(&match?({:array, {:array, _}}, &1.type))
+    |> Enum.map(fn attr ->
+      type =
+        case attr.type do
+          {:array, _} ->
+            :list
 
-    if MapSet.member?(cycle_preventer, [resource, action]) do
-      []
-    else
-      cycle_preventer = MapSet.put(cycle_preventer, [resource, action])
+          _ ->
+            :single
+        end
 
-      resource
-      |> accepted_attributes(action)
-      |> Enum.concat(action.arguments)
-      |> Enum.filter(&Ash.Type.embedded_type?(&1.type))
-      |> Enum.reject(&match?({:array, {:array, _}}, &1.type))
-      |> Enum.map(fn attr ->
-        type =
-          case attr.type do
-            {:array, _} ->
-              :list
+      embed = unwrap_type(attr.type)
 
-            _ ->
-              :single
-          end
-
-        embed = unwrap_type(attr.type)
-
-        data =
-          case type do
-            :list ->
-              fn parent ->
-                if parent do
-                  Map.get(parent, attr.name) || []
-                else
-                  []
-                end
+      data =
+        case type do
+          :list ->
+            fn parent ->
+              if parent do
+                Map.get(parent, attr.name) || []
+              else
+                []
               end
+            end
 
-            :single ->
-              fn parent ->
-                if parent do
-                  Map.get(parent, attr.name)
-                end
+          :single ->
+            fn parent ->
+              if parent do
+                Map.get(parent, attr.name)
               end
-          end
+            end
+        end
 
-        create_action =
-          if attr.constraints[:create_action] do
-            Ash.Resource.Info.action(embed, attr.constraints[:create_action])
-          else
-            Ash.Resource.Info.primary_action(embed, :create)
-          end
+      create_action =
+        if attr.constraints[:create_action] do
+          Ash.Resource.Info.action(embed, attr.constraints[:create_action])
+        else
+          Ash.Resource.Info.primary_action(embed, :create)
+        end
 
-        update_action =
-          if attr.constraints[:update_action] do
-            Ash.Resource.Info.action(embed, attr.constraints[:update_action])
-          else
-            Ash.Resource.Info.primary_action(embed, :update)
-          end
+      update_action =
+        if attr.constraints[:update_action] do
+          Ash.Resource.Info.action(embed, attr.constraints[:update_action])
+        else
+          Ash.Resource.Info.primary_action(embed, :update)
+        end
 
-        {attr.name,
-         [
-           type: type,
-           resource: embed,
-           create_action: create_action.name,
-           update_action: update_action.name,
-           data: data,
-           forms:
-             embedded(embed, create_action, cycle_preventer) ++
-               embedded(embed, update_action, cycle_preventer)
-         ]}
-      end)
-    end
+      {attr.name,
+       [
+         type: type,
+         resource: embed,
+         create_action: create_action.name,
+         update_action: update_action.name,
+         data: data,
+         forms: [],
+         updater: fn opts ->
+           Keyword.update!(opts, :forms, fn forms ->
+             forms ++
+               embedded(embed, create_action) ++
+               embedded(embed, update_action)
+           end)
+         end
+       ]}
+    end)
   end
 
   defp unwrap_type({:array, type}), do: unwrap_type(type)

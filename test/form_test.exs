@@ -47,6 +47,7 @@ defmodule AshPhoenix.FormTest do
       form =
         Comment
         |> Form.for_create(:create,
+          api: Api,
           forms: [
             post: [
               resource: Post,
@@ -56,7 +57,7 @@ defmodule AshPhoenix.FormTest do
         )
         |> Form.add_form(:post, params: %{})
         |> Form.validate(%{"text" => "text", "post" => %{}})
-        |> Form.submit(Api, force?: true)
+        |> Form.submit(force?: true)
         |> elem(1)
         |> form_for("action")
 
@@ -69,6 +70,7 @@ defmodule AshPhoenix.FormTest do
       form =
         Comment
         |> Form.for_create(:create,
+          api: Api,
           forms: [
             post: [
               resource: Post,
@@ -77,7 +79,7 @@ defmodule AshPhoenix.FormTest do
           ]
         )
         |> Form.add_form(:post, params: %{})
-        |> Form.submit(Api, params: %{"text" => "text", "post" => %{}})
+        |> Form.submit(params: %{"text" => "text", "post" => %{}})
         |> elem(1)
         |> form_for("action")
 
@@ -125,6 +127,7 @@ defmodule AshPhoenix.FormTest do
       form =
         Post
         |> Form.for_create(:create,
+          api: Api,
           forms: [
             post: [
               type: :list,
@@ -136,7 +139,7 @@ defmodule AshPhoenix.FormTest do
         )
         |> Form.add_form(:post, params: %{})
         |> Form.validate(%{"text" => "text", "post" => [%{}]})
-        |> Form.submit(Api, force?: true)
+        |> Form.submit(force?: true)
         |> elem(1)
         |> form_for("action")
 
@@ -236,9 +239,9 @@ defmodule AshPhoenix.FormTest do
     test "it runs the action with the params" do
       assert {:ok, %{text: "text"}} =
                Post
-               |> Form.for_create(:create)
+               |> Form.for_create(:create, api: Api)
                |> Form.validate(%{text: "text"})
-               |> Form.submit(Api)
+               |> Form.submit()
     end
   end
 
