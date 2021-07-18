@@ -33,10 +33,10 @@ defmodule AshPhoenix.FormData.Helpers do
     |> Macro.underscore()
   end
 
-  def transform_errors(form, errors, path_filter \\ []) do
+  def transform_errors(form, errors, path_filter \\ nil) do
     errors
     |> Enum.reject(fn error ->
-      Map.has_key?(error, :path) && error.path != path_filter
+      Map.has_key?(error, :path) && path_filter && error.path != path_filter
     end)
     |> Enum.flat_map(&transform_error(form, &1))
     |> Enum.filter(fn

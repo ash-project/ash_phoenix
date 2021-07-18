@@ -171,13 +171,6 @@ defmodule AshPhoenix.Form.Auto do
     manage_opts
     |> Ash.Changeset.ManagedRelationshipHelpers.on_lookup_read_action(relationship)
     |> case do
-      {:join, action, _} ->
-        {:join, action}
-
-      other ->
-        other
-    end
-    |> case do
       nil ->
         opts
 
@@ -190,7 +183,7 @@ defmodule AshPhoenix.Form.Auto do
         |> Keyword.update!(
           :forms,
           fn forms ->
-            case Ash.Changeset.ManagedRelationshipHelpers.on_lookup_read_action(
+            case Ash.Changeset.ManagedRelationshipHelpers.on_lookup_update_action(
                    manage_opts,
                    relationship
                  ) do

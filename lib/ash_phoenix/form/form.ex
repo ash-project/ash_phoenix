@@ -134,7 +134,9 @@ defmodule AshPhoenix.Form do
     :id,
     :transform_errors,
     valid?: false,
-    errors: false
+    errors: false,
+    submitted_once?: false,
+    just_submitted?: false
   ]
 
   @type t :: %__MODULE__{
@@ -154,7 +156,9 @@ defmodule AshPhoenix.Form do
             | (Ash.Changeset.t() | Ash.Query.t(), error :: Ash.Error.t() ->
                  [{field :: atom, message :: String.t(), substituations :: Keyword.t()}]),
           valid?: boolean,
-          errors: boolean
+          errors: boolean,
+          submitted_once?: boolean,
+          just_submitted?: boolean
         }
 
   @for_opts [
@@ -255,6 +259,36 @@ defmodule AshPhoenix.Form do
   end
 
   import AshPhoenix.FormData.Helpers
+
+  @doc "Calls the corresponding `for_*` function depending on the action type"
+  def for_action(resource_or_data, action, opts) do
+    {resource, data} =
+      case resource_or_data do
+        module when is_atom(resource_or_data) -> {module, module.__struct__()}
+        %resource{} = data -> {resource, data}
+      end
+
+    type =
+      if is_atom(action) do
+        Ash.Resource.Info.action(resource, action).type
+      else
+        action.type
+      end
+
+    case type do
+      :create ->
+        for_create(resource, action, opts)
+
+      :update ->
+        for_update(data, action, opts)
+
+      :destroy ->
+        for_destroy(data, action, opts)
+
+      :read ->
+        for_read(resource, action, opts)
+    end
+  end
 
   @doc """
   Creates a form corresponding to a create action on a resource.
@@ -442,53 +476,48 @@ defmodule AshPhoenix.Form do
   """
   @spec for_read(Ash.Resource.t(), action :: atom, opts :: Keyword.t()) :: t()
   def for_read(resource, action, opts \\ []) when is_atom(resource) do
-    if Ash.Resource.Info.action(resource, action).type == :update do
-      for_update(resource.__struct__(), action, opts)
-    else
-      opts =
-        opts
-        |> add_auto(resource, action)
-        |> update_opts()
-        |> validate_opts_with_extra_keys(@for_opts)
-        |> forms_for_type(:read)
+    opts =
+      opts
+      |> add_auto(resource, action)
+      |> update_opts()
+      |> validate_opts_with_extra_keys(@for_opts)
+      |> forms_for_type(:read)
 
-      {forms, params} =
-        handle_forms(opts[:params] || %{}, opts[:forms] || [], !!opts[:errors], [])
+    {forms, params} = handle_forms(opts[:params] || %{}, opts[:forms] || [], !!opts[:errors], [])
 
-      query_opts =
-        Keyword.drop(opts, [
-          :forms,
-          :transform_errors,
-          :errors,
-          :id,
-          :method,
-          :for,
-          :as
-        ])
+    query_opts =
+      Keyword.drop(opts, [
+        :forms,
+        :transform_errors,
+        :errors,
+        :id,
+        :method,
+        :for,
+        :as
+      ])
 
-      %__MODULE__{
-        resource: resource,
-        action: action,
-        type: :create,
-        params: params,
-        errors: opts[:errors],
-        transform_errors: opts[:transform_errors],
-        name: opts[:as] || "form",
-        forms: forms,
-        form_keys: List.wrap(opts[:forms]),
-        id: opts[:id] || opts[:as] || "form",
-        method: opts[:method] || form_for_method(:create),
-        opts: opts,
-        source:
-          Ash.Query.for_read(
-            resource,
-            action,
-            opts[:params] || %{},
-            query_opts
-          )
-      }
-      |> set_validity()
-    end
+    %__MODULE__{
+      resource: resource,
+      action: action,
+      type: :read,
+      params: params,
+      errors: opts[:errors],
+      transform_errors: opts[:transform_errors],
+      name: opts[:as] || "form",
+      forms: forms,
+      form_keys: List.wrap(opts[:forms]),
+      id: opts[:id] || opts[:as] || "form",
+      method: opts[:method] || form_for_method(:create),
+      opts: opts,
+      source:
+        Ash.Query.for_read(
+          resource,
+          action,
+          opts[:params] || %{},
+          query_opts
+        )
+    }
+    |> set_validity()
   end
 
   @doc "A utility to get the list of attributes the action underlying the form accepts"
@@ -498,7 +527,16 @@ defmodule AshPhoenix.Form do
 
   @doc "A utility to get the list of arguments the action underlying the form accepts"
   def arguments(form) do
-    Enum.reject(form.source.action.arguments, & &1.private?)
+    action =
+      case form.source.action do
+        action when is_atom(action) ->
+          Ash.Resource.Info.action(form.resource, action)
+
+        action ->
+          action
+      end
+
+    Enum.reject(action.arguments, & &1.private?)
   end
 
   @validate_opts [
@@ -526,23 +564,33 @@ defmodule AshPhoenix.Form do
       |> Keyword.put(:params, new_params)
       |> Keyword.put(:forms, form.form_keys)
 
-    case form.type do
-      :create ->
-        for_create(
-          form.resource,
-          form.action,
-          new_form_opts
-        )
+    new_form =
+      case form.type do
+        :create ->
+          for_create(
+            form.resource,
+            form.action,
+            new_form_opts
+          )
 
-      :update ->
-        for_update(form.data, form.action, new_form_opts)
+        :update ->
+          for_update(form.data, form.action, new_form_opts)
 
-      :destroy ->
-        for_destroy(form.data, form.action, new_form_opts)
+        :destroy ->
+          for_destroy(form.data, form.action, new_form_opts)
 
-      :read ->
-        for_read(form.resource, form.action, new_form_opts)
-    end
+        :read ->
+          for_read(form.resource, form.action, new_form_opts)
+      end
+
+    %{
+      new_form
+      | submitted_once?: form.submitted_once?,
+        submit_errors: form.submit_errors
+    }
+    |> update_all_forms(fn form ->
+      %{form | just_submitted?: false}
+    end)
   end
 
   @submit_opts [
@@ -637,7 +685,14 @@ defmodule AshPhoenix.Form do
             |> List.wrap()
             |> Enum.flat_map(&expand_error/1)
 
-          {:error, set_action_errors(%{form | source: query}, errors)}
+          {:error,
+           set_action_errors(
+             %{form | source: query},
+             errors
+           )
+           |> update_all_forms(fn form ->
+             %{form | just_submitted?: true, submitted_once?: true}
+           end)}
 
         {:error, %{changeset: changeset} = error} when form.type != :read ->
           changeset = %{changeset | errors: []}
@@ -647,13 +702,23 @@ defmodule AshPhoenix.Form do
             |> List.wrap()
             |> Enum.flat_map(&expand_error/1)
 
-          {:error, set_action_errors(%{form | source: changeset}, errors)}
+          {:error,
+           set_action_errors(
+             %{form | source: changeset},
+             errors
+           )
+           |> update_all_forms(fn form ->
+             %{form | just_submitted?: true, submitted_once?: true}
+           end)}
 
         other ->
           other
       end
     else
-      {:error, form}
+      {:error,
+       form
+       |> update_all_forms(fn form -> %{form | submitted_once?: true, just_submitted?: true} end)
+       |> synthesize_action_errors()}
     end
   end
 
@@ -729,6 +794,8 @@ defmodule AshPhoenix.Form do
                 "#{field}: " <> message
               end)
           end
+        else
+          []
         end
 
       [atom, integer | rest] when is_atom(atom) and is_integer(integer) ->
@@ -923,6 +990,27 @@ defmodule AshPhoenix.Form do
     end
   end
 
+  defp update_all_forms(form, func) do
+    form = func.(form)
+
+    form
+    |> func.()
+    |> Map.update!(:forms, fn forms ->
+      Map.new(forms, fn {key, value} ->
+        case value do
+          %__MODULE__{} = form ->
+            {key, update_all_forms(form, func)}
+
+          list when is_list(list) ->
+            {key, Enum.map(list, &update_all_forms(&1, func))}
+
+          other ->
+            {key, other}
+        end
+      end)
+    end)
+  end
+
   defp do_remove_form(form, [key], _trail) when not is_integer(key) do
     unless form.form_keys[key] do
       raise AshPhoenix.Form.NoFormConfigured,
@@ -1062,18 +1150,10 @@ defmodule AshPhoenix.Form do
       form.forms
       |> Map.put_new(key, default)
       |> Map.update!(key, fn forms ->
-        create_action =
-          config[:create_action] ||
-            raise AshPhoenix.Form.NoActionConfigured,
-              path: Enum.reverse(trail, [key]),
-              action: :create
-
-        resource =
-          config[:create_resource] || config[:resource] ||
-            raise AshPhoenix.Form.NoResourceConfigured, path: Enum.reverse(trail, [key])
+        {resource, action} = add_form_resource_and_action(opts, config, key, trail)
 
         new_form =
-          for_create(resource, create_action,
+          for_action(resource, action,
             params: opts[:params] || %{},
             forms: config[:forms] || []
           )
@@ -1100,6 +1180,56 @@ defmodule AshPhoenix.Form do
 
   defp do_add_form(_form, path, _opts, trail) do
     raise ArgumentError, message: "Invalid Path: #{inspect(Enum.reverse(trail, path))}"
+  end
+
+  defp add_form_resource_and_action(opts, config, key, trail) do
+    action =
+      case opts[:type] || :create do
+        :create ->
+          config[:create_action] ||
+            raise AshPhoenix.Form.NoActionConfigured,
+              path: Enum.reverse(trail, [key]),
+              action: :create
+
+        :update ->
+          config[:update_action] ||
+            raise AshPhoenix.Form.NoActionConfigured,
+              path: Enum.reverse(trail, [key]),
+              action: :update
+
+        :destroy ->
+          config[:destroy_action] ||
+            raise AshPhoenix.Form.NoActionConfigured,
+              path: Enum.reverse(trail, [key]),
+              action: :destroy
+
+        :read ->
+          config[:read_action] ||
+            raise AshPhoenix.Form.NoActionConfigured,
+              path: Enum.reverse(trail, [key]),
+              action: :read
+      end
+
+    resource =
+      case opts[:type] || :create do
+        :create ->
+          config[:create_resource] || config[:resource] ||
+            raise AshPhoenix.Form.NoResourceConfigured, path: Enum.reverse(trail, [key])
+
+        :update ->
+          config[:update_resource] || config[:resource] ||
+            raise AshPhoenix.Form.NoResourceConfigured, path: Enum.reverse(trail, [key])
+
+        :destroy ->
+          config[:destroy_resource] || config[:resource] ||
+            raise AshPhoenix.Form.NoResourceConfigured, path: Enum.reverse(trail, [key])
+
+        :read ->
+          config[:read_resource] || config[:resource] ||
+            raise AshPhoenix.Form.NoResourceConfigured, path: Enum.reverse(trail, [key])
+      end
+
+    {resource, action}
   end
 
   defp add_auto(opts, resource, action) do
@@ -1151,8 +1281,6 @@ defmodule AshPhoenix.Form do
           else
             if forms do
               set_action_errors(forms, errors, path ++ [config[:for] || key])
-            else
-              {key, forms}
             end
           end
 
@@ -1162,6 +1290,32 @@ defmodule AshPhoenix.Form do
     %{form | submit_errors: transform_errors(form, errors, path), forms: new_forms}
   end
 
+  defp synthesize_action_errors(form) do
+    new_forms =
+      form.forms
+      |> Map.new(fn {key, forms} ->
+        new_forms =
+          if is_list(forms) do
+            Enum.map(forms, fn form ->
+              synthesize_action_errors(form)
+            end)
+          else
+            if forms do
+              synthesize_action_errors(forms)
+            end
+          end
+
+        {key, new_forms}
+      end)
+
+    errors =
+      form.source.errors
+      |> List.wrap()
+      |> Enum.flat_map(&expand_error/1)
+
+    %{form | submit_errors: transform_errors(form, errors), forms: new_forms}
+  end
+
   defp expand_error(%class_mod{} = error)
        when class_mod in [
               Ash.Error.Forbidden,
@@ -1169,8 +1323,10 @@ defmodule AshPhoenix.Form do
               Ash.Error.Invalid,
               Ash.Error.Unkonwn
             ] do
-    error.errors
+    Enum.flat_map(error.errors, &expand_error/1)
   end
+
+  defp expand_error(other), do: List.wrap(other)
 
   defp clear_errors(nil), do: nil
 
@@ -1317,7 +1473,7 @@ defmodule AshPhoenix.Form do
 
         if data do
           if (opts[:type] || :single) == :single do
-            for_update(data, update_action,
+            for_action(data, update_action,
               errors: error?,
               prev_data_trail: prev_data_trail,
               forms: opts[:forms] || []
@@ -1325,7 +1481,7 @@ defmodule AshPhoenix.Form do
           else
             Enum.map(
               data,
-              &for_update(&1, update_action,
+              &for_action(&1, update_action,
                 errors: error?,
                 prev_data_trail: prev_data_trail,
                 forms: opts[:forms] || []
@@ -1389,7 +1545,7 @@ defmodule AshPhoenix.Form do
             raise AshPhoenix.Form.NoResourceConfigured,
               path: Enum.reverse(trail, [key])
 
-        for_read(resource, read_action,
+        for_action(resource, read_action,
           params: form_params,
           forms: opts[:forms] || [],
           errors: error?,
@@ -1407,7 +1563,7 @@ defmodule AshPhoenix.Form do
             raise AshPhoenix.Form.NoResourceConfigured,
               path: Enum.reverse(trail, [key])
 
-        for_create(resource, create_action,
+        for_action(resource, create_action,
           params: form_params,
           forms: opts[:forms] || [],
           errors: error?,
@@ -1430,7 +1586,7 @@ defmodule AshPhoenix.Form do
               raise AshPhoenix.Form.NoResourceConfigured,
                 path: Enum.reverse(trail, [key])
 
-          for_read(resource, read_action,
+          for_action(resource, read_action,
             params: form_params,
             forms: opts[:forms] || [],
             errors: error?,
@@ -1448,7 +1604,7 @@ defmodule AshPhoenix.Form do
               raise AshPhoenix.Form.NoResourceConfigured,
                 path: Enum.reverse(trail, [key])
 
-          for_create(resource, create_action,
+          for_action(resource, create_action,
             params: form_params,
             forms: opts[:forms] || [],
             errors: error?,
@@ -1483,7 +1639,7 @@ defmodule AshPhoenix.Form do
                   path: Enum.reverse(trail, Enum.reverse(trail, [key])),
                   action: :update
 
-            for_update(data, update_action,
+            for_action(data, update_action,
               params: form_params,
               forms: opts[:forms] || [],
               errors: error?,
@@ -1497,7 +1653,7 @@ defmodule AshPhoenix.Form do
                   path: Enum.reverse(trail, Enum.reverse(trail, [key])),
                   action: :destroy
 
-            for_destroy(data, destroy_action,
+            for_action(data, destroy_action,
               params: form_params,
               forms: opts[:forms] || [],
               errors: error?,
@@ -1518,7 +1674,7 @@ defmodule AshPhoenix.Form do
                 raise AshPhoenix.Form.NoResourceConfigured,
                   path: Enum.reverse(trail, [key])
 
-            for_create(resource, create_action,
+            for_action(resource, create_action,
               params: form_params,
               forms: opts[:forms] || [],
               errors: error?,
@@ -1537,7 +1693,7 @@ defmodule AshPhoenix.Form do
                   path: Enum.reverse(trail, Enum.reverse(trail, [key])),
                   action: :read
 
-            for_read(resource, read_action,
+            for_action(resource, read_action,
               params: form_params,
               forms: opts[:forms] || [],
               errors: error?,
@@ -1564,7 +1720,7 @@ defmodule AshPhoenix.Form do
                 action: :read
 
           form =
-            for_read(resource, read_action,
+            for_action(resource, read_action,
               params: form_params,
               forms: opts[:forms] || [],
               errors: error?,
@@ -1587,7 +1743,7 @@ defmodule AshPhoenix.Form do
                     path: Enum.reverse(trail, [key])
 
               form =
-                for_create(resource, create_action,
+                for_action(resource, create_action,
                   params: form_params,
                   forms: opts[:forms] || [],
                   errors: error?,
@@ -1605,7 +1761,7 @@ defmodule AshPhoenix.Form do
                         path: Enum.reverse(trail, Enum.reverse(trail, [key])),
                         action: :destroy
 
-                  for_destroy(data, destroy_action,
+                  for_action(data, destroy_action,
                     params: form_params,
                     forms: opts[:forms] || [],
                     errors: error?,
@@ -1618,7 +1774,7 @@ defmodule AshPhoenix.Form do
                         path: Enum.reverse(trail, Enum.reverse(trail, [key])),
                         action: :update
 
-                  for_update(data, update_action,
+                  for_action(data, update_action,
                     params: form_params,
                     forms: opts[:forms] || [],
                     errors: error?,
@@ -1641,7 +1797,7 @@ defmodule AshPhoenix.Form do
                     action: :create
 
               form =
-                for_create(resource, create_action,
+                for_action(resource, create_action,
                   params: form_params,
                   forms: opts[:forms] || [],
                   errors: error?,
@@ -1706,8 +1862,11 @@ defmodule AshPhoenix.Form do
 
       errors =
         if form.errors do
-          form.submit_errors ||
-            transform_errors(form, form.source.errors)
+          if form.just_submitted? do
+            form.submit_errors
+          else
+            transform_errors(form, form.source.errors, [])
+          end
         else
           []
         end
@@ -1775,23 +1934,25 @@ defmodule AshPhoenix.Form do
 
     @impl true
     def input_value(%{source: %Ash.Changeset{} = changeset}, _form, field) do
-      case get_changing_value(changeset, field) do
+      with :error <- get_changing_value(changeset, field),
+           :error <- Ash.Changeset.fetch_argument(changeset, field),
+           :error <- Map.fetch(changeset.params, Atom.to_string(field)),
+           :error <- Map.fetch(changeset.data, field) do
+        nil
+      else
         {:ok, value} ->
           value
-
-        :error ->
-          case Map.fetch(changeset.data, field) do
-            {:ok, value} ->
-              value
-
-            _ ->
-              Ash.Changeset.get_argument(changeset, field)
-          end
       end
     end
 
     def input_value(%{source: %Ash.Query{} = query}, _form, field) do
-      Ash.Query.get_argument(query, field)
+      case Ash.Query.fetch_argument(query, field) do
+        {:ok, value} ->
+          value
+
+        :error ->
+          Map.get(query.params, to_string(field))
+      end
     end
 
     @impl true
