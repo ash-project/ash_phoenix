@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.5.2](https://github.com/ash-project/ash_phoenix/compare/v0.5.1...v0.5.2) (2021-07-19)
+
+
+
+
+### Bug Fixes:
+
+* Fix nested form naming (#14)
+
 ## [v0.5.1](https://github.com/ash-project/ash_phoenix/compare/v0.5.0...v0.5.1) (2021-07-18)
 
 
