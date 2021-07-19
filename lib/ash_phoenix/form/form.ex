@@ -1716,7 +1716,7 @@ defmodule AshPhoenix.Form do
                 prev_data_trail: prev_data_trail,
                 forms: opts[:forms] || [],
                 manage_relationship_source: manage_relationship_source(source_changeset, opts),
-                as: name <> "#{key}][#{index}][",
+                as: name <> "[#{key}][#{index}]",
                 id: id <> "_#{key}_#{index}"
               )
             end)
