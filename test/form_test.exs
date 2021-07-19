@@ -303,6 +303,54 @@ defmodule AshPhoenix.FormTest do
   end
 
   describe "inputs_for` relationships" do
+    test "it should name the fields correctly on `for_update`" do
+      post_id = Ash.UUID.generate()
+      comment_id = Ash.UUID.generate()
+
+      comment = %Comment{
+        text: "text",
+        post: %Post{
+          id: post_id,
+          text: "Some text",
+          comments: [%Comment{id: comment_id}]
+        }
+      }
+
+      form =
+        comment
+        |> Form.for_update(:update,
+          as: "comment",
+          forms: [
+            post: [
+              data: comment.post,
+              type: :single,
+              resource: Post,
+              update_action: :update,
+              create_action: :create,
+              forms: [
+                comments: [
+                  data: & &1.comments,
+                  type: :list,
+                  resource: Comment,
+                  update_action: :update,
+                  create_action: :create
+                ]
+              ]
+            ]
+          ]
+        )
+
+      comments_form =
+        form
+        |> form_for("action")
+        |> inputs_for(:post)
+        |> hd()
+        |> inputs_for(:comments)
+        |> hd()
+
+      assert comments_form.name == "comment[post][comments][0]"
+    end
+
     test "the `type: :single` option should create a form without integer paths" do
       form =
         Comment
@@ -560,7 +608,7 @@ defmodule AshPhoenix.FormTest do
                inputs_for(form_for(form, "action"), :post)
     end
 
-    test "failing single intermediate form" do
+    test "it creates nested forms for single resources" do
       post_id = Ash.UUID.generate()
       comment_id = Ash.UUID.generate()
 
