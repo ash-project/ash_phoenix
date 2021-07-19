@@ -245,12 +245,14 @@ defmodule AshPhoenix.FormTest do
     end
 
     test "it raises an appropriate error when the incorrect api is configured" do
-      assert_raise RuntimeError, ~r/Resource AshPhoenix.Test.Post not found in api AshPhoenix.Test.OtherApi/, fn ->
-        Post
-        |> Form.for_create(:create, api: OtherApi)
-        |> Form.validate(%{text: "text"})
-        |> Form.submit()
-      end
+      assert_raise RuntimeError,
+                   ~r/Resource AshPhoenix.Test.Post not found in api AshPhoenix.Test.OtherApi/,
+                   fn ->
+                     Post
+                     |> Form.for_create(:create, api: OtherApi)
+                     |> Form.validate(%{text: "text"})
+                     |> Form.submit()
+                   end
     end
   end
 
