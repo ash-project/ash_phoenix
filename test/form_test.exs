@@ -4,7 +4,7 @@ defmodule AshPhoenix.FormTest do
 
   alias AshPhoenix.Form
   alias Phoenix.HTML.FormData
-  alias AshPhoenix.Test.{Api, Comment, Post}
+  alias AshPhoenix.Test.{Api, OtherApi, Comment, Post}
 
   describe "form_for fields" do
     test "it should show simple field values" do
@@ -242,6 +242,17 @@ defmodule AshPhoenix.FormTest do
                |> Form.for_create(:create, api: Api)
                |> Form.validate(%{text: "text"})
                |> Form.submit()
+    end
+
+    test "it raises an appropriate error when the incorrect api is configured" do
+      assert_raise RuntimeError,
+                   ~r/Resource AshPhoenix.Test.Post not found in api AshPhoenix.Test.OtherApi/,
+                   fn ->
+                     Post
+                     |> Form.for_create(:create, api: OtherApi)
+                     |> Form.validate(%{text: "text"})
+                     |> Form.submit()
+                   end
     end
   end
 

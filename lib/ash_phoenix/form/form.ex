@@ -814,6 +814,11 @@ defmodule AshPhoenix.Form do
         end
 
       case result do
+        {:error, %Ash.Error.Invalid.NoSuchResource{resource: resource}} ->
+          raise """
+          Resource #{inspect(resource)} not found in api #{inspect(form.api)}
+          """
+
         {:error, %{query: query} = error} when form.type == :read ->
           query = %{query | errors: []}
 
