@@ -598,6 +598,45 @@ defmodule AshPhoenix.FormTest do
       assert Form.params(form) == %{"post" => []}
     end
 
+    test "remaining forms are reindexed after a form has been removed" do
+      post1_id = Ash.UUID.generate()
+      post2_id = Ash.UUID.generate()
+      post3_id = Ash.UUID.generate()
+
+      comment = %Comment{
+        text: "text",
+        post: [%Post{id: post1_id}, %Post{id: post2_id}, %Post{id: post3_id}]
+      }
+
+      form =
+        comment
+        |> Form.for_update(:create,
+          forms: [
+            posts: [
+              data: comment.post,
+              type: :list,
+              resource: Post,
+              create_action: :create,
+              update_action: :update
+            ]
+          ]
+        )
+        |> Form.remove_form([:posts, 1])
+
+      assert [
+               %Phoenix.HTML.Form{source: %AshPhoenix.Form{resource: AshPhoenix.Test.Post}} =
+                 form_0,
+               %Phoenix.HTML.Form{source: %AshPhoenix.Form{resource: AshPhoenix.Test.Post}} =
+                 form_1
+             ] = inputs_for(form_for(form, "action"), :posts)
+
+      assert form_0.name == "form[posts][0]"
+      assert form_0.id == "form_posts_0"
+
+      assert form_1.name == "form[posts][1]"
+      assert form_1.id == "form_posts_1"
+    end
+
     test "when `:single`, `inputs_for` generates a list of one single item" do
       post_id = Ash.UUID.generate()
       comment = %Comment{text: "text", post: %Post{id: post_id, text: "Some text"}}
