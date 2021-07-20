@@ -1304,25 +1304,29 @@ defmodule AshPhoenix.Form do
       end
 
     new_config =
-      form.form_keys
-      |> Keyword.update!(key, fn config ->
-        if config[:data] do
-          Keyword.update!(config, :data, fn data ->
-            cond do
-              is_function(data, 1) ->
-                fn original_data -> [nil | data.(original_data)] end
+      if opts[:prepend] && config[:type] == :list do
+        form.form_keys
+        |> Keyword.update!(key, fn config ->
+          if config[:data] do
+            Keyword.update!(config, :data, fn data ->
+              cond do
+                is_function(data, 1) ->
+                  fn original_data -> [nil | data.(original_data)] end
 
-              is_function(data, 2) ->
-                fn original_data, trail -> [nil | data.(original_data, trail)] end
+                is_function(data, 2) ->
+                  fn original_data, trail -> [nil | data.(original_data, trail)] end
 
-              true ->
-                [nil | data]
-            end
-          end)
-        else
-          config
-        end
-      end)
+                true ->
+                  [nil | data]
+              end
+            end)
+          else
+            config
+          end
+        end)
+      else
+        form.form_keys
+      end
 
     new_forms =
       form.forms
@@ -1952,8 +1956,6 @@ defmodule AshPhoenix.Form do
     if (opts[:type] || :single) == :single do
       if data || map(form_params)["_form_type"] == "read" do
         case map(form_params)["_form_type"] || "update" do
-          # "read" ->
-
           "update" ->
             update_action =
               opts[:update_action] ||
