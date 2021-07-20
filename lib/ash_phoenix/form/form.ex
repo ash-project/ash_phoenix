@@ -18,22 +18,24 @@ defmodule AshPhoenix.Form do
   ```elixir
   form =
     user
-    |> AshPhoenix.Form.for_update(:update, forms: [
-      profile: [
-        resource: MyApp.Profile,
-        data: user.profile,
-        create_action: :create,
-        update_action: :update
-        forms: [
-          emails: [
-            data: user.profile.emails,
-            resource: MyApp.UserEmail,
-            create_action: :create,
-            update_action: :update
+    |> AshPhoenix.Form.for_update(:update,
+      api: MyApi,
+      forms: [
+        profile: [
+          resource: MyApp.Profile,
+          data: user.profile,
+          create_action: :create,
+          update_action: :update
+          forms: [
+            emails: [
+              data: user.profile.emails,
+              resource: MyApp.UserEmail,
+              create_action: :create,
+              update_action: :update
+            ]
           ]
         ]
-      ]
-    ])
+      ])
   ```
 
   ## LiveView
@@ -78,22 +80,24 @@ defmodule AshPhoenix.Form do
       |> MyApp.MyApi.get!(post_id)
       |> MyApi.load!(comments: [:sub_comments])
 
-    form = AshPhoenix.Form.for_update(post, forms: [
-      comments: [
-        resource: Comment,
-        data: post.comments,
-        create_action: :create,
-        update_action: :update
-        forms: [
-          sub_comments: [
-            resource: Comment,
-            data: &(&1.sub_comments),
-            create_action: :create,
-            update_action: :update
+    form = AshPhoenix.Form.for_update(post,
+      api: MyApp.MyApi,
+      forms: [
+        comments: [
+          resource: Comment,
+          data: post.comments,
+          create_action: :create,
+          update_action: :update
+          forms: [
+            sub_comments: [
+              resource: Comment,
+              data: &(&1.sub_comments),
+              create_action: :create,
+              update_action: :update
+            ]
           ]
         ]
-      ]
-    ])
+      ])
 
     {:ok, assign(socket, form: form)}
   end
