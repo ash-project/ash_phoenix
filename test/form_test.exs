@@ -598,6 +598,48 @@ defmodule AshPhoenix.FormTest do
       assert Form.params(form) == %{"post" => []}
     end
 
+    test "when all values have been removed from an existing `:single` relationship, the empty list remains" do
+      post_id = Ash.UUID.generate()
+      comment_2 = %Comment{text: "text"}
+
+      comment = %Comment{text: "text", post: %Post{id: post_id, comments: [comment_2]}}
+
+      form =
+        comment
+        |> Form.for_update(:update,
+          forms: [
+            post: [
+              data: & &1.post,
+              type: :single,
+              resource: Post,
+              update_action: :update,
+              create_action: :create,
+              forms: [
+                comments: [
+                  type: :list,
+                  resource: Comment,
+                  data: & &1.comments,
+                  create_action: :create,
+                  update_action: :update
+                ]
+              ]
+            ]
+          ]
+        )
+
+      assert [%Phoenix.HTML.Form{source: %AshPhoenix.Form{resource: AshPhoenix.Test.Post}}] =
+               form
+               |> form_for("action")
+               |> inputs_for(:post)
+
+      form =
+        form
+        |> Form.remove_form([:post, :comments, 0])
+        |> Form.validate(%{})
+
+      assert Form.params(form) == %{"post" => %{"comments" => []}}
+    end
+
     test "remaining forms are reindexed after a form has been removed" do
       post1_id = Ash.UUID.generate()
       post2_id = Ash.UUID.generate()
