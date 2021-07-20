@@ -5,6 +5,27 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.5.3](https://github.com/ash-project/ash_phoenix/compare/v0.5.2...v0.5.3) (2021-07-20)
+
+
+
+
+### Bug Fixes:
+
+* only prepend to data when necessary
+
+* Fix remove form path when a nested single (#19)
+
+* Add form to single (#18)
+
+* actually reindex this time
+
+* reindex after remove form
+
+### Improvements:
+
+* Improve error message when incorrect api configured for resource (#15)
+
 ## [v0.5.2](https://github.com/ash-project/ash_phoenix/compare/v0.5.1...v0.5.2) (2021-07-19)
 
 
