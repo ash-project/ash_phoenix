@@ -1348,6 +1348,21 @@ defmodule AshPhoenix.Form do
     %{form | forms: new_forms, form_keys: new_config}
   end
 
+  defp do_add_form(form, [key | rest], opts, trail) do
+    unless form.form_keys[key] do
+      raise AshPhoenix.Form.NoFormConfigured,
+        field: key,
+        available: Keyword.keys(form.form_keys || [])
+    end
+
+    new_forms =
+      form.forms
+      |> Map.put_new(key, [])
+      |> Map.update!(key, &do_add_form(&1, rest, opts, [key | trail]))
+
+    %{form | forms: new_forms}
+  end
+
   defp do_add_form(_form, path, _opts, trail) do
     raise ArgumentError, message: "Invalid Path: #{inspect(Enum.reverse(trail, path))}"
   end
