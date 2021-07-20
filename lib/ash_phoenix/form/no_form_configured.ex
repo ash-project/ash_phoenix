@@ -1,13 +1,20 @@
 defmodule AshPhoenix.Form.NoFormConfigured do
-  defexception [:field, :available]
+  defexception [:field, :available, :path]
 
   def exception(opts) do
-    %__MODULE__{field: opts[:field], available: opts[:available]}
+    %__MODULE__{field: opts[:field], available: opts[:available], path: List.wrap(opts[:paths])}
   end
 
-  def message(%{field: field, available: available}) do
+  def message(%{field: field, available: available, path: path}) do
+    path_message =
+      if path do
+        "at path #{inspect(path)}"
+      else
+        ""
+      end
+
     """
-    #{field} must be configured in the form to be used with `inputs_for`. For example:
+    #{field}#{path_message} must be configured in the form to be used with `inputs_for`. For example:
 
     Available forms:
 
