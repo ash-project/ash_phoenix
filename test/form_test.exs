@@ -701,5 +701,47 @@ defmodule AshPhoenix.FormTest do
                |> hd()
                |> inputs_for(:comments)
     end
+
+    test "it `add_form`s for nested single resources" do
+      post_id = Ash.UUID.generate()
+
+      comment = %Comment{
+        text: "text",
+        post: %Post{
+          id: post_id,
+          text: "Some text",
+          comments: []
+        }
+      }
+
+      form =
+        comment
+        |> Form.for_update(:update,
+          forms: [
+            post: [
+              data: comment.post,
+              type: :single,
+              resource: Post,
+              update_action: :update,
+              create_action: :create,
+              forms: [
+                comments: [
+                  type: :list,
+                  resource: Comment,
+                  create_action: :create
+                ]
+              ]
+            ]
+          ]
+        )
+        |> Form.add_form([:post, :comments])
+
+      assert [%Phoenix.HTML.Form{source: %AshPhoenix.Form{resource: AshPhoenix.Test.Comment}}] =
+               form
+               |> form_for("action")
+               |> inputs_for(:post)
+               |> hd()
+               |> inputs_for(:comments)
+    end
   end
 end
