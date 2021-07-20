@@ -1240,7 +1240,12 @@ defmodule AshPhoenix.Form do
       form.forms
       |> Map.put_new(key, [])
       |> Map.update!(key, fn forms ->
-        List.update_at(forms, i, &do_remove_form(&1, rest, [i, key | trail]))
+        forms
+        |> List.update_at(i, &do_remove_form(&1, rest, [i, key | trail]))
+        |> Enum.with_index()
+        |> Enum.map(fn {form, i} ->
+          %{form | name: form.name <> "[#{key}][#{i}]", id: form.id <> "_#{key}_#{i}"}
+        end)
       end)
 
     %{form | forms: new_forms}
