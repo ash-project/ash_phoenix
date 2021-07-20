@@ -1167,45 +1167,6 @@ defmodule AshPhoenix.Form do
     end
   end
 
-  # defp remove_data(form, path) do
-  #   case path do
-  #     [key] ->
-  #       if form.form_keys[key][:data] do
-  #         new_config =
-  #           form.form_keys
-  #           |> Keyword.update!(key, &Keyword.put(&1, :data, nil))
-
-  #         %{form | form_keys: new_config, opts: Keyword.put(form.opts, :forms, new_config)}
-  #       else
-  #         form
-  #       end
-
-  #     [key, index] when is_atom(key) and is_integer(index) ->
-  #       if form.form_keys[key][:data] do
-  #         new_config = do_remove_data(form, key, index)
-  #         %{form | form_keys: new_config, opts: Keyword.put(form.opts, :forms, new_config)}
-  #       else
-  #         form
-  #       end
-
-  #     [atom, integer | rest] when is_atom(atom) and is_integer(integer) ->
-  #       new_forms =
-  #         form.forms
-  #         |> Map.update!(atom, fn nested_forms ->
-  #           List.update_at(nested_forms, integer, &remove_data(&1, rest))
-  #         end)
-
-  #       %{form | forms: new_forms}
-
-  #     [atom | rest] ->
-  #       new_forms =
-  #         form.forms
-  #         |> Map.update!(atom, &remove_data(&1, rest))
-
-  #       %{form | forms: new_forms}
-  #   end
-  # end
-
   @doc false
   def update_opts(opts) do
     if opts[:forms] do
@@ -1232,35 +1193,6 @@ defmodule AshPhoenix.Form do
       String.replace(acc, "%{#{key}}", to_string(value))
     end)
   end
-
-  # defp prepend_data(form, path) do
-  #   case path do
-  #     [key] ->
-  #       if form.form_keys[key][:data] && form.form_keys[key][:type] == :list do
-  #         new_config = do_prepend_data(form, key)
-
-  #         %{form | form_keys: new_config, opts: Keyword.put(form.opts, :forms, new_config)}
-  #       else
-  #         form
-  #       end
-
-  #     [atom, integer | rest] when is_atom(atom) and is_integer(integer) ->
-  #       new_forms =
-  #         form.forms
-  #         |> Map.update!(atom, fn nested_forms ->
-  #           List.update_at(nested_forms, integer, &prepend_data(&1, rest))
-  #         end)
-
-  #       %{form | forms: new_forms}
-
-  #     [atom | rest] ->
-  #       new_forms =
-  #         form.forms
-  #         |> Map.update!(atom, &prepend_data(&1, rest))
-
-  #       %{form | forms: new_forms}
-  #   end
-  # end
 
   defp update_all_forms(form, func) do
     form = func.(form)
