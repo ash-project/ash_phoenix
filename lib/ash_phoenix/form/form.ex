@@ -102,6 +102,16 @@ defmodule AshPhoenix.Form do
     {:ok, assign(socket, form: form)}
   end
 
+  # In order to use the `add_form` and `remove_form` helpers, you
+  # need to make sure that you are validating the form on change
+  def handle_event("validate", %{"form" => params}, socket) do
+    form = AshPhoenix.Form.validate(socket.assigns.form, params)
+    # You can also skip errors by setting `errors: false` if you only want to show errors on submit
+    # form = AshPhoenix.Form.validate(socket.assigns.form, params, errors: false)
+
+    {:ok, assign(socket, :form, form)}
+  end
+
   def handle_event("save", _params, socket) do
     case AshPhoenix.Form.submit(socket.assigns.form) do
       {:ok, result} ->
