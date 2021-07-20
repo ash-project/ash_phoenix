@@ -743,5 +743,48 @@ defmodule AshPhoenix.FormTest do
                |> hd()
                |> inputs_for(:comments)
     end
+
+    test "it `remove_form`s for nested single resources" do
+      post_id = Ash.UUID.generate()
+
+      comment = %Comment{
+        text: "text",
+        post: %Post{
+          id: post_id,
+          text: "Some text",
+          comments: []
+        }
+      }
+
+      form =
+        comment
+        |> Form.for_update(:update,
+          forms: [
+            post: [
+              data: comment.post,
+              type: :single,
+              resource: Post,
+              update_action: :update,
+              create_action: :create,
+              forms: [
+                comments: [
+                  type: :list,
+                  resource: Comment,
+                  create_action: :create
+                ]
+              ]
+            ]
+          ]
+        )
+        |> Form.add_form([:post, :comments])
+        |> Form.remove_form([:post, :comments, 0])
+
+      assert [] =
+               form
+               |> form_for("action")
+               |> inputs_for(:post)
+               |> hd()
+               |> inputs_for(:comments)
+    end
   end
 end
