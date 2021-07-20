@@ -1223,7 +1223,12 @@ defmodule AshPhoenix.Form do
       form.forms
       |> Map.put_new(key, [])
       |> Map.update!(key, fn forms ->
-        List.delete_at(forms, i)
+        forms
+        |> List.delete_at(i)
+        |> Enum.with_index()
+        |> Enum.map(fn {nested_form, i} ->
+          %{nested_form | name: form.name <> "[#{key}][#{i}]", id: form.id <> "_#{key}_#{i}"}
+        end)
       end)
 
     %{form | forms: new_forms, form_keys: new_config}
@@ -1240,12 +1245,7 @@ defmodule AshPhoenix.Form do
       form.forms
       |> Map.put_new(key, [])
       |> Map.update!(key, fn forms ->
-        forms
-        |> List.update_at(i, &do_remove_form(&1, rest, [i, key | trail]))
-        |> Enum.with_index()
-        |> Enum.map(fn {form, i} ->
-          %{form | name: form.name <> "[#{key}][#{i}]", id: form.id <> "_#{key}_#{i}"}
-        end)
+        List.update_at(forms, i, &do_remove_form(&1, rest, [i, key | trail]))
       end)
 
     %{form | forms: new_forms}
