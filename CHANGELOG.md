@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.5.5](https://github.com/ash-project/ash_phoenix/compare/v0.5.4...v0.5.5) (2021-07-21)
+
+
+
+
+### Bug Fixes:
+
+* don't consider `www.` as part of the host
+
 ## [v0.5.4](https://github.com/ash-project/ash_phoenix/compare/v0.5.3...v0.5.4) (2021-07-20)
 
 
