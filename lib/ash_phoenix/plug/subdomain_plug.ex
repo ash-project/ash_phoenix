@@ -100,7 +100,16 @@ defmodule AshPhoenix.SubdomainPlug do
     if host in [root_host, "localhost", "127.0.0.1", "0.0.0.0"] do
       nil
     else
-      String.replace(host, ~r/.?#{root_host}/, "")
+      host
+      |> String.trim_leading("www.")
+      |> String.replace(~r/.?#{root_host}/, "")
+      |> case do
+        "" ->
+          nil
+
+        subdomain ->
+          subdomain
+      end
     end
   end
 end
