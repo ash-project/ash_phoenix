@@ -718,7 +718,7 @@ defmodule AshPhoenix.Form do
     %{
       new_form
       | submitted_once?: form.submitted_once?,
-        submit_errors: form.submit_errors
+        submit_errors: nil
     }
     |> update_all_forms(fn form ->
       %{form | just_submitted?: false}
@@ -936,8 +936,113 @@ defmodule AshPhoenix.Form do
     end
   end
 
+  @errors_opts [
+    format: [
+      type: {:one_of, [:simple, :raw, :plaintext]},
+      default: :simple,
+      doc: """
+      `:raw` - `[field:, {message, substitutions}}]` (for translation)
+      `:simple` - `[field: "message w/ variables substituted"]`
+      `:plaintext` - `["field: message w/ variables substituted"]
+      """
+    ],
+    for_path: [
+      type: :any,
+      default: [],
+      doc: """
+      The path of the form you want errors for, either as a list or as a string, e.g `[:comments, 0]` or `form[comments][0]`
+      Passing `:all` will cause this function to return a map of path to its errors, like so:
+
+      ```elixir
+      %{[:comments, 0] => [body: "is invalid"], ...}
+      ```
+      """
+    ]
+  ]
+
+  @doc """
+  Returns the errors on the form.
+
+  By default, only errors on the form being passed in (not nested forms) are provided.
+  Use `for_path` to get errors for nested forms.
+
+  #{Ash.OptionsHelpers.docs(@errors_opts)}
+  """
+  @spec errors(t(), Keyword.t()) :: [{atom, {String.t(), Keyword.t()}}] | [String.t()]
+  def errors(form, opts \\ []) do
+    opts = validate_opts_with_extra_keys(opts, @errors_opts)
+
+    case opts[:for_path] do
+      :all ->
+        gather_errors(form, opts[:format])
+
+      [] ->
+        form
+        |> Phoenix.HTML.Form.form_for("foo")
+        |> Map.get(:errors)
+        |> List.wrap()
+        |> format_errors(opts[:format])
+
+      path ->
+        form
+        |> gather_errors(opts[:format])
+        |> Map.get(path)
+        |> List.wrap()
+    end
+  end
+
+  defp format_errors(errors, :raw), do: errors
+
+  defp format_errors(errors, :simple) do
+    Enum.map(errors, fn {field, {message, vars}} ->
+      message = replace_vars(message, vars)
+
+      {field, message}
+    end)
+  end
+
+  defp format_errors(errors, :plaintext) do
+    Enum.map(errors, fn {field, {message, vars}} ->
+      message = replace_vars(message, vars)
+
+      "#{field}: " <> message
+    end)
+  end
+
+  defp gather_errors(form, format, acc \\ %{}, trail \\ []) do
+    errors = errors(form, format: format)
+
+    acc =
+      if Enum.empty?(errors) do
+        acc
+      else
+        Map.put(acc, trail, errors)
+      end
+
+    Enum.reduce(form.forms, acc, fn {key, forms}, acc ->
+      case forms do
+        [] ->
+          acc
+
+        nil ->
+          acc
+
+        forms when is_list(forms) ->
+          forms
+          |> Enum.with_index()
+          |> Enum.reduce(acc, fn {form, i}, acc ->
+            gather_errors(form, format, acc, trail ++ [key, i])
+          end)
+
+        form ->
+          gather_errors(form, format, acc, trail ++ [key])
+      end
+    end)
+  end
+
   @spec errors_for(t(), list(atom | integer) | String.t(), type :: :simple | :raw | :plaintext) ::
           [{atom, {String.t(), Keyword.t()}}] | [String.t()] | map | nil
+  @deprecated "Use errors/2 instead"
   def errors_for(form, path, type \\ :raw) do
     path =
       case path do

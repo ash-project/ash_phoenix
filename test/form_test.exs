@@ -88,6 +88,66 @@ defmodule AshPhoenix.FormTest do
       assert hd(inputs_for(form, :post)).errors == [{:text, {"is required", []}}]
     end
 
+    test "nested errors can be fetched with `Form.errors/2`" do
+      form =
+        Comment
+        |> Form.for_create(:create,
+          api: Api,
+          forms: [
+            post: [
+              resource: Post,
+              create_action: :create
+            ]
+          ]
+        )
+        |> Form.add_form(:post, params: %{})
+        |> Form.validate(%{"text" => "text", "post" => %{}})
+        |> Form.submit(force?: true)
+        |> elem(1)
+        |> form_for("action")
+
+      assert Form.errors(form.source, for_path: [:post]) == [{:text, "is required"}]
+
+      assert Form.errors(form.source, for_path: [:post], format: :raw) == [
+               {:text, {"is required", []}}
+             ]
+
+      assert Form.errors(form.source, for_path: [:post], format: :plaintext) == [
+               "text: is required"
+             ]
+
+      assert Form.errors(form.source, for_path: :all) == %{[:post] => [{:text, "is required"}]}
+    end
+
+    test "errors can be fetched with `Form.errors/2`" do
+      form =
+        Comment
+        |> Form.for_create(:create,
+          api: Api,
+          forms: [
+            post: [
+              resource: Post,
+              create_action: :create
+            ]
+          ]
+        )
+        |> Form.add_form(:post, params: %{})
+        |> Form.validate(%{"post" => %{"text" => "text"}})
+        |> Form.submit(force?: true)
+        |> elem(1)
+        |> form_for("action")
+
+      assert Form.errors(form.source) == [{:text, "is required"}]
+
+      assert Form.errors(form.source, format: :raw) == [
+               {:text, {"is required", []}}
+             ]
+
+      assert Form.errors(form.source, format: :plaintext) == [
+               "text: is required"
+             ]
+    end
+
     test "nested forms submit empty values when not present in input params" do
       form =
         Comment
