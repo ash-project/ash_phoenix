@@ -968,7 +968,8 @@ defmodule AshPhoenix.Form do
 
   #{Ash.OptionsHelpers.docs(@errors_opts)}
   """
-  @spec errors(t(), Keyword.t()) :: [{atom, {String.t(), Keyword.t()}}] | [String.t()]
+  @spec errors(t(), Keyword.t()) ::
+          [{atom, {String.t(), Keyword.t()}}] | [String.t()] | [{atom, String.t()}]
   def errors(form, opts \\ []) do
     opts = validate_opts_with_extra_keys(opts, @errors_opts)
 
