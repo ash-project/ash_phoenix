@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.5.6](https://github.com/ash-project/ash_phoenix/compare/v0.5.5...v0.5.6) (2021-07-23)
+
+
+
+
+### Improvements:
+
+* looser ash version requirement
+
+* add `Form.errors/2`, deprecate `Form.errors_for/3`
+
 ## [v0.5.5](https://github.com/ash-project/ash_phoenix/compare/v0.5.4...v0.5.5) (2021-07-21)
 
 
