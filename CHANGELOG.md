@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.5.7](https://github.com/ash-project/ash_phoenix/compare/v0.5.6...v0.5.7) (2021-07-23)
+
+
+
+
+### Bug Fixes:
+
+* fix type signature of `Form.errors/2`
+
 ## [v0.5.6](https://github.com/ash-project/ash_phoenix/compare/v0.5.5...v0.5.6) (2021-07-23)
 
 
