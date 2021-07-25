@@ -11,7 +11,7 @@ defmodule AshPhoenix.Form do
 
   If your resource action accepts related data, (for example a managed relationship argument, or an embedded resource attribute), you can
   use Phoenix's `inputs_for` for that field, *but* you must explicitly configure the behavior of it using the `forms` option.
-  See `Form.for_create/3` for more.
+  See `for_create/3` for more.
 
   For example:
 
@@ -184,7 +184,7 @@ defmodule AshPhoenix.Form do
   @for_opts [
     forms: [
       type: :keyword_list,
-      doc: "Nested form configurations. See for_create/3 docs for more."
+      doc: "Nested form configurations. See `for_create/3` \"Nested Form Options\" docs for more."
     ],
     api: [
       type: :atom,
@@ -328,8 +328,8 @@ defmodule AshPhoenix.Form do
 
   To automatically determine the nested forms available for a given form, use `forms: [auto?: true]`.
   You can add additional nested forms by including them in the `forms` config alongside `auto?: true`.
-  See the module documentation of `AshPhoenix.Forms.Auto` for more information. If you want to do some
-  manipulation of the auto forms, you can also call `AshPhoenix.Forms.Auto.auto/2`, and then manipulate the
+  See the module documentation of `AshPhoenix.Form.Auto` for more information. If you want to do some
+  manipulation of the auto forms, you can also call `AshPhoenix.Form.Auto.auto/2`, and then manipulate the
   result and pass it to the `forms` option.
 
   #{Ash.OptionsHelpers.docs(@nested_form_opts)}
@@ -941,9 +941,10 @@ defmodule AshPhoenix.Form do
       type: {:one_of, [:simple, :raw, :plaintext]},
       default: :simple,
       doc: """
-      `:raw` - `[field:, {message, substitutions}}]` (for translation)
-      `:simple` - `[field: "message w/ variables substituted"]`
-      `:plaintext` - `["field: message w/ variables substituted"]
+      Values:
+          - `:raw` - `[field:, {message, substitutions}}]` (for translation)
+          - `:simple` - `[field: "message w/ variables substituted"]`
+          - `:plaintext` - `["field: message w/ variables substituted"]`
       """
     ],
     for_path: [
