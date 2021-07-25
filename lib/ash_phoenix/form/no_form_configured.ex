@@ -14,7 +14,7 @@ defmodule AshPhoenix.Form.NoFormConfigured do
       end
 
     """
-    #{field}#{path_message} must be configured in the form to be used with `inputs_for`. For example:
+    #{field} #{path_message} must be configured in the form to be used with `inputs_for`. For example:
 
     Available forms:
 
