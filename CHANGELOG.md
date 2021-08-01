@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.5.8](https://github.com/ash-project/ash_phoenix/compare/v0.5.7...v0.5.8) (2021-08-01)
+
+
+
+
+### Improvements:
+
+* retain original data for form submission
+
+* update to latest ash
+
 ## [v0.5.7](https://github.com/ash-project/ash_phoenix/compare/v0.5.6...v0.5.7) (2021-07-23)
 
 
