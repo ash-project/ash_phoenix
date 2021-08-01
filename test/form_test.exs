@@ -3,8 +3,8 @@ defmodule AshPhoenix.FormTest do
   import Phoenix.HTML.Form, only: [form_for: 2, inputs_for: 2]
 
   alias AshPhoenix.Form
+  alias AshPhoenix.Test.{Api, Comment, OtherApi, Post}
   alias Phoenix.HTML.FormData
-  alias AshPhoenix.Test.{Api, OtherApi, Comment, Post}
 
   describe "form_for fields" do
     test "it should show simple field values" do
@@ -64,6 +64,34 @@ defmodule AshPhoenix.FormTest do
       assert form.errors == []
 
       assert hd(inputs_for(form, :post)).errors == [{:text, {"is required", []}}]
+    end
+
+    test "relationship source data is retained, so that it can be properly removed" do
+      post =
+        Post
+        |> Ash.Changeset.new(%{text: "post"})
+        |> Api.create!()
+
+      comment =
+        Comment
+        |> Ash.Changeset.new(%{text: "comment"})
+        |> Ash.Changeset.replace_relationship(:post, post)
+        |> Api.create!()
+
+      comment = Comment |> Api.get!(comment.id)
+
+      comment
+      |> Api.load!(:post)
+      |> Form.for_update(:update,
+        api: Api,
+        forms: [
+          auto?: true
+        ]
+      )
+      |> Form.remove_form([:post])
+      |> Form.submit!(params: %{"text" => "text", "post" => %{"text" => "new_post"}})
+
+      assert [%{text: "new_post"}] = Api.read!(Post)
     end
 
     test "nested errors are set on the appropriate form after submit, even if no submit actually happens" do

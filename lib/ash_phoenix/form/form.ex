@@ -148,6 +148,7 @@ defmodule AshPhoenix.Form do
     :opts,
     :id,
     :transform_errors,
+    :original_data,
     data_updates: [],
     valid?: false,
     errors: false,
@@ -474,6 +475,7 @@ defmodule AshPhoenix.Form do
       transform_errors: opts[:transform_errors],
       forms: forms,
       form_keys: List.wrap(opts[:forms]),
+      original_data: data,
       method: opts[:method] || form_for_method(:update),
       data_updates: opts[:data_updates] || [],
       opts: opts,
@@ -553,6 +555,7 @@ defmodule AshPhoenix.Form do
       errors: opts[:errors],
       transform_errors: opts[:transform_errors],
       data_updates: opts[:data_updates] || [],
+      original_data: data,
       forms: forms,
       name: name,
       id: id,
@@ -718,7 +721,8 @@ defmodule AshPhoenix.Form do
     %{
       new_form
       | submitted_once?: form.submitted_once?,
-        submit_errors: nil
+        submit_errors: nil,
+        original_data: form.original_data
     }
     |> update_all_forms(fn form ->
       %{form | just_submitted?: false}
@@ -819,7 +823,7 @@ defmodule AshPhoenix.Form do
             |> form.api.create()
 
           :update ->
-            form.data
+            form.original_data
             |> Ash.Changeset.for_update(
               form.source.action.name,
               params(form),
@@ -829,7 +833,7 @@ defmodule AshPhoenix.Form do
             |> form.api.update()
 
           :destroy ->
-            form.data
+            form.original_data
             |> Ash.Changeset.for_destroy(
               form.source.action.name,
               params(form),
@@ -856,48 +860,74 @@ defmodule AshPhoenix.Form do
           """
 
         {:error, %{query: query} = error} when form.type == :read ->
-          query = %{query | errors: []}
+          if opts[:raise?] do
+            raise Ash.Error.to_error_class(query.errors, query: query)
+          else
+            query = %{query | errors: []}
 
-          errors =
-            error
-            |> List.wrap()
-            |> Enum.flat_map(&expand_error/1)
+            errors =
+              error
+              |> List.wrap()
+              |> Enum.flat_map(&expand_error/1)
 
-          {:error,
-           set_action_errors(
-             %{form | source: query},
-             errors
-           )
-           |> update_all_forms(fn form ->
-             %{form | just_submitted?: true, submitted_once?: true}
-           end)}
+            {:error,
+             set_action_errors(
+               %{form | source: query},
+               errors
+             )
+             |> update_all_forms(fn form ->
+               %{form | just_submitted?: true, submitted_once?: true}
+             end)}
+          end
 
         {:error, %{changeset: changeset} = error} when form.type != :read ->
-          changeset = %{changeset | errors: []}
+          if opts[:raise?] do
+            raise Ash.Error.to_error_class(changeset.errors, changeset: changeset)
+          else
+            changeset = %{changeset | errors: []}
 
-          errors =
-            error
-            |> List.wrap()
-            |> Enum.flat_map(&expand_error/1)
+            errors =
+              error
+              |> List.wrap()
+              |> Enum.flat_map(&expand_error/1)
 
-          {:error,
-           set_action_errors(
-             %{form | source: changeset},
-             errors
-           )
-           |> update_all_forms(fn form ->
-             %{form | just_submitted?: true, submitted_once?: true}
-           end)}
+            {:error,
+             set_action_errors(
+               %{form | source: changeset},
+               errors
+             )
+             |> update_all_forms(fn form ->
+               %{form | just_submitted?: true, submitted_once?: true}
+             end)}
+          end
 
         other ->
           other
       end
     else
-      {:error,
-       form
-       |> update_all_forms(fn form -> %{form | submitted_once?: true, just_submitted?: true} end)
-       |> synthesize_action_errors()}
+      if opts[:raise?] do
+        case form.source do
+          %Ash.Query{} = query ->
+            raise Ash.Error.to_error_class(query.errors, query: query)
+
+          %Ash.Changeset{} = changeset ->
+            raise Ash.Error.to_error_class(changeset.errors, changeset: changeset)
+        end
+      else
+        {:error,
+         form
+         |> update_all_forms(fn form -> %{form | submitted_once?: true, just_submitted?: true} end)
+         |> synthesize_action_errors()}
+      end
     end
+  end
+
+  @doc """
+  Same as `submit/2`, but raises an error if the submission fails.
+  """
+  @spec submit!(t(), Keyword.t()) :: {:ok, Ash.Resource.record()} | :ok | no_return
+  def submit!(form, opts \\ []) do
+    submit(form, Keyword.put(opts, :raise?, true))
   end
 
   @spec update_form(t(), list(atom | integer) | String.t(), (t() -> t())) :: t()
@@ -1093,41 +1123,6 @@ defmodule AshPhoenix.Form do
         form.forms
         |> Map.get(atom)
         |> errors_for(rest, type)
-    end
-  end
-
-  @doc """
-  Same as `submit/3`, but raises an error if the submission fails.
-  """
-  def submit!(form, api, opts \\ []) do
-    changeset_opts = Keyword.drop(form.opts, [:forms, :errors, :id, :method, :for, :as])
-
-    form = clear_errors(form)
-
-    if form.source.valid? || opts[:force?] do
-      case form.type do
-        :create ->
-          form.resource
-          |> Ash.Changeset.for_create(form.source.action.name, params(form), changeset_opts)
-          |> api.create!()
-
-        :update ->
-          form.data
-          |> Ash.Changeset.for_update(form.source.action.name, params(form), changeset_opts)
-          |> api.update!()
-
-        :destroy ->
-          form.data
-          |> Ash.Changeset.for_destroy(form.source.action.name, params(form), changeset_opts)
-          |> api.destroy!()
-
-        :read ->
-          form.resource
-          |> Ash.Query.for_read(form.source.action.name, params(form), changeset_opts)
-          |> api.read!()
-      end
-    else
-      raise Ash.Error.to_ash_error(form.source.errors)
     end
   end
 
