@@ -208,6 +208,8 @@ defmodule AshPhoenix.FormTest do
         |> Form.add_form(:post, params: %{})
         |> Form.validate(%{"text" => "text"})
 
+      assert Form.value(form, :text) == "text"
+
       assert Form.params(form) == %{"text" => "text", "post" => []}
     end
 

@@ -1143,6 +1143,16 @@ defmodule AshPhoenix.Form do
   end
 
   @doc """
+  Gets the value for a given field in the form.
+  """
+  @spec value(t(), atom) :: any()
+  def value(form, field) do
+    form
+    |> Phoenix.HTML.Form.form_for("form")
+    |> Phoenix.HTML.Form.input_value(field)
+  end
+
+  @doc """
   Returns the parameters from the form that would be submitted to the action.
 
   This can be useful if you want to get the parameters and manipulate them/build a custom changeset
@@ -2602,6 +2612,9 @@ defmodule AshPhoenix.Form do
            :error <- Map.fetch(changeset.data, field) do
         nil
       else
+        {:ok, %Ash.NotLoaded{}} ->
+          nil
+
         {:ok, value} ->
           value
       end
