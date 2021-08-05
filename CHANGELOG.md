@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.5.9](https://github.com/ash-project/ash_phoenix/compare/v0.5.8...v0.5.9) (2021-08-05)
+
+
+
+
+### Bug Fixes:
+
+* don't return NotLoaded from input_value
+
+### Improvements:
+
+* add `Form.value/2`
+
 ## [v0.5.8](https://github.com/ash-project/ash_phoenix/compare/v0.5.7...v0.5.8) (2021-08-01)
 
 

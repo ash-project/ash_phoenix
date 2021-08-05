@@ -925,9 +925,18 @@ defmodule AshPhoenix.Form do
   @doc """
   Same as `submit/2`, but raises an error if the submission fails.
   """
-  @spec submit!(t(), Keyword.t()) :: {:ok, Ash.Resource.record()} | :ok | no_return
+  @spec submit!(t(), Keyword.t()) :: Ash.Resource.record() | :ok | no_return
   def submit!(form, opts \\ []) do
-    submit(form, Keyword.put(opts, :raise?, true))
+    case submit(form, Keyword.put(opts, :raise?, true)) do
+      {:ok, value} ->
+        value
+
+      :ok ->
+        :ok
+
+      _ ->
+        :error
+    end
   end
 
   @spec update_form(t(), list(atom | integer) | String.t(), (t() -> t())) :: t()

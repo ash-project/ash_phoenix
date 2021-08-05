@@ -965,9 +965,11 @@ defmodule AshPhoenix.FormTest do
           ]
         )
 
-      {:ok, updated_comment} =
+      Application.put_env(:foo, :bar, true)
+
+      updated_comment =
         form
-        |> AshPhoenix.Form.submit(
+        |> AshPhoenix.Form.submit!(
           params: %{
             "post" => %{
               "id" => post.id,

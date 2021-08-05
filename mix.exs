@@ -5,7 +5,7 @@ defmodule AshPhoenix.MixProject do
   Utilities for integrating Ash with Phoenix
   """
 
-  @version "0.5.8"
+  @version "0.5.9"
 
   def project do
     [
@@ -72,7 +72,7 @@ defmodule AshPhoenix.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ash, ash_version("~> 1.47 and >= 1.47.6")},
+      {:ash, ash_version("~> 1.47 and >= 1.47.8")},
       {:phoenix, "~> 1.5.6"},
       {:phoenix_html, "~> 2.14"},
       {:phoenix_live_view, "~> 0.15"},
