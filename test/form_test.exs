@@ -919,4 +919,74 @@ defmodule AshPhoenix.FormTest do
                |> inputs_for(:comments)
     end
   end
+
+  describe "issue #259" do
+    test "updating should not duplicate nested resources" do
+      post =
+        Post
+        |> Ash.Changeset.new(%{text: "post"})
+        |> Api.create!()
+
+      comment =
+        Comment
+        |> Ash.Changeset.new(%{text: "comment"})
+        |> Ash.Changeset.replace_relationship(:post, post)
+        |> Api.create!()
+
+      # Check the persisted post.comments count after create
+      post = Post |> Api.get!(post.id) |> Api.load!(:comments)
+      assert Enum.count(post.comments) == 1
+
+      # Grab the persisted comment
+      comment = Comment |> Api.get!(comment.id) |> Api.load!(post: [:comments])
+
+      form =
+        comment
+        |> Form.for_update(:update,
+          as: "comment",
+          api: Api,
+          forms: [
+            post: [
+              data: & &1.post,
+              type: :single,
+              resource: Post,
+              update_action: :update,
+              create_action: :create,
+              forms: [
+                comments: [
+                  data: & &1.comments,
+                  type: :list,
+                  resource: Comment,
+                  update_action: :update,
+                  create_action: :create
+                ]
+              ]
+            ]
+          ]
+        )
+
+      {:ok, updated_comment} =
+        form
+        |> AshPhoenix.Form.submit(
+          params: %{
+            "post" => %{
+              "id" => post.id,
+              "text" => "text",
+              "comments" => %{
+                "0" => %{
+                  "id" => comment.id,
+                  "text" => comment.text
+                }
+              }
+            }
+          }
+        )
+
+      assert Enum.count(updated_comment.post.comments) == 1
+
+      # now, check the persisted post
+      persisted_post = Post |> Api.get!(post.id) |> Api.load!(:comments)
+      assert Enum.count(persisted_post.comments) == 1
+    end
+  end
 end
