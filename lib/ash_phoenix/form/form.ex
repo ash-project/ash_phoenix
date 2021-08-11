@@ -1997,33 +1997,33 @@ defmodule AshPhoenix.Form do
         if data do
           {data, further} = apply_data_updates(data_updates, data, [key])
 
-          if (opts[:type] || :single) == :single do
-            for_action(data, update_action,
-              errors: error?,
-              prev_data_trail: prev_data_trail,
-              forms: opts[:forms] || [],
-              manage_relationship_source: manage_relationship_source(source_changeset, opts),
-              as: name <> "[#{key}]",
-              id: id <> "_#{key}",
-              data_updates: further
-            )
-          else
-            data
-            |> Enum.with_index()
-            |> Enum.map(fn {data, index} ->
+          if data do
+            if (opts[:type] || :single) == :single do
               for_action(data, update_action,
                 errors: error?,
                 prev_data_trail: prev_data_trail,
                 forms: opts[:forms] || [],
                 manage_relationship_source: manage_relationship_source(source_changeset, opts),
-                as: name <> "[#{key}][#{index}]",
-                id: id <> "_#{key}_#{index}",
-                data_updates: updates_for_index(further, index)
+                as: name <> "[#{key}]",
+                id: id <> "_#{key}",
+                data_updates: further
               )
-            end)
+            else
+              data
+              |> Enum.with_index()
+              |> Enum.map(fn {data, index} ->
+                for_action(data, update_action,
+                  errors: error?,
+                  prev_data_trail: prev_data_trail,
+                  forms: opts[:forms] || [],
+                  manage_relationship_source: manage_relationship_source(source_changeset, opts),
+                  as: name <> "[#{key}][#{index}]",
+                  id: id <> "_#{key}_#{index}",
+                  data_updates: updates_for_index(further, index)
+                )
+              end)
+            end
           end
-        else
-          nil
         end
       else
         if (opts[:type] || :single) == :single do
