@@ -59,11 +59,27 @@ defmodule AshPhoenix.Form.Auto do
 
   @dialyzer {:nowarn_function, rel_to_resource: 2}
 
-  def auto(resource, action, default_data \\ nil) do
-    related(resource, action, default_data) ++ embedded(resource, action)
+  @auto_opts [
+    relationship_fetcher: [
+      type: :any,
+      doc: """
+      A two argument function that receives the parent data, the relationship to fetch.
+      The default simply fetches the relationship value, and if it isn't loaded, it uses `[]` or `nil`.
+      """
+    ],
+    sparse_lists?: [
+      type: :boolean,
+      doc: "Sets all list type forms to `sparse?: true` by default.",
+      default: false
+    ]
+  ]
+
+  def auto(resource, action, opts \\ []) do
+    opts = Ash.OptionsHelpers.validate!(opts, @auto_opts)
+    related(resource, action, opts) ++ embedded(resource, action, opts)
   end
 
-  def related(resource, action, relationship_fetcher \\ nil) do
+  def related(resource, action, auto_opts) do
     action =
       if is_atom(action) do
         Ash.Resource.Info.action(resource, action)
@@ -110,17 +126,22 @@ defmodule AshPhoenix.Form.Auto do
       opts = [
         type: type,
         forms: [],
+        sparse?: auto_opts[:sparse_lists?],
         managed_relationship: {relationship.source, relationship.name},
         updater: fn opts ->
           opts =
             opts
-            |> add_create_action(manage_opts, relationship)
-            |> add_read_action(manage_opts, relationship)
-            |> add_update_action(manage_opts, relationship)
-            |> add_nested_forms()
+            |> add_create_action(manage_opts, relationship, auto_opts)
+            |> add_read_action(manage_opts, relationship, auto_opts)
+            |> add_update_action(manage_opts, relationship, auto_opts)
+            |> add_nested_forms(auto_opts)
 
           if opts[:update_action] || opts[:destroy_action] do
-            Keyword.put(opts, :data, relationship_fetcher(relationship, relationship_fetcher))
+            Keyword.put(
+              opts,
+              :data,
+              relationship_fetcher(relationship, auto_opts[:relationship_fetcher])
+            )
           else
             opts
           end
@@ -131,31 +152,31 @@ defmodule AshPhoenix.Form.Auto do
     end)
   end
 
-  defp add_nested_forms(opts) do
+  defp add_nested_forms(opts, auto_opts) do
     Keyword.update!(opts, :forms, fn forms ->
       forms =
         if forms[:update_action] do
-          forms ++ set_for_type(auto(opts[:resource], opts[:update_action]), :update)
+          forms ++ set_for_type(auto(opts[:resource], opts[:update_action], auto_opts), :update)
         else
           forms
         end
 
       forms =
         if forms[:create_action] do
-          forms ++ set_for_type(auto(opts[:resource], opts[:create_action]), :create)
+          forms ++ set_for_type(auto(opts[:resource], opts[:create_action], auto_opts), :create)
         else
           forms
         end
 
       forms =
         if forms[:destroy_action] do
-          forms ++ set_for_type(auto(opts[:resource], opts[:destroy_action]), :destroy)
+          forms ++ set_for_type(auto(opts[:resource], opts[:destroy_action], auto_opts), :destroy)
         else
           forms
         end
 
       if forms[:read_action] do
-        forms ++ set_for_type(auto(opts[:resource], opts[:read_action]), :read)
+        forms ++ set_for_type(auto(opts[:resource], opts[:read_action], auto_opts), :read)
       else
         forms
       end
@@ -168,7 +189,7 @@ defmodule AshPhoenix.Form.Auto do
     end)
   end
 
-  defp add_read_action(opts, manage_opts, relationship) do
+  defp add_read_action(opts, manage_opts, relationship, auto_opts) do
     manage_opts
     |> Ash.Changeset.ManagedRelationshipHelpers.on_lookup_read_action(relationship)
     |> case do
@@ -190,13 +211,13 @@ defmodule AshPhoenix.Form.Auto do
                  ) do
               nil ->
                 forms ++
-                  auto(resource, action_name)
+                  auto(resource, action_name, auto_opts)
 
               {source_dest_or_join, update_action} ->
                 resource = rel_to_resource(source_dest_or_join, relationship)
 
                 forms ++
-                  auto(resource, action_name) ++
+                  auto(resource, action_name, auto_opts) ++
                   [
                     {:_update,
                      [
@@ -212,7 +233,7 @@ defmodule AshPhoenix.Form.Auto do
                 resource = relationship.through
 
                 forms ++
-                  auto(resource, action_name) ++
+                  auto(resource, action_name, auto_opts) ++
                   [
                     {:_update,
                      [
@@ -229,7 +250,7 @@ defmodule AshPhoenix.Form.Auto do
     end
   end
 
-  defp add_create_action(opts, manage_opts, relationship) do
+  defp add_create_action(opts, manage_opts, relationship, auto_opts) do
     manage_opts
     |> Ash.Changeset.ManagedRelationshipHelpers.on_no_match_destination_actions(relationship)
     |> List.wrap()
@@ -247,13 +268,13 @@ defmodule AshPhoenix.Form.Auto do
         |> Keyword.update!(
           :forms,
           &(&1 ++
-              auto(resource, action_name))
+              auto(resource, action_name, auto_opts))
         )
         |> add_join_form(relationship, rest)
     end
   end
 
-  defp add_update_action(opts, manage_opts, relationship) do
+  defp add_update_action(opts, manage_opts, relationship, auto_opts) do
     manage_opts
     |> Ash.Changeset.ManagedRelationshipHelpers.on_match_destination_actions(relationship)
     |> List.wrap()
@@ -271,7 +292,7 @@ defmodule AshPhoenix.Form.Auto do
         |> Keyword.update!(
           :forms,
           &(&1 ++
-              auto(resource, action_name))
+              auto(resource, action_name, auto_opts))
         )
         |> add_join_form(relationship, rest)
     end
@@ -367,7 +388,7 @@ defmodule AshPhoenix.Form.Auto do
     end
   end
 
-  def embedded(resource, action) do
+  def embedded(resource, action, auto_opts) do
     action =
       if is_atom(action) do
         Ash.Resource.Info.action(resource, action)
@@ -429,6 +450,7 @@ defmodule AshPhoenix.Form.Auto do
        [
          type: type,
          resource: embed,
+         sparse?: auto_opts[:sparse_lists?],
          create_action: create_action.name,
          update_action: update_action.name,
          data: data,
@@ -436,8 +458,8 @@ defmodule AshPhoenix.Form.Auto do
          updater: fn opts ->
            Keyword.update!(opts, :forms, fn forms ->
              forms ++
-               embedded(embed, create_action) ++
-               embedded(embed, update_action)
+               embedded(embed, create_action, auto_opts) ++
+               embedded(embed, update_action, auto_opts)
            end)
          end
        ]}

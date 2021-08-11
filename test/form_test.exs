@@ -271,8 +271,8 @@ defmodule AshPhoenix.FormTest do
 
       assert Form.params(form) == %{
                "post" => [
-                 %{"comments" => [], "id" => post1_id},
-                 %{"comments" => [], "id" => post2_id}
+                 %{"id" => post1_id},
+                 %{"id" => post2_id}
                ],
                "text" => "text"
              }
@@ -318,7 +318,7 @@ defmodule AshPhoenix.FormTest do
       assert Form.params(form) == %{
                "post" => [
                  %{"comments" => [%{"id" => comment_id}], "id" => post1_id},
-                 %{"comments" => [], "id" => post2_id}
+                 %{"id" => post2_id}
                ],
                "text" => "text"
              }
@@ -381,11 +381,11 @@ defmodule AshPhoenix.FormTest do
           "other_post" => %{"text" => "post_text"}
         })
 
-      assert Form.params(form) == %{
+      assert %{
                "text" => "text",
                "post" => [%{"comments" => [%{"text" => "post_text"}], "text" => "post_text"}],
                "for_posts" => %{"text" => "post_text"}
-             }
+             } = Form.params(form)
     end
   end
 
@@ -725,9 +725,10 @@ defmodule AshPhoenix.FormTest do
       form =
         form
         |> Form.remove_form([:post, :comments, 0])
-        |> Form.validate(%{})
+        # This is added by the hidden fields helper, so we add it here to simulate that.
+        |> Form.validate(%{"post" => %{"_touched" => "comments"}})
 
-      assert Form.params(form) == %{"post" => %{"comments" => []}}
+      assert %{"post" => %{"comments" => []}} = Form.params(form)
     end
 
     test "remaining forms are reindexed after a form has been removed" do
