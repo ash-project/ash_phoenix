@@ -59,11 +59,11 @@ defmodule AshPhoenix.Form.Auto do
 
   @dialyzer {:nowarn_function, rel_to_resource: 2}
 
-  def auto(resource, action) do
-    related(resource, action) ++ embedded(resource, action)
+  def auto(resource, action, default_data \\ nil) do
+    related(resource, action, default_data) ++ embedded(resource, action)
   end
 
-  def related(resource, action) do
+  def related(resource, action, relationship_fetcher \\ nil) do
     action =
       if is_atom(action) do
         Ash.Resource.Info.action(resource, action)
@@ -120,7 +120,7 @@ defmodule AshPhoenix.Form.Auto do
             |> add_nested_forms()
 
           if opts[:update_action] || opts[:destroy_action] do
-            Keyword.put(opts, :data, relationship_fetcher(relationship))
+            Keyword.put(opts, :data, relationship_fetcher(relationship, relationship_fetcher))
           else
             opts
           end
@@ -336,16 +336,20 @@ defmodule AshPhoenix.Form.Auto do
     end
   end
 
-  defp relationship_fetcher(relationship) do
+  defp relationship_fetcher(relationship, relationship_fetcher) do
     fn parent ->
-      case Map.get(parent, relationship.name) do
-        %Ash.NotLoaded{} ->
-          if relationship.cardinality == :many do
-            []
-          end
+      if relationship_fetcher do
+        relationship_fetcher.(parent, relationship)
+      else
+        case Map.get(parent, relationship.name) do
+          %Ash.NotLoaded{} ->
+            if relationship.cardinality == :many do
+              []
+            end
 
-        value ->
-          value
+          value ->
+            value
+        end
       end
     end
   end

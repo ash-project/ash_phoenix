@@ -204,7 +204,7 @@ defmodule AshPhoenix.Form do
         "The html id of the form. Defaults to the value of `:as` if provided, otherwise \"form\""
     ],
     transform_errors: [
-      type: {:fun, 2},
+      type: :any,
       doc: """
       Allows for manual manipulation and transformation of errors.
 
@@ -975,6 +975,50 @@ defmodule AshPhoenix.Form do
     end
   end
 
+  @spec get_form(t(), list(atom | integer) | String.t()) :: t() | nil
+  def get_form(form, path) do
+    path =
+      case path do
+        [] ->
+          []
+
+        path when is_list(path) ->
+          path
+
+        path ->
+          parse_path!(form, path)
+      end
+
+    case path do
+      [] ->
+        form
+
+      [atom, integer | rest] when is_atom(atom) and is_integer(integer) ->
+        form.forms
+        |> Map.get(atom)
+        |> List.wrap()
+        |> Enum.at(integer)
+        |> case do
+          nil ->
+            nil
+
+          form ->
+            get_form(form, rest)
+        end
+
+      [atom | rest] ->
+        form.forms
+        |> Map.get(atom)
+        |> case do
+          %__MODULE__{} = form ->
+            get_form(form, rest)
+
+          _ ->
+            nil
+        end
+    end
+  end
+
   @errors_opts [
     format: [
       type: {:one_of, [:simple, :raw, :plaintext]},
@@ -1174,20 +1218,28 @@ defmodule AshPhoenix.Form do
       |> Keyword.keys()
       |> Enum.flat_map(&[&1, to_string(&1)])
 
-    Enum.reduce(form.form_keys, Map.drop(form.params, form_keys), fn {key, config}, params ->
+    form.form_keys
+    # |> Enum.filter(fn {key, _} ->
+    #   Map.has_key?(form.params, key) || Map.has_key?(form.params, to_string(key))
+    # end)
+    |> Enum.reduce(Map.drop(form.params, form_keys), fn {key, config}, params ->
       case config[:type] || :single do
         :single ->
-          nested_params =
-            if form.forms[key] do
-              params(form.forms[key])
-            else
-              nil
-            end
+          if form.forms[key] do
+            nested_params =
+              if form.forms[key] do
+                params(form.forms[key])
+              else
+                nil
+              end
 
-          if form.form_keys[key][:merge?] do
-            Map.merge(nested_params || %{}, params)
+            if form.form_keys[key][:merge?] do
+              Map.merge(nested_params || %{}, params)
+            else
+              Map.put(params, to_string(config[:for] || key), nested_params)
+            end
           else
-            Map.put(params, to_string(config[:for] || key), nested_params)
+            Map.put(params, to_string(config[:for] || key), nil)
           end
 
         :list ->
@@ -1241,10 +1293,10 @@ defmodule AshPhoenix.Form do
     {form, path} =
       if is_binary(path) do
         path = parse_path!(form, path)
-        {do_add_form(form, path, opts, []), path}
+        {do_add_form(form, path, opts, [], form.transform_errors), path}
       else
         path = List.wrap(path)
-        {do_add_form(form, path, opts, []), path}
+        {do_add_form(form, path, opts, [], form.transform_errors), path}
       end
 
     %{form | data_updates: [{:prepend, path} | form.data_updates]}
@@ -1432,7 +1484,7 @@ defmodule AshPhoenix.Form do
     raise ArgumentError, message: "Invalid Path: #{inspect(Enum.reverse(trail, path))}"
   end
 
-  defp do_add_form(form, [key, i | rest], opts, trail) when is_integer(i) do
+  defp do_add_form(form, [key, i | rest], opts, trail, transform_errors) when is_integer(i) do
     unless form.form_keys[key] do
       raise AshPhoenix.Form.NoFormConfigured,
         field: key,
@@ -1444,13 +1496,13 @@ defmodule AshPhoenix.Form do
       form.forms
       |> Map.put_new(key, [])
       |> Map.update!(key, fn forms ->
-        List.update_at(forms, i, &do_add_form(&1, rest, opts, [i, key | trail]))
+        List.update_at(forms, i, &do_add_form(&1, rest, opts, [i, key | trail], transform_errors))
       end)
 
     %{form | forms: new_forms}
   end
 
-  defp do_add_form(form, [key], opts, trail) do
+  defp do_add_form(form, [key], opts, trail, transform_errors) do
     config =
       form.form_keys[key] ||
         raise AshPhoenix.Form.NoFormConfigured,
@@ -1484,7 +1536,8 @@ defmodule AshPhoenix.Form do
           for_action(resource, action,
             params: opts[:params] || %{},
             forms: config[:forms] || [],
-            manage_relationship_source: manage_relationship_source(form, config)
+            manage_relationship_source: manage_relationship_source(form, config),
+            transform_errors: transform_errors
           )
 
         case config[:type] || :single do
@@ -1518,7 +1571,7 @@ defmodule AshPhoenix.Form do
     }
   end
 
-  defp do_add_form(form, [key | rest], opts, trail) do
+  defp do_add_form(form, [key | rest], opts, trail, transform_errors) do
     unless form.form_keys[key] do
       raise AshPhoenix.Form.NoFormConfigured,
         field: key,
@@ -1529,12 +1582,12 @@ defmodule AshPhoenix.Form do
     new_forms =
       form.forms
       |> Map.put_new(key, [])
-      |> Map.update!(key, &do_add_form(&1, rest, opts, [key | trail]))
+      |> Map.update!(key, &do_add_form(&1, rest, opts, [key | trail], transform_errors))
 
     %{form | forms: new_forms}
   end
 
-  defp do_add_form(_form, path, _opts, trail) do
+  defp do_add_form(_form, path, _opts, trail, _) do
     raise ArgumentError, message: "Invalid Path: #{inspect(Enum.reverse(trail, path))}"
   end
 
@@ -2067,8 +2120,8 @@ defmodule AshPhoenix.Form do
             do_remove(data, i)
         end
 
-      {:remove, [_]}, data ->
-        data
+      {:remove, [_]}, _data ->
+        nil
     end)
   end
 

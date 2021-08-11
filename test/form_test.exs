@@ -176,7 +176,7 @@ defmodule AshPhoenix.FormTest do
              ]
     end
 
-    test "nested forms submit empty values when not present in input params" do
+    test "nested forms don't submit empty values when not present in forms" do
       form =
         Comment
         |> Form.for_create(:create,
