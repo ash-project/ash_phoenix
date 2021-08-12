@@ -1404,10 +1404,10 @@ defmodule AshPhoenix.Form do
 
     touched_forms =
       Enum.reduce(forms, touched_forms, fn {key, form_or_forms}, touched_forms ->
-        if form_or_forms not in [nil, []] do
-          MapSet.put(touched_forms, to_string(key))
-        else
+        if form_or_forms in [nil, []] do
           touched_forms
+        else
+          MapSet.put(touched_forms, to_string(key))
         end
       end)
 
