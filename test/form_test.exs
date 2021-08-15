@@ -966,8 +966,6 @@ defmodule AshPhoenix.FormTest do
           ]
         )
 
-      Application.put_env(:foo, :bar, true)
-
       updated_comment =
         form
         |> AshPhoenix.Form.submit!(

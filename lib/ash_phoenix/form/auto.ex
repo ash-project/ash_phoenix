@@ -128,6 +128,7 @@ defmodule AshPhoenix.Form.Auto do
         forms: [],
         sparse?: auto_opts[:sparse_lists?],
         managed_relationship: {relationship.source, relationship.name},
+        must_load?: Ash.Changeset.ManagedRelationshipHelpers.must_load?(manage_opts),
         updater: fn opts ->
           opts =
             opts
