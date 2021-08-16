@@ -26,6 +26,12 @@ defimpl AshPhoenix.FormData.Error, for: Ash.Error.Changes.InvalidArgument do
   end
 end
 
+defimpl AshPhoenix.FormData.Error, for: Ash.Error.Changes.InvalidRelationship do
+  def to_form_error(error) do
+    {error.relationship, error.message, error.vars}
+  end
+end
+
 defimpl AshPhoenix.FormData.Error, for: Ash.Error.Changes.InvalidChanges do
   def to_form_error(error) do
     fields = Enum.join(error.fields || [], ",")
