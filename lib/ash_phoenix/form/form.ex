@@ -3053,10 +3053,7 @@ defmodule AshPhoenix.Form do
     defp type_validations(_), do: []
 
     defp get_changing_value(changeset, field) do
-      with :error <- Map.fetch(changeset.attributes, field),
-           :error <- Map.fetch(changeset.params, field) do
-        Map.fetch(changeset.params, to_string(field))
-      end
+      Map.fetch(changeset.attributes, field)
     end
   end
 end
