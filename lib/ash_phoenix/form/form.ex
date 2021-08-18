@@ -2957,7 +2957,7 @@ defmodule AshPhoenix.Form do
     def input_value(%{source: %Ash.Changeset{} = changeset}, _form, field) do
       with :error <- get_changing_value(changeset, field),
            :error <- Ash.Changeset.fetch_argument(changeset, field),
-           :error <- Map.fetch(changeset.params, Atom.to_string(field)),
+           :error <- get_non_attribute_non_argument_param(changeset, field),
            :error <- Map.fetch(changeset.data, field) do
         nil
       else
@@ -2976,6 +2976,15 @@ defmodule AshPhoenix.Form do
 
         :error ->
           Map.get(query.params, to_string(field))
+      end
+    end
+
+    defp get_non_attribute_non_argument_param(changeset, field) do
+      if Ash.Resource.Info.attribute(changeset.resource, field) ||
+           Enum.any?(changeset.action.arguments, &(&1.name == field)) do
+        :error
+      else
+        Map.fetch(changeset.params, Atom.to_string(field))
       end
     end
 
