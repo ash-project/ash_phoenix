@@ -1451,7 +1451,12 @@ defmodule AshPhoenix.Form do
         end
       end)
 
-    case params["_touched"] do
+    touched =
+      if is_map(params) do
+        params["_touched"]
+      end
+
+    case touched do
       touched_from_params when is_binary(touched_from_params) ->
         touched_from_params
         |> String.split(",")
