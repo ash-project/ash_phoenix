@@ -1047,6 +1047,14 @@ defmodule AshPhoenix.Form do
     end
   end
 
+  defp add_index(form_params, index, opts) do
+    if opts[:sparse?] do
+      Map.put(form_params, "_index", to_string(index))
+    else
+      form_params
+    end
+  end
+
   defp find_form(forms, index, config) do
     if config[:sparse?] do
       Enum.find(forms, fn form ->
@@ -2410,7 +2418,7 @@ defmodule AshPhoenix.Form do
                 path: Enum.reverse(trail, [key])
 
           for_action(resource, read_action,
-            params: Map.put(form_params, "_index", to_string(original_index)),
+            params: add_index(form_params, original_index, opts),
             forms: opts[:forms] || [],
             errors: error?,
             prev_data_trail: prev_data_trail,
@@ -2432,7 +2440,7 @@ defmodule AshPhoenix.Form do
                 path: Enum.reverse(trail, [key])
 
           for_action(resource, create_action,
-            params: Map.put(form_params, "_index", to_string(original_index)),
+            params: add_index(form_params, original_index, opts),
             forms: opts[:forms] || [],
             errors: error?,
             prev_data_trail: prev_data_trail,
@@ -2581,7 +2589,7 @@ defmodule AshPhoenix.Form do
 
           form =
             for_action(resource, read_action,
-              params: Map.put(form_params, "_index", to_string(original_index)),
+              params: add_index(form_params, original_index, opts),
               forms: opts[:forms] || [],
               errors: error?,
               prev_data_trail: prev_data_trail,
@@ -2608,7 +2616,7 @@ defmodule AshPhoenix.Form do
 
               form =
                 for_action(resource, create_action,
-                  params: Map.put(form_params, "_index", to_string(original_index)),
+                  params: add_index(form_params, original_index, opts),
                   forms: opts[:forms] || [],
                   errors: error?,
                   prev_data_trail: prev_data_trail,
