@@ -2843,11 +2843,6 @@ defmodule AshPhoenix.Form do
     |> Enum.sort_by(fn {params, key} ->
       params["_index"] || key
     end)
-  rescue
-    _e ->
-      map
-      |> List.wrap()
-      |> Enum.with_index()
   end
 
   defp indexed_list(other) do
