@@ -227,28 +227,6 @@ defmodule AshPhoenix.Form do
       default: :single,
       doc: "The cardinality of the nested form."
     ],
-    sparse?: [
-      type: :boolean,
-      doc: """
-      If the nested form is `sparse`, the form won't expect all inputs for all forms to be present.
-
-      Has no effect if the type is `:single`.
-
-      Normally, if you leave some forms out of a list of nested forms, they are removed from the parameters
-      passed to the action. For example, if you had a `post` with two comments `[%Comment{id: 1}, %Comment{id: 2}]`
-      and you passed down params like `comments[0][id]=1&comments[1][text]=new_text`, we would remove the second comment
-      from the input parameters, resulting in the following being passed into the action: `%{"comments" => [%{"id" => 1, "text" => "new"}]}`.
-      By setting it to sparse, you have to explicitly use `remove_form` for that removal to happen. So in the same scenario above, the parameters
-      that would be sent would actually be `%{"comments" => [%{"id" => 1, "text" => "new"}, %{"id" => 2}]}`.
-
-      One major difference with `sparse?` is that the form actually ignores the *index* provided, e.g `comments[0]...`, and instead uses the primary
-      key e.g `comments[0][id]` to match which form is being updated. This prevents you from having to find the index of the specific item you want to
-      update. Which could be very gnarly on deeply nested forms. If there is no primary key, or the primary key does not match anything, it is treated
-      as a new form.
-
-      REMEMBER: You need to use `hidden_inputs_for` (or `HiddenInputs` if using surface) for the id to be automatically placed into the form.
-      """
-    ],
     forms: [
       type: :keyword_list,
       doc: "Forms nested inside the current nesting level in all cases"
@@ -1025,7 +1003,7 @@ defmodule AshPhoenix.Form do
         form.forms
         |> Map.get(atom)
         |> List.wrap()
-        |> find_form(integer, form.form_keys[atom])
+        |> Enum.at(integer)
         |> case do
           nil ->
             nil
@@ -1044,17 +1022,6 @@ defmodule AshPhoenix.Form do
           _ ->
             nil
         end
-    end
-  end
-
-  defp find_form(forms, index, config) do
-    if config[:sparse?] do
-      Enum.find(forms, fn form ->
-        form.params["_index"] == to_string(index)
-      end) ||
-        Enum.at(forms, index)
-    else
-      Enum.at(forms, index)
     end
   end
 
@@ -1598,18 +1565,9 @@ defmodule AshPhoenix.Form do
       form.forms
       |> Map.put_new(key, [])
       |> Map.update!(key, fn forms ->
-        index =
-          if form.form_keys[key][:sparse?] do
-            Enum.find_index(forms, fn form ->
-              form.params["_index"] == to_string(i)
-            end) || i
-          else
-            i
-          end
-
         List.update_at(
           forms,
-          index,
+          i,
           &do_add_form(&1, rest, opts, [i, key | trail], transform_errors)
         )
       end)
@@ -1967,7 +1925,7 @@ defmodule AshPhoenix.Form do
 
     case path do
       [^name | rest] ->
-        do_decode_path(form, original_path, rest, false)
+        do_decode_path(form, original_path, rest)
 
       _other ->
         raise ArgumentError,
@@ -1975,43 +1933,23 @@ defmodule AshPhoenix.Form do
     end
   end
 
-  defp do_decode_path(_, _, [], _), do: []
+  defp do_decode_path(_, _, []), do: []
 
-  defp do_decode_path([], original_path, _, _) do
+  defp do_decode_path([], original_path, _) do
     raise "Invalid Path: #{original_path}"
   end
 
-  defp do_decode_path(forms, original_path, [key | rest], sparse?) when is_list(forms) do
+  defp do_decode_path(forms, original_path, [key | rest]) when is_list(forms) do
     case Integer.parse(key) do
       {index, ""} ->
-        matching_form =
-          if sparse? do
-            Enum.find(forms, fn form ->
-              form.params["_index"] == key
-            end)
-          else
-            Enum.at(forms, index)
-          end
+        matching_form = Enum.at(forms, index)
 
         case matching_form do
           nil ->
             raise "Invalid Path: #{original_path}"
 
           form ->
-            case Enum.at(rest, 0) do
-              nil ->
-                [index | do_decode_path(form, original_path, rest, false)]
-
-              next_key ->
-                next_config =
-                  Enum.find_value(form.form_keys, fn {search_key, value} ->
-                    if to_string(search_key) == next_key do
-                      value
-                    end
-                  end)
-
-                [index | do_decode_path(form, original_path, rest, next_config[:sparse?])]
-            end
+            [index | do_decode_path(form, original_path, rest)]
         end
 
       _ ->
@@ -2019,7 +1957,7 @@ defmodule AshPhoenix.Form do
     end
   end
 
-  defp do_decode_path(form, original_path, [key | rest], _sparse?) do
+  defp do_decode_path(form, original_path, [key | rest]) do
     form.form_keys
     |> Enum.find_value(fn {search_key, value} ->
       if to_string(search_key) == key do
@@ -2032,9 +1970,9 @@ defmodule AshPhoenix.Form do
 
       {key, config} ->
         if config[:type] || :single == :single do
-          [key | do_decode_path(form.forms[key], original_path, rest, config[:sparse?])]
+          [key | do_decode_path(form.forms[key], original_path, rest)]
         else
-          [key | do_decode_path(form.forms[key] || [], original_path, rest, config[:sparse?])]
+          [key | do_decode_path(form.forms[key] || [], original_path, rest)]
         end
     end
   end
@@ -2396,7 +2334,7 @@ defmodule AshPhoenix.Form do
       form_params
       |> indexed_list()
       |> Enum.with_index()
-      |> Enum.map(fn {{form_params, original_index}, index} ->
+      |> Enum.map(fn {form_params, index} ->
         if map(form_params)["_form_type"] == "read" do
           read_action =
             opts[:read_action] ||
@@ -2410,7 +2348,7 @@ defmodule AshPhoenix.Form do
                 path: Enum.reverse(trail, [key])
 
           for_action(resource, read_action,
-            params: Map.put(form_params, "_index", to_string(original_index)),
+            params: form_params,
             forms: opts[:forms] || [],
             errors: error?,
             prev_data_trail: prev_data_trail,
@@ -2432,7 +2370,7 @@ defmodule AshPhoenix.Form do
                 path: Enum.reverse(trail, [key])
 
           for_action(resource, create_action,
-            params: Map.put(form_params, "_index", to_string(original_index)),
+            params: form_params,
             forms: opts[:forms] || [],
             errors: error?,
             prev_data_trail: prev_data_trail,
@@ -2565,8 +2503,7 @@ defmodule AshPhoenix.Form do
       form_params
       |> indexed_list()
       |> Enum.with_index()
-      |> Enum.reduce({[], List.wrap(data)}, fn {{form_params, original_index}, index},
-                                               {forms, data} ->
+      |> Enum.reduce({[], List.wrap(data)}, fn {form_params, index}, {forms, data} ->
         if map(form_params)["_form_type"] == "read" do
           resource =
             opts[:read_resource] || opts[:resource] ||
@@ -2581,7 +2518,7 @@ defmodule AshPhoenix.Form do
 
           form =
             for_action(resource, read_action,
-              params: Map.put(form_params, "_index", to_string(original_index)),
+              params: form_params,
               forms: opts[:forms] || [],
               errors: error?,
               prev_data_trail: prev_data_trail,
@@ -2593,7 +2530,7 @@ defmodule AshPhoenix.Form do
 
           {[form | forms], data}
         else
-          case find_form_match(data, form_params, opts) do
+          case data do
             [nil | rest] ->
               create_action =
                 opts[:create_action] ||
@@ -2608,7 +2545,7 @@ defmodule AshPhoenix.Form do
 
               form =
                 for_action(resource, create_action,
-                  params: Map.put(form_params, "_index", to_string(original_index)),
+                  params: form_params,
                   forms: opts[:forms] || [],
                   errors: error?,
                   prev_data_trail: prev_data_trail,
@@ -2690,135 +2627,8 @@ defmodule AshPhoenix.Form do
           end
         end
       end)
-      |> add_forms_for_remaining_data(
-        opts,
-        prev_data_trail,
-        key,
-        source_changeset,
-        name,
-        id,
-        further,
-        error?
-      )
       |> elem(0)
       |> Enum.reverse()
-    end
-  end
-
-  defp add_forms_for_remaining_data(
-         {forms, remaining_data},
-         opts,
-         prev_data_trail,
-         key,
-         source_changeset,
-         name,
-         id,
-         further,
-         error?
-       ) do
-    if opts[:sparse?] do
-      offset = Enum.count(forms)
-
-      update_action =
-        opts[:update_action] ||
-          raise AshPhoenix.Form.NoActionConfigured,
-            path: Enum.reverse(prev_data_trail, [key]),
-            action: :update
-
-      all_forms =
-        remaining_data
-        |> List.wrap()
-        |> Enum.with_index()
-        |> Enum.reduce(Enum.reverse(forms), fn {data, index}, forms ->
-          index = index + offset
-
-          [
-            for_action(data, update_action,
-              errors: error?,
-              prev_data_trail: prev_data_trail,
-              forms: opts[:forms] || [],
-              manage_relationship_source: manage_relationship_source(source_changeset, opts),
-              as: name <> "[#{key}][#{index}]",
-              id: id <> "_#{key}_#{index}",
-              data_updates: updates_for_index(further, index)
-            )
-            | forms
-          ]
-        end)
-        |> Enum.reverse()
-
-      {all_forms, []}
-    else
-      {forms, remaining_data}
-    end
-  end
-
-  defp find_form_match(data, form_params, opts) do
-    match_index =
-      if opts[:sparse?] do
-        find_resource =
-          case data do
-            data when data in [nil, []] ->
-              nil
-
-            [%resource{} | _] ->
-              resource
-
-            %resource{} ->
-              resource
-          end
-
-        if find_resource do
-          pkey_fields = Ash.Resource.Info.primary_key(find_resource)
-
-          pkey =
-            Enum.map(pkey_fields, fn field ->
-              Ash.Resource.Info.attribute(find_resource, field)
-            end)
-
-          casted_pkey =
-            Enum.reduce_while(pkey, {:ok, %{}}, fn attribute, {:ok, key_search} ->
-              fetched =
-                case Map.fetch(form_params, attribute.name) do
-                  {:ok, value} ->
-                    {:ok, value}
-
-                  :error ->
-                    Map.fetch(form_params, to_string(attribute.name))
-                end
-
-              case fetched do
-                {:ok, value} ->
-                  case Ash.Type.cast_input(attribute.type, value, attribute.constraints) do
-                    {:ok, value} -> {:cont, {:ok, Map.put(key_search, attribute.name, value)}}
-                    _ -> {:halt, :error}
-                  end
-
-                :error ->
-                  {:halt, :error}
-              end
-            end)
-
-          case casted_pkey do
-            {:ok, empty} when empty == %{} ->
-              nil
-
-            {:ok, pkey_search} ->
-              Enum.find_index(data, fn data ->
-                data && Map.take(data, pkey_fields) == pkey_search
-              end)
-
-            :error ->
-              nil
-          end
-        end
-      end
-
-    if match_index do
-      {match, rest} = List.pop_at(data, match_index)
-      [match | rest]
-    else
-      data
     end
   end
 
@@ -2837,18 +2647,14 @@ defmodule AshPhoenix.Form do
     map
     |> Map.keys()
     |> Enum.map(&String.to_integer/1)
+    |> Enum.sort()
     |> Enum.map(fn key ->
-      {map[to_string(key)], key}
-    end)
-    |> Enum.sort_by(fn {params, key} ->
-      params["_index"] || key
+      map[to_string(key)]
     end)
   end
 
   defp indexed_list(other) do
-    other
-    |> List.wrap()
-    |> Enum.with_index()
+    List.wrap(other)
   end
 
   defp fetch_key(params, key) do
@@ -2881,13 +2687,6 @@ defmodule AshPhoenix.Form do
         case form.touched_forms |> Enum.join(",") do
           "" -> hidden
           fields -> Keyword.put(hidden, :_touched, fields)
-        end
-
-      hidden =
-        if form.params["_index"] && form.params["_index"] != "" do
-          Keyword.put(hidden, :_index, form.params["_index"])
-        else
-          hidden
         end
 
       errors =

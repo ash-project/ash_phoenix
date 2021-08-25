@@ -66,11 +66,6 @@ defmodule AshPhoenix.Form.Auto do
       A two argument function that receives the parent data, the relationship to fetch.
       The default simply fetches the relationship value, and if it isn't loaded, it uses `[]` or `nil`.
       """
-    ],
-    sparse_lists?: [
-      type: :boolean,
-      doc: "Sets all list type forms to `sparse?: true` by default.",
-      default: false
     ]
   ]
 
@@ -126,7 +121,6 @@ defmodule AshPhoenix.Form.Auto do
       opts = [
         type: type,
         forms: [],
-        sparse?: auto_opts[:sparse_lists?],
         managed_relationship: {relationship.source, relationship.name},
         must_load?: Ash.Changeset.ManagedRelationshipHelpers.must_load?(manage_opts),
         updater: fn opts ->
@@ -451,7 +445,6 @@ defmodule AshPhoenix.Form.Auto do
        [
          type: type,
          resource: embed,
-         sparse?: auto_opts[:sparse_lists?],
          create_action: create_action.name,
          update_action: update_action.name,
          data: data,
