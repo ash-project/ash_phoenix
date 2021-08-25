@@ -74,7 +74,7 @@ defmodule AshPhoenix.MixProject do
     [
       {:ash, ash_version("~> 1.47 and >= 1.47.8")},
       {:phoenix, "~> 1.5.6"},
-      {:phoenix_html, "~> 2.14"},
+      {:phoenix_html, "~> 2.14 or ~> 3.0"},
       {:phoenix_live_view, "~> 0.15"},
       {:git_ops, "~> 2.4.4", only: :dev},
       {:ex_doc, "~> 0.23", only: :dev, runtime: false},
