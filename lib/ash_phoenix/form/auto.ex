@@ -69,7 +69,8 @@ defmodule AshPhoenix.Form.Auto do
     ],
     sparse_lists?: [
       type: :boolean,
-      doc: "Sets all list type forms to `sparse?: true` by default.",
+      doc:
+        "Sets all list type forms to `sparse?: true` by default. Has no effect on forms derived for embedded resources.",
       default: false
     ]
   ]
@@ -451,9 +452,9 @@ defmodule AshPhoenix.Form.Auto do
        [
          type: type,
          resource: embed,
-         sparse?: auto_opts[:sparse_lists?],
          create_action: create_action.name,
          update_action: update_action.name,
+         embed?: true,
          data: data,
          forms: [],
          updater: fn opts ->
