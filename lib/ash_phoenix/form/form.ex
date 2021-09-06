@@ -485,7 +485,8 @@ defmodule AshPhoenix.Form do
         manage_relationship_source_changeset,
         name,
         id,
-        opts[:data_updates] || []
+        opts[:data_updates] || [],
+        [data]
       )
 
     %__MODULE__{
@@ -568,7 +569,8 @@ defmodule AshPhoenix.Form do
         manage_relationship_source_changeset,
         name,
         id,
-        opts[:data_updates] || []
+        opts[:data_updates] || [],
+        [data]
       )
 
     %__MODULE__{
@@ -2852,7 +2854,11 @@ defmodule AshPhoenix.Form do
       {match, rest} = List.pop_at(data, match_index)
       [match | rest]
     else
-      data
+      if opts[:sparse?] do
+        [nil | data]
+      else
+        data
+      end
     end
   end
 
