@@ -2506,7 +2506,7 @@ defmodule AshPhoenix.Form do
     {data, further} = apply_data_updates(data_updates, data, [key])
 
     if (opts[:type] || :single) == :single do
-      if data || map(form_params)["_form_type"] == "read" do
+      if data do
         case map(form_params)["_form_type"] || "update" do
           "update" ->
             update_action =
