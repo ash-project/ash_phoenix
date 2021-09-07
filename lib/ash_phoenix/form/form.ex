@@ -2726,68 +2726,68 @@ defmodule AshPhoenix.Form do
           end
         end
       end)
-      |> add_forms_for_remaining_data(
-        opts,
-        prev_data_trail,
-        key,
-        source_changeset,
-        name,
-        id,
-        further,
-        error?
-      )
+      # |> add_forms_for_remaining_data(
+      #   opts,
+      #   prev_data_trail,
+      #   key,
+      #   source_changeset,
+      #   name,
+      #   id,
+      #   further,
+      #   error?
+      # )
       |> elem(0)
       |> Enum.reverse()
     end
   end
 
-  defp add_forms_for_remaining_data(
-         {forms, remaining_data},
-         opts,
-         prev_data_trail,
-         key,
-         source_changeset,
-         name,
-         id,
-         further,
-         error?
-       ) do
-    if opts[:sparse?] do
-      offset = Enum.count(forms)
+  # defp add_forms_for_remaining_data(
+  #        {forms, remaining_data},
+  #        opts,
+  #        prev_data_trail,
+  #        key,
+  #        source_changeset,
+  #        name,
+  #        id,
+  #        further,
+  #        error?
+  #      ) do
+  #   if opts[:sparse?] do
+  #     offset = Enum.count(forms)
 
-      update_action =
-        opts[:update_action] ||
-          raise AshPhoenix.Form.NoActionConfigured,
-            path: Enum.reverse(prev_data_trail, [key]),
-            action: :update
+  #     update_action =
+  #       opts[:update_action] ||
+  #         raise AshPhoenix.Form.NoActionConfigured,
+  #           path: Enum.reverse(prev_data_trail, [key]),
+  #           action: :update
 
-      all_forms =
-        remaining_data
-        |> List.wrap()
-        |> Enum.with_index()
-        |> Enum.reduce(Enum.reverse(forms), fn {data, index}, forms ->
-          index = index + offset
+  #     all_forms =
+  #       remaining_data
+  #       |> List.wrap()
+  #       |> Enum.with_index()
+  #       |> Enum.reduce(Enum.reverse(forms), fn {data, index}, forms ->
+  #         index = index + offset
 
-          [
-            for_action(data, update_action,
-              errors: error?,
-              prev_data_trail: prev_data_trail,
-              forms: opts[:forms] || [],
-              manage_relationship_source: manage_relationship_source(source_changeset, opts),
-              as: name <> "[#{key}][#{index}]",
-              id: id <> "_#{key}_#{index}",
-              data_updates: updates_for_index(further, index)
-            )
-            | forms
-          ]
-        end)
-        |> Enum.reverse()
+  #         [
+  #           for_action(data, update_action,
+  #             errors: error?,
+  #             prev_data_trail: prev_data_trail,
+  #             forms: opts[:forms] || [],
+  #             manage_relationship_source: manage_relationship_source(source_changeset, opts),
+  #             as: name <> "[#{key}][#{index}]",
+  #             id: id <> "_#{key}_#{index}",
+  #             data_updates: updates_for_index(further, index)
+  #           )
+  #           | forms
+  #         ]
+  #       end)
+  #       |> Enum.reverse()
 
-      {all_forms, []}
-    else
-      {forms, remaining_data}
-    end
-  end
+  #     {all_forms, []}
+  #   else
+  #     {forms, remaining_data}
+  #   end
+  # end
 
   defp find_form_match(data, form_params, opts) do
     match_index =
