@@ -130,17 +130,26 @@ defmodule AshPhoenix.LiveView do
   def keep_live(socket, assign, callback, opts \\ []) do
     opts = NimbleOptions.validate!(opts, @opts)
 
-    if opts[:load_until_connected?] && !Phoenix.LiveView.connected?(socket) do
-      Phoenix.LiveView.assign(socket, assign, :loading)
+    if opts[:load_until_connected?] && match?(%Phoenix.LiveView.Socket{}, socket) &&
+         !Phoenix.LiveView.connected?(socket) do
+      assign(socket, assign, :loading)
     else
       if opts[:refetch_interval] do
         :timer.send_interval(opts[:refetch_interval], {:refetch, assign, []})
       end
 
-      if Phoenix.LiveView.connected?(socket) do
-        for topic <- List.wrap(opts[:subscribe]) do
-          socket.endpoint.subscribe(topic)
-        end
+      case socket do
+        %Phoenix.LiveView.Socket{} ->
+          if Phoenix.LiveView.connected?(socket) do
+            for topic <- List.wrap(opts[:subscribe]) do
+              (opts[:pub_sub] || socket.endpoint).subscribe(topic)
+            end
+          end
+
+        _ ->
+          for topic <- List.wrap(opts[:subscribe]) do
+            (opts[:pub_sub] || socket.endpoint).subscribe(topic)
+          end
       end
 
       live_config = Map.get(socket.assigns, :ash_live_config, %{})
@@ -163,8 +172,8 @@ defmodule AshPhoenix.LiveView do
       }
 
       socket
-      |> Phoenix.LiveView.assign(assign, result)
-      |> Phoenix.LiveView.assign(:ash_live_config, Map.put(live_config, assign, this_config))
+      |> assign(assign, result)
+      |> assign(:ash_live_config, Map.put(live_config, assign, this_config))
     end
   end
 
@@ -202,8 +211,8 @@ defmodule AshPhoenix.LiveView do
     new_live_config = Map.update!(live_config, assign, &Map.put(&1, :opts, new_opts))
 
     socket
-    |> Phoenix.LiveView.assign(assign, new_result)
-    |> Phoenix.LiveView.assign(:ash_live_config, new_live_config)
+    |> assign(assign, new_result)
+    |> assign(:ash_live_config, new_live_config)
   end
 
   def page_from_params(params, default_limit, count? \\ false) do
@@ -452,8 +461,8 @@ defmodule AshPhoenix.LiveView do
         new_full_config = Map.put(socket.assigns.ash_live_config, assign, new_config)
 
         socket
-        |> Phoenix.LiveView.assign(assign, result)
-        |> Phoenix.LiveView.assign(:ash_live_config, new_full_config)
+        |> assign(assign, result)
+        |> assign(:ash_live_config, new_full_config)
     end
   end
 
@@ -560,4 +569,12 @@ defmodule AshPhoenix.LiveView do
   end
 
   defp mark_page_as_first(page), do: page
+
+  defp assign(%Phoenix.LiveView.Socket{} = socket, one, two) do
+    Phoenix.LiveView.assign(socket, one, two)
+  end
+
+  defp assign(socket, one, two) do
+    Phoenix.Socket.assign(socket, one, two)
+  end
 end

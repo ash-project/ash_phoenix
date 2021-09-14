@@ -2911,8 +2911,14 @@ defmodule AshPhoenix.Form do
     def to_form(form, opts) do
       hidden =
         if form.type in [:update, :destroy] do
+          pkey =
+            form.resource
+            |> Ash.Resource.Info.public_attributes()
+            |> Enum.filter(&(!&1.private?))
+            |> Enum.map(& &1.name)
+
           form.data
-          |> Map.take(Ash.Resource.Info.primary_key(form.resource))
+          |> Map.take(pkey)
           |> Enum.to_list()
         else
           []
