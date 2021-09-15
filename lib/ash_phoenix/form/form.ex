@@ -2914,6 +2914,7 @@ defmodule AshPhoenix.Form do
           pkey =
             form.resource
             |> Ash.Resource.Info.public_attributes()
+            |> Enum.filter(& &1.primary_key?)
             |> Enum.filter(&(!&1.private?))
             |> Enum.map(& &1.name)
 
