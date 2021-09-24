@@ -485,7 +485,8 @@ defmodule AshPhoenix.Form do
         manage_relationship_source_changeset,
         name,
         id,
-        opts[:data_updates] || []
+        opts[:data_updates] || [],
+        [data]
       )
 
     %__MODULE__{
@@ -568,7 +569,8 @@ defmodule AshPhoenix.Form do
         manage_relationship_source_changeset,
         name,
         id,
-        opts[:data_updates] || []
+        opts[:data_updates] || [],
+        [data]
       )
 
     %__MODULE__{
@@ -1260,8 +1262,12 @@ defmodule AshPhoenix.Form do
   """
   @spec params(t()) :: map
   def params(form, opts \\ []) do
+    # These options aren't documented because they are still experimental
     hidden? = opts[:hidden?] || false
-    indexed_lists? = opts[:indexed_lists?] || false
+    indexer = opts[:indexer]
+    indexed_lists? = opts[:indexed_lists?] || not is_nil(indexer) || false
+    transform = opts[:transform]
+    only_touched? = Keyword.get(opts, :only_touched?, true)
 
     form_keys =
       form.form_keys
@@ -1279,56 +1285,78 @@ defmodule AshPhoenix.Form do
         params
       end
 
-    form.form_keys
-    |> Enum.filter(fn {key, _} ->
+    untransformed_params =
+      form.form_keys
+      |> only_touched(form, only_touched?)
+      |> Enum.reduce(params, fn {key, config}, params ->
+        case config[:type] || :single do
+          :single ->
+            if form.forms[key] do
+              nested_params =
+                if form.forms[key] do
+                  params(form.forms[key], opts)
+                else
+                  nil
+                end
+
+              if form.form_keys[key][:merge?] do
+                Map.merge(nested_params || %{}, params)
+              else
+                Map.put(params, to_string(config[:for] || key), nested_params)
+              end
+            else
+              Map.put(params, to_string(config[:for] || key), nil)
+            end
+
+          :list ->
+            for_name = to_string(config[:for] || key)
+
+            if indexed_lists? do
+              params
+              |> Map.put_new(for_name, %{})
+              |> Map.update!(for_name, fn current ->
+                if indexer do
+                  Enum.reduce(form.forms[key], current, fn form, current ->
+                    Map.put(current, indexer.(form), params(form, opts))
+                  end)
+                else
+                  max =
+                    current
+                    |> Map.keys()
+                    |> Enum.map(&String.to_integer/1)
+                    |> Enum.max(fn -> -1 end)
+
+                  form.forms[key]
+                  |> Enum.reduce({current, max + 1}, fn form, {current, i} ->
+                    {Map.put(current, to_string(i), params(form, opts)), i + 1}
+                  end)
+                  |> elem(0)
+                end
+              end)
+            else
+              params
+              |> Map.put_new(for_name, [])
+              |> Map.update!(for_name, fn current ->
+                current ++ Enum.map(form.forms[key] || [], &params(&1, opts))
+              end)
+            end
+        end
+      end)
+
+    if transform do
+      Map.new(untransformed_params, transform)
+    else
+      untransformed_params
+    end
+  end
+
+  defp only_touched(form_keys, true, form) do
+    Enum.filter(form_keys, fn {key, _} ->
       MapSet.member?(form.touched_forms, to_string(key))
     end)
-    |> Enum.reduce(params, fn {key, config}, params ->
-      case config[:type] || :single do
-        :single ->
-          if form.forms[key] do
-            nested_params =
-              if form.forms[key] do
-                params(form.forms[key], opts)
-              else
-                nil
-              end
-
-            if form.form_keys[key][:merge?] do
-              Map.merge(nested_params || %{}, params)
-            else
-              Map.put(params, to_string(config[:for] || key), nested_params)
-            end
-          else
-            Map.put(params, to_string(config[:for] || key), nil)
-          end
-
-        :list ->
-          for_name = to_string(config[:for] || key)
-
-          if indexed_lists? do
-            params
-            |> Map.put_new(for_name, %{})
-            |> Map.update!(for_name, fn current ->
-              max =
-                current |> Map.keys() |> Enum.map(&String.to_integer/1) |> Enum.max(fn -> -1 end)
-
-              form.forms[key]
-              |> Enum.reduce({current, max + 1}, fn form, {current, i} ->
-                {Map.put(current, to_string(i), params(form, opts)), i + 1}
-              end)
-              |> elem(0)
-            end)
-          else
-            params
-            |> Map.put_new(for_name, [])
-            |> Map.update!(for_name, fn current ->
-              current ++ Enum.map(form.forms[key] || [], &params(&1, opts))
-            end)
-          end
-      end
-    end)
   end
+
+  defp only_touched(form_keys, _, _), do: form_keys
 
   @add_form_opts [
     prepend: [
@@ -2480,7 +2508,7 @@ defmodule AshPhoenix.Form do
     {data, further} = apply_data_updates(data_updates, data, [key])
 
     if (opts[:type] || :single) == :single do
-      if data || map(form_params)["_form_type"] == "read" do
+      if data do
         case map(form_params)["_form_type"] || "update" do
           "update" ->
             update_action =
@@ -2698,68 +2726,68 @@ defmodule AshPhoenix.Form do
           end
         end
       end)
-      |> add_forms_for_remaining_data(
-        opts,
-        prev_data_trail,
-        key,
-        source_changeset,
-        name,
-        id,
-        further,
-        error?
-      )
+      # |> add_forms_for_remaining_data(
+      #   opts,
+      #   prev_data_trail,
+      #   key,
+      #   source_changeset,
+      #   name,
+      #   id,
+      #   further,
+      #   error?
+      # )
       |> elem(0)
       |> Enum.reverse()
     end
   end
 
-  defp add_forms_for_remaining_data(
-         {forms, remaining_data},
-         opts,
-         prev_data_trail,
-         key,
-         source_changeset,
-         name,
-         id,
-         further,
-         error?
-       ) do
-    if opts[:sparse?] do
-      offset = Enum.count(forms)
+  # defp add_forms_for_remaining_data(
+  #        {forms, remaining_data},
+  #        opts,
+  #        prev_data_trail,
+  #        key,
+  #        source_changeset,
+  #        name,
+  #        id,
+  #        further,
+  #        error?
+  #      ) do
+  #   if opts[:sparse?] do
+  #     offset = Enum.count(forms)
 
-      update_action =
-        opts[:update_action] ||
-          raise AshPhoenix.Form.NoActionConfigured,
-            path: Enum.reverse(prev_data_trail, [key]),
-            action: :update
+  #     update_action =
+  #       opts[:update_action] ||
+  #         raise AshPhoenix.Form.NoActionConfigured,
+  #           path: Enum.reverse(prev_data_trail, [key]),
+  #           action: :update
 
-      all_forms =
-        remaining_data
-        |> List.wrap()
-        |> Enum.with_index()
-        |> Enum.reduce(Enum.reverse(forms), fn {data, index}, forms ->
-          index = index + offset
+  #     all_forms =
+  #       remaining_data
+  #       |> List.wrap()
+  #       |> Enum.with_index()
+  #       |> Enum.reduce(Enum.reverse(forms), fn {data, index}, forms ->
+  #         index = index + offset
 
-          [
-            for_action(data, update_action,
-              errors: error?,
-              prev_data_trail: prev_data_trail,
-              forms: opts[:forms] || [],
-              manage_relationship_source: manage_relationship_source(source_changeset, opts),
-              as: name <> "[#{key}][#{index}]",
-              id: id <> "_#{key}_#{index}",
-              data_updates: updates_for_index(further, index)
-            )
-            | forms
-          ]
-        end)
-        |> Enum.reverse()
+  #         [
+  #           for_action(data, update_action,
+  #             errors: error?,
+  #             prev_data_trail: prev_data_trail,
+  #             forms: opts[:forms] || [],
+  #             manage_relationship_source: manage_relationship_source(source_changeset, opts),
+  #             as: name <> "[#{key}][#{index}]",
+  #             id: id <> "_#{key}_#{index}",
+  #             data_updates: updates_for_index(further, index)
+  #           )
+  #           | forms
+  #         ]
+  #       end)
+  #       |> Enum.reverse()
 
-      {all_forms, []}
-    else
-      {forms, remaining_data}
-    end
-  end
+  #     {all_forms, []}
+  #   else
+  #     {forms, remaining_data}
+  #   end
+  # end
 
   defp find_form_match(data, form_params, opts) do
     match_index =
@@ -2826,7 +2854,11 @@ defmodule AshPhoenix.Form do
       {match, rest} = List.pop_at(data, match_index)
       [match | rest]
     else
-      data
+      if opts[:sparse?] do
+        [nil | data]
+      else
+        data
+      end
     end
   end
 
@@ -2851,6 +2883,9 @@ defmodule AshPhoenix.Form do
     |> Enum.sort_by(fn {params, key} ->
       params["_index"] || key
     end)
+
+    # rescue
+    #   _ ->
   end
 
   defp indexed_list(other) do
@@ -2876,8 +2911,15 @@ defmodule AshPhoenix.Form do
     def to_form(form, opts) do
       hidden =
         if form.type in [:update, :destroy] do
+          pkey =
+            form.resource
+            |> Ash.Resource.Info.public_attributes()
+            |> Enum.filter(& &1.primary_key?)
+            |> Enum.filter(&(!&1.private?))
+            |> Enum.map(& &1.name)
+
           form.data
-          |> Map.take(Ash.Resource.Info.primary_key(form.resource))
+          |> Map.take(pkey)
           |> Enum.to_list()
         else
           []

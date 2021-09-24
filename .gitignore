@@ -25,3 +25,5 @@ ash_phoenix-*.tar
 
 # Temporary files for e.g. tests
 /tmp
+
+.vscode

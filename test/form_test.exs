@@ -266,13 +266,16 @@ defmodule AshPhoenix.FormTest do
         )
         |> Form.validate(%{
           "text" => "text",
-          "post" => %{"0" => %{"id" => post1_id}, "1" => %{"id" => post2_id}}
+          "post" => %{
+            "0" => %{"id" => post1_id},
+            "1" => %{"id" => post2_id}
+          }
         })
 
       assert Form.params(form) == %{
                "post" => [
-                 %{"id" => post1_id},
-                 %{"id" => post2_id}
+                 %{"id" => post1_id, "comments" => []},
+                 %{"id" => post2_id, "comments" => []}
                ],
                "text" => "text"
              }
@@ -318,7 +321,7 @@ defmodule AshPhoenix.FormTest do
       assert Form.params(form) == %{
                "post" => [
                  %{"comments" => [%{"id" => comment_id}], "id" => post1_id},
-                 %{"id" => post2_id}
+                 %{"id" => post2_id, "comments" => []}
                ],
                "text" => "text"
              }
