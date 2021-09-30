@@ -5,6 +5,23 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.5.15](https://github.com/ash-project/ash_phoenix/compare/v0.5.14...v0.5.15) (2021-09-30)
+
+
+
+
+### Bug Fixes:
+
+* ensure `transform_errors` is never unset
+
+### Improvements:
+
+* always pass errors to `transform_errors/2`
+
+* improve typespec on errors/2 (#27)
+
+* Allow Phoenix 1.6.0 (#25)
+
 ## [v0.5.14](https://github.com/ash-project/ash_phoenix/compare/v0.5.13...v0.5.14) (2021-09-15)
 
 
