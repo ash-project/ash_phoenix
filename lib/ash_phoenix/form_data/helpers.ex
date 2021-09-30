@@ -33,10 +33,18 @@ defmodule AshPhoenix.FormData.Helpers do
     |> Macro.underscore()
   end
 
-  def transform_errors(form, errors, path_filter \\ nil) do
+  def transform_errors(form, errors, path_filter \\ nil, additional_path_filters \\ []) do
     errors
     |> Enum.reject(fn error ->
-      Map.has_key?(error, :path) && path_filter && error.path != path_filter
+      Map.has_key?(error, :path) && path_filter && error.path != path_filter &&
+        error.path not in additional_path_filters
+    end)
+    |> Enum.map(fn error ->
+      if error.path in additional_path_filters do
+        %{error | field: List.last(Enum.at(additional_path_filters, 0))}
+      else
+        error
+      end
     end)
     |> Enum.flat_map(&transform_error(form, &1))
     |> Enum.filter(fn
@@ -70,8 +78,6 @@ defmodule AshPhoenix.FormData.Helpers do
     end)
   end
 
-  def transform_error(_form, {_key, _value, _vars} = error), do: error
-
   def transform_error(form, error) do
     case form.transform_errors do
       transformer when is_function(transformer, 2) ->
@@ -101,10 +107,16 @@ defmodule AshPhoenix.FormData.Helpers do
         end
 
       nil ->
-        if AshPhoenix.FormData.Error.impl_for(error) do
-          List.wrap(to_form_error(error))
-        else
-          []
+        case error do
+          {_key, _value, _vars} = error ->
+            error
+
+          error ->
+            if AshPhoenix.FormData.Error.impl_for(error) do
+              List.wrap(to_form_error(error))
+            else
+              []
+            end
         end
     end
   end
