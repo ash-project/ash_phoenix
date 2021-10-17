@@ -7,7 +7,7 @@ defmodule AshPhoenix.Form do
   1. Create a form with `AshPhoenix.Form`
   2. Render that form with Phoenix's `form_for` (or, if using surface, <Form>)
   3. To validate the form (e.g with `on-change` for liveview), pass the input to `AshPhoenix.Form.validate(form, params)`
-  4. On form submission, pass the input to `AshPhoenix.Form.validate(form, params)` and then use `AshPhoenix.Form.submid(form, ApiModule)`
+  4. On form submission, pass the input to `AshPhoenix.Form.validate(form, params)` and then use `AshPhoenix.Form.submit(form, ApiModule)`
 
   If your resource action accepts related data, (for example a managed relationship argument, or an embedded resource attribute), you can
   use Phoenix's `inputs_for` for that field, *but* you must explicitly configure the behavior of it using the `forms` option.
