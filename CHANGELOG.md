@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.5.16](https://github.com/ash-project/ash_phoenix/compare/v0.5.15...v0.5.16) (2021-10-21)
+
+
+
+
+### Bug Fixes:
+
+* fix some error transforming logic
+
+* forms now receive an error if no nested path matches the error path
+
 ## [v0.5.15](https://github.com/ash-project/ash_phoenix/compare/v0.5.14...v0.5.15) (2021-09-30)
 
 
