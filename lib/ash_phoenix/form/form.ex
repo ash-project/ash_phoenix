@@ -1933,28 +1933,25 @@ defmodule AshPhoenix.Form do
         {key, new_forms}
       end)
 
-    extra_paths =
-      form.form_keys
-      |> Enum.filter(fn {_key, config} -> config[:type] == :list end)
-      |> Enum.map(fn {key, _config} ->
-        path ++ [key]
-      end)
-
-    %{form | submit_errors: transform_errors(form, errors, path, extra_paths), forms: new_forms}
+    %{
+      form
+      | submit_errors: transform_errors(form, errors, path, form.form_keys),
+        forms: new_forms
+    }
   end
 
-  defp synthesize_action_errors(form) do
+  defp synthesize_action_errors(form, trail \\ []) do
     new_forms =
       form.forms
       |> Map.new(fn {key, forms} ->
         new_forms =
           if is_list(forms) do
             Enum.map(forms, fn form ->
-              synthesize_action_errors(form)
+              synthesize_action_errors(form, [key | trail])
             end)
           else
             if forms do
-              synthesize_action_errors(forms)
+              synthesize_action_errors(forms, [key | trail])
             end
           end
 
@@ -1966,7 +1963,7 @@ defmodule AshPhoenix.Form do
       |> List.wrap()
       |> Enum.flat_map(&expand_error/1)
 
-    %{form | submit_errors: transform_errors(form, errors), forms: new_forms}
+    %{form | submit_errors: transform_errors(form, errors, [], form.form_keys), forms: new_forms}
   end
 
   defp expand_error(%class_mod{} = error)
@@ -2928,7 +2925,7 @@ defmodule AshPhoenix.Form do
           if form.just_submitted? do
             form.submit_errors
           else
-            transform_errors(form, form.source.errors, [])
+            transform_errors(form, form.source.errors, [], form.form_keys)
           end
         else
           []

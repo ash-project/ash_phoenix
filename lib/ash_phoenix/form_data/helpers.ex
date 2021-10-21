@@ -33,15 +33,47 @@ defmodule AshPhoenix.FormData.Helpers do
     |> Macro.underscore()
   end
 
-  def transform_errors(form, errors, path_filter \\ nil, additional_path_filters \\ []) do
+  defp match_path_filter?(path, path_filter, form_keys) do
+    path == path_filter ||
+      (List.starts_with?(path, path_filter) &&
+         !Enum.any?(form_keys, fn {key, _} ->
+           List.starts_with?(path, path ++ [key])
+         end))
+  end
+
+  def transform_errors(form, errors, path_filter \\ nil, form_keys \\ []) do
+    additional_path_filters =
+      form_keys
+      |> Enum.filter(fn {_key, config} -> config[:type] == :list end)
+      |> Enum.map(fn {key, _config} ->
+        [key]
+      end)
+
     errors
-    |> Enum.reject(fn error ->
-      Map.has_key?(error, :path) && path_filter && error.path != path_filter &&
-        error.path not in additional_path_filters
+    |> Enum.filter(fn error ->
+      if Map.has_key?(error, :path) && path_filter do
+        Enum.any?(
+          [path_filter | additional_path_filters],
+          &match_path_filter?(error.path, &1, form_keys)
+        )
+      else
+        true
+      end
     end)
     |> Enum.map(fn error ->
       if error.path in additional_path_filters do
-        %{error | field: List.last(Enum.at(additional_path_filters, 0))}
+        error =
+          if Map.has_key?(error, :field) do
+            %{error | field: List.last(Enum.at(additional_path_filters, 0))}
+          else
+            error
+          end
+
+        if Map.has_key?(error, :fields) do
+          %{error | fields: [List.last(Enum.at(additional_path_filters, 0))]}
+        else
+          error
+        end
       else
         error
       end
