@@ -33,12 +33,23 @@ defmodule AshPhoenix.FormData.Helpers do
     |> Macro.underscore()
   end
 
-  defp match_path_filter?(path, path_filter, form_keys) do
+  defp match_path_filter?(path, path_filter, form_keys \\ []) do
     path == path_filter ||
-      (List.starts_with?(path, path_filter) &&
-         !Enum.any?(form_keys, fn {key, _} ->
-           List.starts_with?(path, path ++ [key])
-         end))
+      (!Enum.empty?(form_keys) &&
+         !form_would_capture?(form_keys, path, path_filter))
+  end
+
+  defp form_would_capture?(form_keys, path, path_filter) do
+    Enum.any?(form_keys, fn {key, config} ->
+      key = config[:for] || key
+
+      if config[:type] == :list do
+        List.starts_with?(path, path_filter ++ [key]) &&
+          is_integer(path |> Enum.drop(Enum.count(path_filter) + 1) |> Enum.at(0))
+      else
+        List.starts_with?(path, path_filter ++ [key])
+      end
+    end)
   end
 
   def transform_errors(form, errors, path_filter \\ nil, form_keys \\ []) do
@@ -52,12 +63,10 @@ defmodule AshPhoenix.FormData.Helpers do
     errors
     |> Enum.filter(fn error ->
       if Map.has_key?(error, :path) && path_filter do
-        Enum.any?(
-          [path_filter | additional_path_filters],
-          &match_path_filter?(error.path, &1, form_keys)
-        )
+        match_path_filter?(error.path, path_filter, form_keys) ||
+          Enum.any?(additional_path_filters, &match_path_filter?(error.path, &1))
       else
-        true
+        false
       end
     end)
     |> Enum.map(fn error ->
