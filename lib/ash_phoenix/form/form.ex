@@ -149,6 +149,8 @@ defmodule AshPhoenix.Form do
     :id,
     :transform_errors,
     :original_data,
+    any_removed?: false,
+    added?: false,
     changed?: false,
     touched_forms: MapSet.new(),
     data_updates: [],
@@ -1471,20 +1473,17 @@ defmodule AshPhoenix.Form do
   end
 
   defp changed?(form) do
-    is_changed?(form) ||
+    form.any_removed? ||
+      is_changed?(form) ||
       Enum.any?(form.forms, fn {_key, forms} ->
         forms
         |> List.wrap()
-        |> Enum.any?(& &1.changed?)
+        |> Enum.any?(&(&1.changed? || &1.added?))
       end)
   end
 
   defp is_changed?(form) do
-    if form.type == :create do
-      true
-    else
-      attributes_changed?(form) || arguments_changed?(form)
-    end
+    attributes_changed?(form) || arguments_changed?(form)
   end
 
   defp attributes_changed?(%{source: %Ash.Query{}}), do: false
@@ -1644,6 +1643,15 @@ defmodule AshPhoenix.Form do
         path: Enum.reverse(trail)
     end
 
+    found_form = form.forms[key]
+
+    any_removed? =
+      if found_form && !found_form.added? do
+        true
+      else
+        false
+      end
+
     new_config =
       form.form_keys
       |> Keyword.update!(key, fn config ->
@@ -1659,6 +1667,7 @@ defmodule AshPhoenix.Form do
     %{
       form
       | forms: new_forms,
+        any_removed?: form.any_removed? || any_removed?,
         form_keys: new_config,
         opts: Keyword.put(form.opts, :forms, new_config)
     }
@@ -1674,11 +1683,21 @@ defmodule AshPhoenix.Form do
 
     new_config = do_remove_data(form, key, i)
 
+    found_form = Enum.at(form.forms[key] || [], i)
+
+    any_removed? =
+      if found_form && !found_form.added? do
+        true
+      else
+        false
+      end
+
     new_forms =
       form.forms
       |> Map.put_new(key, [])
       |> Map.update!(key, fn forms ->
         forms
+        |> Kernel.||([])
         |> List.delete_at(i)
         |> Enum.with_index()
         |> Enum.map(fn {nested_form, i} ->
@@ -1689,6 +1708,7 @@ defmodule AshPhoenix.Form do
     %{
       form
       | forms: new_forms,
+        any_removed?: form.any_removed? || any_removed?,
         form_keys: new_config,
         opts: Keyword.put(form.opts, :forms, new_config)
     }
@@ -1803,15 +1823,15 @@ defmodule AshPhoenix.Form do
 
         case config[:type] || :single do
           :single ->
-            %{new_form | name: form.name <> "[#{key}]", id: form.id <> "_#{key}"}
+            %{new_form | name: form.name <> "[#{key}]", id: form.id <> "_#{key}", added?: true}
 
           :list ->
             forms = List.wrap(forms)
 
             if opts[:prepend] do
-              [new_form | forms]
+              [%{new_form | added?: true} | forms]
             else
-              forms ++ [new_form]
+              forms ++ [%{new_form | added?: true}]
             end
             |> Enum.with_index()
             |> Enum.map(fn {nested_form, index} ->

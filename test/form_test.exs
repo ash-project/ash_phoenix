@@ -24,13 +24,13 @@ defmodule AshPhoenix.FormTest do
   end
 
   describe "the .changed? field is updated as data changes" do
-    test "it is true for a create form with no changes" do
+    test "it is false for a create form with no changes" do
       form =
         Post
         |> Form.for_create(:create)
         |> Form.validate(%{})
 
-      assert form.changed?
+      refute form.changed?
     end
 
     test "it is false by default for update forms" do
@@ -77,6 +77,104 @@ defmodule AshPhoenix.FormTest do
       form =
         form
         |> Form.validate(%{text: "post"})
+
+      refute form.changed?
+    end
+
+    test "adding a form causes changed? to be true on the root form, but not the nested form" do
+      form =
+        Comment
+        |> Form.for_create(:create,
+          api: Api,
+          forms: [
+            post: [
+              resource: Post,
+              create_action: :create
+            ]
+          ]
+        )
+        |> Form.add_form(:post, params: %{})
+
+      assert form.changed?
+      refute form.forms[:post].changed?
+    end
+
+    test "removing a form that was there prior marks the form as changed" do
+      post =
+        Post
+        |> Ash.Changeset.new(%{text: "post"})
+        |> Api.create!()
+
+      comment =
+        Comment
+        |> Ash.Changeset.new(%{text: "comment"})
+        |> Ash.Changeset.replace_relationship(:post, post)
+        |> Api.create!()
+
+      # Check the persisted post.comments count after create
+      post = Post |> Api.get!(post.id) |> Api.load!(:comments)
+      assert Enum.count(post.comments) == 1
+
+      form =
+        post
+        |> Form.for_update(:update,
+          api: Api,
+          forms: [
+            comments: [
+              resource: Comment,
+              type: :list,
+              data: [comment],
+              create_action: :create,
+              update_action: :update
+            ]
+          ]
+        )
+
+      refute form.changed?
+
+      form = Form.remove_form(form, [:comments, 0])
+
+      assert form.changed?
+    end
+
+    test "removing a form that was added does not mark the form as changed" do
+      post =
+        Post
+        |> Ash.Changeset.new(%{text: "post"})
+        |> Api.create!()
+
+      comment =
+        Comment
+        |> Ash.Changeset.new(%{text: "comment"})
+        |> Ash.Changeset.replace_relationship(:post, post)
+        |> Api.create!()
+
+      # Check the persisted post.comments count after create
+      post = Post |> Api.get!(post.id) |> Api.load!(:comments)
+      assert Enum.count(post.comments) == 1
+
+      form =
+        post
+        |> Form.for_update(:update,
+          api: Api,
+          forms: [
+            comments: [
+              resource: Comment,
+              type: :list,
+              data: [comment],
+              create_action: :create,
+              update_action: :update
+            ]
+          ]
+        )
+
+      refute form.changed?
+
+      form = Form.add_form(form, [:comments])
+
+      assert form.changed?
+
+      form = Form.remove_form(form, [:comments, 1])
 
       refute form.changed?
     end
