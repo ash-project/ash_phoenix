@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.5.17](https://github.com/ash-project/ash_phoenix/compare/v0.5.16...v0.5.17) (2021-11-06)
+
+
+
+
+### Improvements:
+
+* add a `.changed?` field
+
 ## [v0.5.16](https://github.com/ash-project/ash_phoenix/compare/v0.5.15...v0.5.16) (2021-10-21)
 
 
