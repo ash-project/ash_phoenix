@@ -149,6 +149,7 @@ defmodule AshPhoenix.Form do
     :id,
     :transform_errors,
     :original_data,
+    changed?: false,
     touched_forms: MapSet.new(),
     data_updates: [],
     valid?: false,
@@ -434,6 +435,7 @@ defmodule AshPhoenix.Form do
           changeset_opts
         )
     }
+    |> set_changed?()
     |> set_validity()
   end
 
@@ -519,6 +521,7 @@ defmodule AshPhoenix.Form do
           changeset_opts
         )
     }
+    |> set_changed?()
     |> set_validity()
   end
 
@@ -604,6 +607,7 @@ defmodule AshPhoenix.Form do
           changeset_opts
         )
     }
+    |> set_changed?()
     |> set_validity()
   end
 
@@ -684,6 +688,7 @@ defmodule AshPhoenix.Form do
           query_opts
         )
     }
+    |> set_changed?()
     |> set_validity()
   end
 
@@ -912,7 +917,8 @@ defmodule AshPhoenix.Form do
              )
              |> update_all_forms(fn form ->
                %{form | just_submitted?: true, submitted_once?: true}
-             end)}
+             end)
+             |> set_changed?()}
           end
 
         {:error, %{changeset: changeset} = error} when form.type != :read ->
@@ -1418,6 +1424,7 @@ defmodule AshPhoenix.Form do
       | data_updates: [{:prepend, path} | form.data_updates],
         touched_forms: touched_forms(form.forms, opts[:params] || %{}, form.opts)
     }
+    |> set_changed?()
   end
 
   @doc """
@@ -1444,6 +1451,7 @@ defmodule AshPhoenix.Form do
       end
 
     %{form | data_updates: [{:remove, path} | form.data_updates]}
+    |> set_changed?()
   end
 
   defp forms_for_type(opts, type) do
@@ -1455,6 +1463,98 @@ defmodule AshPhoenix.Form do
       end)
     else
       opts
+    end
+  end
+
+  defp set_changed?(form) do
+    %{form | changed?: changed?(form)}
+  end
+
+  defp changed?(form) do
+    is_changed?(form) ||
+      Enum.any?(form.forms, fn {_key, forms} ->
+        forms
+        |> List.wrap()
+        |> Enum.any?(& &1.changed?)
+      end)
+  end
+
+  defp is_changed?(form) do
+    if form.type == :create do
+      true
+    else
+      attributes_changed?(form) || arguments_changed?(form)
+    end
+  end
+
+  defp attributes_changed?(%{source: %Ash.Query{}}), do: false
+
+  defp attributes_changed?(form) do
+    changeset = form.source
+
+    changeset.attributes
+    |> Map.drop(Enum.map(form.form_keys, &elem(&1, 0)))
+    |> Map.delete(:last_editor_save)
+    |> Enum.any?(fn {key, value} ->
+      original_value = Map.get(changeset.data, key) || default(changeset.resource, key)
+
+      Comp.not_equal?(value, original_value)
+    end)
+  end
+
+  def arguments_changed?(form) do
+    changeset = form.source
+
+    changeset.arguments
+    |> Map.drop(Enum.map(form.form_keys, &elem(&1, 0)))
+    |> Enum.any?(fn {key, value} ->
+      action =
+        if is_atom(changeset.action) do
+          Ash.Resource.Info.action(changeset.resource, changeset.action)
+        else
+          changeset.action
+        end
+
+      original_value = default_argument(action, key)
+
+      value != original_value
+    end)
+  end
+
+  # if the value is the same as the default, we don't want to consider it as changed
+  defp default_argument(action, key) do
+    action.arguments
+    |> Enum.find(&(&1.name == key))
+    |> case do
+      nil ->
+        nil
+
+      argument ->
+        cond do
+          is_nil(argument.default) ->
+            nil
+
+          is_function(argument.default) ->
+            argument.default.()
+
+          true ->
+            argument.default
+        end
+    end
+  end
+
+  defp default(resource, key) do
+    attribute = Ash.Resource.Info.attribute(resource, key)
+
+    cond do
+      is_nil(attribute.default) ->
+        nil
+
+      is_function(attribute.default) ->
+        attribute.default.()
+
+      true ->
+        attribute.default
     end
   end
 
@@ -2863,9 +2963,6 @@ defmodule AshPhoenix.Form do
     |> Enum.sort_by(fn {params, key} ->
       params["_index"] || key
     end)
-
-    # rescue
-    #   _ ->
   end
 
   defp indexed_list(other) do

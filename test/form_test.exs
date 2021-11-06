@@ -23,6 +23,65 @@ defmodule AshPhoenix.FormTest do
     end
   end
 
+  describe "the .changed? field is updated as data changes" do
+    test "it is true for a create form with no changes" do
+      form =
+        Post
+        |> Form.for_create(:create)
+        |> Form.validate(%{})
+
+      assert form.changed?
+    end
+
+    test "it is false by default for update forms" do
+      post =
+        Post
+        |> Ash.Changeset.new(%{text: "post"})
+        |> Api.create!()
+
+      form =
+        post
+        |> Form.for_update(:update)
+        |> Form.validate(%{})
+
+      refute form.changed?
+    end
+
+    test "it is true when a change is made" do
+      post =
+        Post
+        |> Ash.Changeset.new(%{text: "post"})
+        |> Api.create!()
+
+      form =
+        post
+        |> Form.for_update(:update)
+        |> Form.validate(%{text: "post1"})
+
+      assert form.changed?
+    end
+
+    test "it goes back to false if the change is unmade" do
+      post =
+        Post
+        |> Ash.Changeset.new(%{text: "post"})
+        |> Api.create!()
+
+      form =
+        post
+        |> Form.for_update(:update)
+        |> Form.validate(%{text: "post1"})
+
+      assert form.changed?
+
+      form =
+        form
+        |> Form.validate(%{text: "post"})
+
+      refute form.changed?
+    end
+  end
+
   describe "errors" do
     test "errors are not set on the form without validating" do
       form =
