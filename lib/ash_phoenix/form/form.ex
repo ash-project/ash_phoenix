@@ -731,74 +731,86 @@ defmodule AshPhoenix.Form do
         opts[:prev_data_trail] || []
       )
 
-    source_opts =
-      Keyword.drop(form.opts, [
-        :forms,
-        :transform_errors,
-        :errors,
-        :id,
-        :method,
-        :for,
-        :as
-      ])
+    if params == form.params && !!opts[:errors?] == form.errors do
+      %{
+        form
+        | forms: forms,
+          submit_errors: nil,
+          touched_forms: touched_forms(forms, params, touched_forms: form.touched_forms)
+      }
+      |> set_validity()
+      |> set_changed?()
+      |> update_all_forms(fn form ->
+        %{form | just_submitted?: false}
+      end)
+    else
+      source_opts =
+        Keyword.drop(form.opts, [
+          :forms,
+          :transform_errors,
+          :errors,
+          :id,
+          :method,
+          :for,
+          :as
+        ])
 
-    new_source =
-      case form.type do
-        :create ->
-          form.resource
-          |> Ash.Changeset.new()
-          |> set_managed_relationship_context(opts)
-          |> Ash.Changeset.for_create(
-            form.action,
-            params,
-            source_opts
-          )
+      new_source =
+        case form.type do
+          :create ->
+            form.resource
+            |> Ash.Changeset.new()
+            |> set_managed_relationship_context(opts)
+            |> Ash.Changeset.for_create(
+              form.action,
+              params,
+              source_opts
+            )
 
-        :update ->
-          form.data
-          |> Ash.Changeset.new()
-          |> set_managed_relationship_context(opts)
-          |> Ash.Changeset.for_update(
-            form.action,
-            params,
-            source_opts
-          )
+          :update ->
+            form.data
+            |> Ash.Changeset.new()
+            |> set_managed_relationship_context(opts)
+            |> Ash.Changeset.for_update(
+              form.action,
+              params,
+              source_opts
+            )
 
-        :destroy ->
-          form.data
-          |> Ash.Changeset.new()
-          |> set_managed_relationship_context(opts)
-          |> Ash.Changeset.for_destroy(
-            form.action,
-            params,
-            source_opts
-          )
+          :destroy ->
+            form.data
+            |> Ash.Changeset.new()
+            |> set_managed_relationship_context(opts)
+            |> Ash.Changeset.for_destroy(
+              form.action,
+              params,
+              source_opts
+            )
 
-        :read ->
-          Ash.Query.for_read(
-            form.resource,
-            form.action,
-            params,
-            source_opts
-          )
-      end
+          :read ->
+            Ash.Query.for_read(
+              form.resource,
+              form.action,
+              params,
+              source_opts
+            )
+        end
 
-    %{
-      form
-      | source: new_source,
-        forms: forms,
-        params: params,
-        errors: !!opts[:errors],
-        submitted_once?: form.submitted_once?,
-        submit_errors: nil,
-        touched_forms: touched_forms(forms, params, touched_forms: form.touched_forms),
-        original_data: form.original_data
-    }
-    |> set_validity()
-    |> set_changed?()
-    |> update_all_forms(fn form ->
-      %{form | just_submitted?: false}
-    end)
+      %{
+        form
+        | source: new_source,
+          forms: forms,
+          params: params,
+          errors: !!opts[:errors],
+          submit_errors: nil,
+          touched_forms: touched_forms(forms, params, touched_forms: form.touched_forms)
+      }
+      |> set_validity()
+      |> set_changed?()
+      |> update_all_forms(fn form ->
+        %{form | just_submitted?: false}
+      end)
+    end
   end
 
   defp validate_nested_forms(
