@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.5.19-rc.1](https://github.com/ash-project/ash_phoenix/compare/v0.5.19-rc.0...v0.5.19-rc.1) (2021-11-08)
+
+
+
+
+### Improvements:
+
+* don't rebuild a form when params haven't changed
+
 ## [v0.5.19-rc.0](https://github.com/ash-project/ash_phoenix/compare/v0.5.18...v0.5.19-rc.0) (2021-11-08)
 
 
