@@ -93,7 +93,7 @@ defmodule AshPhoenix.FormTest do
             ]
           ]
         )
-        |> Form.add_form(:post, params: %{})
+        |> Form.add_form(:post)
 
       assert form.changed?
       refute form.forms[:post].changed?
