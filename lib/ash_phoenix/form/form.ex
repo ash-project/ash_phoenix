@@ -723,11 +723,18 @@ defmodule AshPhoenix.Form do
   def validate(form, new_params, opts \\ []) do
     opts = validate_opts_with_extra_keys(opts, @validate_opts)
 
+    matcher =
+      opts[:matcher] ||
+        fn nested_form, _params, root_form, key, index ->
+          nested_form.id == root_form.id <> "_#{key}_#{index}"
+        end
+
     {forms, params} =
       validate_nested_forms(
         form,
         new_params || %{},
         !!opts[:errors],
+        matcher,
         opts[:prev_data_trail] || []
       )
 
@@ -818,6 +825,7 @@ defmodule AshPhoenix.Form do
          params,
          errors?,
          prev_data_trail,
+         matcher,
          trail \\ []
        ) do
     Enum.reduce(form.form_keys, {%{}, params}, fn {key, opts}, {forms, params} ->
@@ -838,9 +846,7 @@ defmodule AshPhoenix.Form do
 
               new_forms =
                 Enum.reduce(form_params, forms, fn {index, params}, forms ->
-                  case Enum.find(form.forms[key] || [], fn nested_form ->
-                         nested_form.id == form.id <> "_#{key}_#{index}"
-                       end) do
+                  case Enum.find(form.forms[key] || [], &matcher.(&1, params, form, key, index)) do
                     nil ->
                       create_action =
                         opts[:create_action] ||
@@ -872,7 +878,8 @@ defmodule AshPhoenix.Form do
                       validated =
                         validate(matching_form, params,
                           errors?: errors?,
-                          prev_data_trail?: prev_data_trail
+                          prev_data_trail?: prev_data_trail,
+                          matcher: matcher
                         )
 
                       Map.update(forms, key, [validated], fn nested_forms ->
@@ -891,7 +898,8 @@ defmodule AshPhoenix.Form do
               end
             else
               if form.forms[key] do
-                new_form = validate(form.forms[key], form_params, errors?: errors?)
+                new_form =
+                  validate(form.forms[key], form_params, errors?: errors?, matcher: matcher)
 
                 Map.put(forms, key, new_form)
               else
