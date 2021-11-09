@@ -734,8 +734,8 @@ defmodule AshPhoenix.Form do
         form,
         new_params || %{},
         !!opts[:errors],
-        matcher,
-        opts[:prev_data_trail] || []
+        opts[:prev_data_trail] || [],
+        matcher
       )
 
     if params == form.params && !!opts[:errors?] == form.errors do
