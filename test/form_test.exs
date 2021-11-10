@@ -3,7 +3,7 @@ defmodule AshPhoenix.FormTest do
   import Phoenix.HTML.Form, only: [form_for: 2, inputs_for: 2]
 
   alias AshPhoenix.Form
-  alias AshPhoenix.Test.{Api, Comment, OtherApi, Post}
+  alias AshPhoenix.Test.{Api, Comment, OtherApi, Post, PostWithDefault}
   alias Phoenix.HTML.FormData
 
   describe "form_for fields" do
@@ -21,6 +21,13 @@ defmodule AshPhoenix.FormTest do
       assert Form.for_create(Post, :create).id == "form"
       assert Form.for_create(Post, :create, as: "post").id == "post"
     end
+  end
+
+  describe "validation errors are attached to fields" do
+    form = Form.for_create(PostWithDefault, :create, api: Api)
+    form = Form.validate(form, %{"text" => ""})
+    assert %{errors: [text: {"is required", []}]} = form_for(form, "foo")
+    assert form.valid? == false
   end
 
   describe "the .changed? field is updated as data changes" do

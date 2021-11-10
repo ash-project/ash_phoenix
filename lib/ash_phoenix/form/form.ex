@@ -2199,6 +2199,8 @@ defmodule AshPhoenix.Form do
           |> List.wrap()
           |> Enum.all?(&valid?/1)
         end)
+    else
+      false
     end
   end
 
