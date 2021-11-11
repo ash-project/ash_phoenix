@@ -25,7 +25,8 @@ defmodule AshPhoenix.FormTest do
 
   describe "validation errors are attached to fields" do
     form = Form.for_create(PostWithDefault, :create, api: Api)
-    form = Form.validate(form, %{"text" => ""})
+    form = AshPhoenix.Form.validate(form, %{"text" => ""}, errors: form.submitted_once?)
+    {:error, form} = Form.submit(form, params: %{"text" => ""})
     assert %{errors: [text: {"is required", []}]} = form_for(form, "foo")
     assert form.valid? == false
   end
