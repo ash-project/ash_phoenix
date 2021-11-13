@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.5.19-rc.2](https://github.com/ash-project/ash_phoenix/compare/v0.5.19-rc.1...v0.5.19-rc.2) (2021-11-13)
+
+
+
+
+### Bug Fixes:
+
+* typo on checking if errors are set to the same value as before
+
+* pass matcher in correct argument position
+
+### Improvements:
+
+* support custom matcher experimental
+
 ## [v0.5.19-rc.1](https://github.com/ash-project/ash_phoenix/compare/v0.5.19-rc.0...v0.5.19-rc.1) (2021-11-08)
 
 
