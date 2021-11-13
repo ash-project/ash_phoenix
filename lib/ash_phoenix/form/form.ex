@@ -738,7 +738,7 @@ defmodule AshPhoenix.Form do
         matcher
       )
 
-    if params == form.params && !!opts[:errors?] == form.errors do
+    if params == form.params && !!opts[:errors] == form.errors do
       %{
         form
         | forms: forms,
