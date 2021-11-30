@@ -9,6 +9,7 @@ defmodule AshPhoenix.Test.Post do
   attributes do
     uuid_primary_key(:id)
     attribute(:text, :string, allow_nil?: false)
+    attribute(:title, :string)
   end
 
   actions do
