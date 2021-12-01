@@ -1,12 +1,45 @@
 defmodule AshPhoenix.FilterForm do
-  defstruct [:id, :resource, params: %{}, components: [], operator: :and]
+  defstruct [
+    :id,
+    :resource,
+    valid?: false,
+    negated?: false,
+    params: %{},
+    components: [],
+    operator: :and,
+    remove_empty_groups?: false
+  ]
 
   alias AshPhoenix.FilterForm.Predicate
+  require Ash.Query
+
+  @new_opts [
+    params: [
+      type: :any,
+      doc: "Initial parameters to create the form with",
+      default: %{}
+    ],
+    remove_empty_groups?: [
+      type: :boolean,
+      doc: """
+      If true (the default), then any time a group would be made empty by removing a group or predicate, it is removed instead.
+
+      An empty form can still be added, this only affects a group if its last component is removed.
+      """,
+      default: false
+    ]
+  ]
 
   @moduledoc """
-  Create a new filter form
+  Create a new filter form.
+
+  Options:
+  #{Ash.OptionsHelpers.docs(@new_opts)}
   """
-  def new(resource, params \\ %{}) do
+  def new(resource, opts \\ []) do
+    opts = Ash.OptionsHelpers.validate!(opts, @new_opts)
+    params = opts[:params]
+
     params =
       if is_operator?(params) do
         %{
@@ -26,11 +59,21 @@ defmodule AshPhoenix.FilterForm do
       id: params["id"] || params[:id],
       resource: resource,
       params: params,
-      components: parse_components(resource, params["components"] || params[:components]),
+      remove_empty_groups?: opts[:remove_empty_groups?],
+      components:
+        parse_components(resource, params["components"] || params[:components],
+          remove_empty_groups?: opts[:remove_empty_groups?]
+        ),
       operator: to_existing_atom(params["operator"] || params[:operator] || :and)
     }
+    |> set_validity()
   end
 
+  @doc """
+  Updates the filter with the provided input and validates it.
+
+  At present, no validation actually occurs, but this will eventually be added.
+  """
   def validate(form, params \\ %{}) do
     params =
       if is_operator?(params) do
@@ -54,6 +97,157 @@ defmodule AshPhoenix.FilterForm do
           validate_components(form.components, params["components"] || params[:components]),
         operator: to_existing_atom(params["operator"] || params[:operator] || :and)
     }
+    |> set_validity()
+  end
+
+  @doc """
+  Returns a filter expression that can be provided to Ash.Query.filter/2
+
+  To add this to a query, remember to use `^`, for example:
+  ```elixir
+  filter = AshPhoenix.FilterForm.to_filter(form)
+
+  Ash.Query.filter(MyApp.Post, ^filter)
+  ```
+
+  Alternatively, you can use the shorthand: `filter/2`.
+  """
+  def to_filter(form) do
+    if form.valid? do
+      case do_to_filter(form, form.resource) do
+        {:ok, expr} ->
+          {:ok, %Ash.Filter{expression: expr, resource: form.resource}}
+
+        {:error, form} ->
+          {:error, form}
+      end
+    else
+      {:error, form}
+    end
+  end
+
+  @doc """
+  Same as `to_filter/1`
+  """
+  def to_filter!(form) do
+    case to_filter(form) do
+      {:ok, filter} ->
+        filter
+
+      {:error, form} ->
+        raise Ash.Error.to_error_class(errors(form))
+    end
+  end
+
+  @doc """
+  Returns a flat list of all errors on all predicates in the filter.
+  """
+  def errors(%__MODULE__{components: components}) do
+    Enum.flat_map(components, &errors/1)
+  end
+
+  def errors(%Predicate{errors: errors}), do: errors
+
+  defp do_to_filter(%__MODULE__{components: []}, _), do: {:ok, true}
+
+  defp do_to_filter(
+         %__MODULE__{components: components, operator: operator, negated?: negated?} = form,
+         resource
+       ) do
+    {filters, components, errors?} =
+      Enum.reduce(components, {[], [], false}, fn component, {filters, components, errors?} ->
+        case do_to_filter(component, resource) do
+          {:ok, component_filter} ->
+            {filters ++ [component_filter], components ++ [component], errors?}
+
+          {:error, component} ->
+            {filters, components ++ [component], true}
+        end
+      end)
+
+    if errors? do
+      {:error, %{form | components: components}}
+    else
+      expr =
+        Enum.reduce(filters, nil, fn component_as_filter, acc ->
+          if acc do
+            Ash.Query.BooleanExpression.new(operator, acc, component_as_filter)
+          else
+            component_as_filter
+          end
+        end)
+
+      if negated? do
+        {:ok, Ash.Query.Not.new(expr)}
+      else
+        {:ok, expr}
+      end
+    end
+  end
+
+  defp do_to_filter(
+         %Predicate{field: field, value: value, operator: operator, negated?: negated?} =
+           predicate,
+         resource
+       ) do
+    ref = Ash.Query.expr(ref(^field, []))
+
+    expr =
+      if Ash.Filter.get_function(operator, resource) do
+        {:ok, %Ash.Query.Call{name: operator, args: [ref, value]}}
+      else
+        if operator_module = Ash.Filter.get_operator(operator) do
+          case Ash.Query.Operator.new(operator_module, ref, value) do
+            {:ok, operator} ->
+              {:ok, operator}
+
+            {:error, error} ->
+              {:error,
+               Ash.Error.Query.InvalidQuery.exception(
+                 field: field,
+                 message: "Error constructing operator: #{error}"
+               )}
+          end
+        else
+          {:error,
+           Ash.Error.Query.InvalidQuery.exception(
+             field: field,
+             message: "No such function or operator #{operator}"
+           )}
+        end
+      end
+
+    case expr do
+      {:ok, expr} ->
+        if negated? do
+          {:ok, Ash.Query.Not.new(expr)}
+        else
+          {:ok, expr}
+        end
+
+      {:error, error} ->
+        {:error, %{predicate | errors: predicate.errors ++ [error]}}
+    end
+  end
+
+  @doc """
+  Converts the form into a filter, and filters the provided query or resource with that filter.
+  """
+  def filter(query, form) do
+    case to_filter(form) do
+      {:ok, filter} ->
+        {:ok, Ash.Query.do_filter(query, filter)}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  @doc """
+  Same as `filter/2` but raises on errors.
+  """
+  def filter!(query, form) do
+    Ash.Query.do_filter(query, to_filter!(form))
   end
 
   defp add_ids(params) do
@@ -114,19 +308,19 @@ defmodule AshPhoenix.FilterForm do
     end
   end
 
-  defp parse_components(resource, component_params) do
+  defp parse_components(resource, component_params, form_opts) do
     component_params
     |> Kernel.||([])
-    |> Enum.map(&parse_component(resource, &1))
+    |> Enum.map(&parse_component(resource, &1, form_opts))
   end
 
-  defp parse_component(resource, params) do
+  defp parse_component(resource, params, form_opts) do
     if is_operator?(params) do
       # Eventually, components may have references w/ paths
       # also, we should validate references here
       new_predicate(params)
     else
-      new(resource, params)
+      new(resource, Keyword.put(form_opts, :params, params))
     end
   end
 
@@ -135,8 +329,14 @@ defmodule AshPhoenix.FilterForm do
       id: params[:id] || params["id"] || Ash.UUID.generate(),
       field: to_existing_atom(params["field"] || params[:field]),
       value: params["value"] || params[:value],
+      params: params,
+      negated?: negated?(params),
       operator: to_existing_atom(params["operator"] || params[:operator] || :eq)
     }
+  end
+
+  defp negated?(params) do
+    (params["negated"] || params[:negated]) in [true, "true"]
   end
 
   defp validate_components(form, component_params) do
@@ -159,7 +359,10 @@ defmodule AshPhoenix.FilterForm do
               if match_component.id == component.id do
                 case component do
                   %__MODULE__{} ->
-                    new(form.resource, params)
+                    new(form.resource,
+                      params: params,
+                      remove_empty_groups?: form.remove_empty_groups?
+                    )
 
                   %Predicate{} ->
                     new_predicate(params)
@@ -174,7 +377,7 @@ defmodule AshPhoenix.FilterForm do
         if is_operator?(params) do
           new_predicate(params)
         else
-          new(form.resource, params)
+          new(form.resource, params: params, remove_empty_groups?: form.remove_empty_groups?)
         end
 
       %{form | components: form.components ++ [component]}
@@ -224,20 +427,89 @@ defmodule AshPhoenix.FilterForm do
     ]
   ]
 
+  @doc """
+  Add a predicate to the filter.
+
+  Options:
+
+  #{Ash.OptionsHelpers.docs(@add_predicate_opts)}
+  """
   def add_predicate(form, field, operator_or_function, value, opts \\ []) do
     opts = Ash.OptionsHelpers.validate!(opts, @add_predicate_opts)
 
+    predicate_id = Ash.UUID.generate()
+
     predicate = %Predicate{
-      id: Ash.UUID.generate(),
+      id: predicate_id,
       field: field,
       value: value,
       operator: operator_or_function
     }
 
+    predicate = %{predicate | errors: predicate_errors(predicate, form.resource)}
+
     if opts[:to] && opts[:to] != form.id do
-      %{form | components: Enum.map(form.components, &do_add_predicate(&1, opts[:to], predicate))}
+      {set_validity(%{
+         form
+         | components: Enum.map(form.components, &do_add_predicate(&1, opts[:to], predicate))
+       }), predicate_id}
     else
-      %{form | components: form.components ++ [predicate]}
+      {set_validity(%{form | components: form.components ++ [predicate]}), predicate_id}
+    end
+  end
+
+  defp set_validity(%__MODULE__{components: components} = form) do
+    components = Enum.map(components, &set_validity/1)
+
+    if Enum.all?(components, & &1.valid?) do
+      %{form | components: components, valid?: true}
+    else
+      %{form | components: components, valid?: false}
+    end
+  end
+
+  defp set_validity(%Predicate{errors: []} = predicate), do: %{predicate | valid?: true}
+  defp set_validity(%Predicate{errors: _} = predicate), do: %{predicate | valid?: false}
+
+  @doc "Remove the predicate with the given id"
+  def remove_predicate(form, id) do
+    %{
+      form
+      | components:
+          Enum.flat_map(form.components, fn
+            %__MODULE__{} = nested_form ->
+              new_nested_form = remove_predicate(nested_form, id)
+
+              remove_if_empty(new_nested_form, form.remove_empty_groups?)
+
+            %Predicate{id: ^id} ->
+              []
+
+            predicate ->
+              [predicate]
+          end)
+    }
+    |> set_validity()
+  end
+
+  defp predicate_errors(predicate, resource) do
+    errors =
+      case Ash.Resource.Info.public_field(resource, predicate.field) do
+        nil ->
+          [Ash.Error.Query.NoSuchAttribute.exception(resource: resource, name: predicate.field)]
+
+        _ ->
+          []
+      end
+
+    if Ash.Filter.get_function(predicate.operator, resource) do
+      errors
+    else
+      if Ash.Filter.get_operator(predicate.operator) do
+        errors
+      else
+        [Ash.Error.Query.NoSuchOperator.exception(name: predicate.operator) | errors]
+      end
     end
   end
 
@@ -273,12 +545,54 @@ defmodule AshPhoenix.FilterForm do
   def add_group(form, opts \\ []) do
     opts = Ash.OptionsHelpers.validate!(opts, @add_group_opts)
 
-    group = %__MODULE__{operator: opts[:operator], id: Ash.UUID.generate()}
+    group_id = Ash.UUID.generate()
+    group = %__MODULE__{operator: opts[:operator], id: group_id}
 
     if opts[:to] && opts[:to] != form.id do
-      %{form | components: Enum.map(form.components, &do_add_group(&1, opts[:to], group))}
+      {set_validity(%{
+         form
+         | components: Enum.map(form.components, &do_add_group(&1, opts[:to], group))
+       }), group_id}
     else
-      %{form | components: form.components ++ [group]}
+      {set_validity(%{form | components: form.components ++ [group]}), group_id}
+    end
+  end
+
+  @doc "Remove the group with the given id"
+  def remove_group(form, group_id) do
+    %{
+      form
+      | components:
+          Enum.flat_map(form.components, fn
+            %__MODULE__{id: ^group_id} ->
+              []
+
+            %__MODULE__{} = nested_form ->
+              new_nested_form = remove_group(nested_form, group_id)
+
+              remove_if_empty(new_nested_form, form.remove_empty_groups?)
+
+            predicate ->
+              [predicate]
+          end)
+    }
+    |> set_validity()
+  end
+
+  @doc "Removes the group *or* component with the given id"
+  def remove_component(form, group_or_component_id) do
+    form
+    |> remove_group(group_or_component_id)
+    |> remove_component(group_or_component_id)
+  end
+
+  defp remove_if_empty(form, false), do: [form]
+
+  defp remove_if_empty(form, true) do
+    if Enum.empty?(form.components) do
+      []
+    else
+      [form]
     end
   end
 
@@ -310,26 +624,27 @@ defmodule AshPhoenix.FilterForm do
       }
     end
 
-    # @impl true
-    # def to_form(form, _phoenix_form, field, opts) do
-    #   unless Keyword.has_key?(form.form_keys, field) do
-    #     raise AshPhoenix.Form.NoFormConfigured,
-    #       field: field,
-    #       available: Keyword.keys(form.form_keys || [])
-    #   end
+    @impl true
+    def to_form(form, _, :components, _opts) do
+      Enum.map(form.components, &Phoenix.HTML.Form.form_for(&1, "action"))
+    end
 
-    #   case form.form_keys[field][:type] || :single do
-    #     :single ->
-    #       if form.forms[field] do
-    #         to_form(form.forms[field], opts)
-    #       end
+    def to_form(_, _, other, _) do
+      raise "Invalid inputs_for name #{other}. Only :components is supported"
+    end
 
-    #     :list ->
-    #       form.forms[field]
-    #       |> Kernel.||([])
-    #       |> Enum.map(&to_form(&1, opts))
-    #   end
-    #   |> List.wrap()
-    # end
+    @impl true
+    def input_type(_, _, _), do: :text_input
+
+    @impl true
+    def input_value(%{negated?: negated?}, _, :negated), do: negated?
+    def input_value(%{operator: operator}, _, :operator), do: operator
+
+    def input_value(_, _, field) do
+      raise "Invalid filter form field #{field}. Only :negated, and :operator are supported"
+    end
+
+    @impl true
+    def input_validations(_, _, _), do: []
   end
 end

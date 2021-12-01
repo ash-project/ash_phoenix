@@ -72,7 +72,7 @@ defmodule AshPhoenix.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ash, ash_version("~> 1.47 and >= 1.47.8")},
+      {:ash, ash_version("~> 1.50 and >= 1.50.8")},
       {:phoenix, "~> 1.5.6 or ~> 1.6.0"},
       {:phoenix_html, "~> 2.14 or ~> 3.0"},
       {:phoenix_live_view, "~> 0.15"},
