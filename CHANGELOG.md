@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.6.0-rc.0](https://github.com/ash-project/ash_phoenix/compare/v0.5.19-rc.2...v0.6.0-rc.0) (2021-12-01)
+
+
+
+
+### Features:
+
+* new `FilterForm` for building forms to produce `Ash.Filter`s
+
 ## [v0.5.19-rc.2](https://github.com/ash-project/ash_phoenix/compare/v0.5.19-rc.1...v0.5.19-rc.2) (2021-11-13)
 
 

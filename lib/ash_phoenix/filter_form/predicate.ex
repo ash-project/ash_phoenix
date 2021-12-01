@@ -36,6 +36,9 @@ defmodule AshPhoenix.FilterForm.Predicate do
     def input_type(_, _, _), do: :text_input
 
     @impl true
+    def to_form(_, _, _, _), do: []
+
+    @impl true
     def input_value(%{field: field}, _, :field), do: field
     def input_value(%{value: value}, _, :value), do: value
     def input_value(%{operator: operator}, _, :operator), do: operator
