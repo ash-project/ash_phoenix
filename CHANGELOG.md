@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.6.0-rc.4](https://github.com/ash-project/ash_phoenix/compare/v0.6.0-rc.3...v0.6.0-rc.4) (2021-12-02)
+
+
+
+
+### Improvements:
+
+* `to_filter` -> `to_filter_expression`
+
 ## [v0.6.0-rc.3](https://github.com/ash-project/ash_phoenix/compare/v0.6.0-rc.2...v0.6.0-rc.3) (2021-12-02)
 
 
