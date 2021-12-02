@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.6.0-rc.2](https://github.com/ash-project/ash_phoenix/compare/v0.6.0-rc.1...v0.6.0-rc.2) (2021-12-02)
+
+
+
+
+### Improvements:
+
+* better sanitized parameters
+
+* add params_for_query
+
 ## [v0.6.0-rc.1](https://github.com/ash-project/ash_phoenix/compare/v0.6.0-rc.0...v0.6.0-rc.1) (2021-12-02)
 
 
