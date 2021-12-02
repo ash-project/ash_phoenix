@@ -51,33 +51,30 @@ defmodule AshPhoenix.FilterForm do
     opts = Ash.OptionsHelpers.validate!(opts, @new_opts)
     params = opts[:params]
 
+    params = sanitize_params(params)
+
     params =
-      if is_operator?(params) do
+      if is_predicate?(params) do
         %{
-          operator: :and,
-          components: %{"0" => params}
+          "operator" => "and",
+          "components" => %{"0" => params}
         }
       else
         params
       end
 
-    params =
-      params
-      |> params_to_list()
-      |> add_ids()
-
     form = %__MODULE__{
-      id: params["id"] || params[:id],
+      id: params["id"],
       resource: resource,
       params: params,
       remove_empty_groups?: opts[:remove_empty_groups?],
-      operator: to_existing_atom(params["operator"] || params[:operator] || :and)
+      operator: to_existing_atom(params["operator"] || :and)
     }
 
     %{
       form
       | components:
-          parse_components(resource, form, params["components"] || params[:components],
+          parse_components(resource, form, params["components"],
             remove_empty_groups?: opts[:remove_empty_groups?]
           )
     }
@@ -91,7 +88,7 @@ defmodule AshPhoenix.FilterForm do
   """
   def validate(form, params \\ %{}) do
     params =
-      if is_operator?(params) do
+      if is_predicate?(params) do
         %{
           operator: :and,
           components: %{"0" => params}
@@ -100,17 +97,13 @@ defmodule AshPhoenix.FilterForm do
         params
       end
 
-    params =
-      params
-      |> params_to_list()
-      |> add_ids()
+    params = sanitize_params(params)
 
     %{
       form
-      | params: params_to_list(params),
-        components:
-          validate_components(form.components, params["components"] || params[:components]),
-        operator: to_existing_atom(params["operator"] || params[:operator] || :and)
+      | params: params,
+        components: validate_components(form.components, params["components"]),
+        operator: to_existing_atom(params["operator"] || :and)
     }
     |> set_validity()
   end
@@ -150,7 +143,19 @@ defmodule AshPhoenix.FilterForm do
         filter
 
       {:error, form} ->
-        raise Ash.Error.to_error_class(errors(form))
+        error =
+          form
+          |> errors()
+          |> Enum.map(fn
+            {key, message, vars} ->
+              "#{key}: #{AshPhoenix.replace_vars(message, vars)}"
+
+            other ->
+              other
+          end)
+          |> Ash.Error.to_error_class()
+
+        raise error
     end
   end
 
@@ -268,72 +273,65 @@ defmodule AshPhoenix.FilterForm do
     Ash.Query.do_filter(query, to_filter!(form))
   end
 
-  defp add_ids(params) do
-    params =
-      if params[:id] || params["id"] do
-        params
-      else
-        Map.put(params, :id, Ash.UUID.generate())
-      end
-
-    field =
-      if Map.has_key?(params, :components) do
-        :components
-      else
-        if Map.has_key?(params, "components") do
-          "components"
+  defp sanitize_params(params) do
+    if is_predicate?(params) do
+      field =
+        case params[:field] || params["field"] do
+          nil -> nil
+          field -> to_string(field)
         end
-      end
 
-    if field do
-      Map.update!(params, field, fn components ->
-        Enum.map(components, fn component ->
-          if component[:id] || component["id"] do
-            component
-          else
-            Map.put(component, :id, Ash.UUID.generate())
-          end
-        end)
-      end)
+      path =
+        case params[:path] || params["path"] do
+          nil -> nil
+          path when is_list(path) -> Enum.join(path, ".")
+          path when is_binary(path) -> path
+        end
+
+      %{
+        "id" => params[:id] || params["id"] || Ash.UUID.generate(),
+        "operator" => to_string(params[:operator] || params["operator"] || "eq"),
+        "negated" => params[:negated] || params["negated"] || false,
+        "field" => field,
+        "value" => to_string(params[:value] || params["value"]),
+        "path" => path
+      }
     else
-      params
-    end
-  end
+      components = params[:components] || params["components"] || []
 
-  defp params_to_list(params) do
-    field =
-      if Map.has_key?(params, :components) do
-        :components
-      else
-        if Map.has_key?(params, "components") do
-          "components"
-        end
-      end
-
-    if field do
-      Map.update!(params, field, fn components ->
+      components =
         if is_list(components) do
           components
+          |> Enum.with_index()
+          |> Map.new(fn {value, index} ->
+            {to_string(index), value}
+          end)
         else
-          components
-          |> Enum.sort_by(&elem(&1, 0))
-          |> Enum.map(&elem(&1, 1))
-          |> Enum.map(&params_to_list/1)
+          if is_map(components) do
+            components
+          end
         end
-      end)
-    else
-      params
+
+      %{
+        "components" => components || %{},
+        "id" => params[:id] || params["id"] || Ash.UUID.generate(),
+        "operator" => to_string(params[:operator] || params["operator"] || "and")
+      }
     end
   end
 
   defp parse_components(resource, parent, component_params, form_opts) do
     component_params
-    |> Kernel.||([])
+    |> Kernel.||(%{})
+    |> Enum.sort_by(fn {key, _value} ->
+      String.to_integer(key)
+    end)
+    |> Enum.map(&elem(&1, 1))
     |> Enum.map(&parse_component(resource, parent, &1, form_opts))
   end
 
   defp parse_component(resource, parent, params, form_opts) do
-    if is_operator?(params) do
+    if is_predicate?(params) do
       # Eventually, components may have references w/ paths
       # also, we should validate references here
       new_predicate(params, parent)
@@ -344,13 +342,13 @@ defmodule AshPhoenix.FilterForm do
 
   defp new_predicate(params, form) do
     predicate = %AshPhoenix.FilterForm.Predicate{
-      id: params[:id] || params["id"] || Ash.UUID.generate(),
-      field: to_existing_atom(params["field"] || params[:field]),
-      value: params["value"] || params[:value],
+      id: params["id"],
+      field: to_existing_atom(params["field"]),
+      value: params["value"],
       path: parse_path(params),
       params: params,
       negated?: negated?(params),
-      operator: to_existing_atom(params["operator"] || params[:operator] || :eq)
+      operator: to_existing_atom(params["operator"] || :eq)
     }
 
     %{predicate | errors: predicate_errors(predicate, form.resource)}
@@ -377,7 +375,7 @@ defmodule AshPhoenix.FilterForm do
   end
 
   defp negated?(params) do
-    (params["negated"] || params[:negated]) in [true, "true"]
+    params["negated"] in [true, "true"]
   end
 
   defp validate_components(form, component_params) do
@@ -415,7 +413,7 @@ defmodule AshPhoenix.FilterForm do
       }
     else
       component =
-        if is_operator?(params) do
+        if is_predicate?(params) do
           new_predicate(params, form)
         else
           new(form.resource, params: params, remove_empty_groups?: form.remove_empty_groups?)
@@ -425,8 +423,8 @@ defmodule AshPhoenix.FilterForm do
     end
   end
 
-  defp is_operator?(params) do
-    params["field"] || params[:field] || params[:value] || params["value"]
+  defp is_predicate?(params) do
+    [:field, :value, "field", "value"] |> Enum.any?(&Map.has_key?(params, &1))
   end
 
   defp to_existing_atom(value) when is_atom(value), do: value
@@ -435,6 +433,35 @@ defmodule AshPhoenix.FilterForm do
     String.to_existing_atom(value)
   rescue
     _ -> value
+  end
+
+  @doc """
+  Returns the minimal set of params (at the moment just strips ids) for use in a query string.
+  """
+  def params_for_query(form) do
+    do_params_for_query(form.params)
+  end
+
+  defp do_params_for_query(params) do
+    if is_predicate?(params) do
+      Map.delete(params, "id")
+    else
+      params =
+        case params["components"] do
+          components when is_map(components) ->
+            new_components =
+              Map.new(components, fn {key, value} ->
+                {key, do_params_for_query(value)}
+              end)
+
+            Map.put(params, "components", new_components)
+
+          _ ->
+            Map.delete(params, "components")
+        end
+
+      Map.delete(params, "id")
+    end
   end
 
   @doc "Returns the list of available predicates for the given resource, which may be functions or operators."
@@ -488,10 +515,10 @@ defmodule AshPhoenix.FilterForm do
     predicate =
       new_predicate(
         %{
-          id: predicate_id,
-          field: field,
-          value: value,
-          operator: operator_or_function
+          "id" => predicate_id,
+          "field" => field,
+          "value" => value,
+          "operator" => operator_or_function
         },
         form
       )
@@ -700,11 +727,12 @@ defmodule AshPhoenix.FilterForm do
     def input_type(_, _, _), do: :text_input
 
     @impl true
+    def input_value(%{id: id}, _, :id), do: id
     def input_value(%{negated?: negated?}, _, :negated), do: negated?
     def input_value(%{operator: operator}, _, :operator), do: operator
 
     def input_value(_, _, field) do
-      raise "Invalid filter form field #{field}. Only :negated, and :operator are supported"
+      raise "Invalid filter form field #{field}. Only :id, :negated, and :operator are supported"
     end
 
     @impl true

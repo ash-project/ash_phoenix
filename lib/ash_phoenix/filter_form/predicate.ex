@@ -83,6 +83,7 @@ defmodule AshPhoenix.FilterForm.Predicate do
     def to_form(_, _, _, _), do: []
 
     @impl true
+    def input_value(%{id: id}, _, :id), do: id
     def input_value(%{field: field}, _, :field), do: field
     def input_value(%{value: value}, _, :value), do: value
     def input_value(%{operator: operator}, _, :operator), do: operator
@@ -90,7 +91,7 @@ defmodule AshPhoenix.FilterForm.Predicate do
     def input_value(%{path: path}, _, :path), do: Enum.join(path, ".")
 
     def input_value(_, _, field) do
-      raise "Invalid filter form field #{field}. Only :negated, :operator, :field, :path, :value are supported"
+      raise "Invalid filter form field #{field}. Only :id, :negated, :operator, :field, :path, :value are supported"
     end
 
     @impl true

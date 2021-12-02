@@ -148,18 +148,6 @@ defmodule AshPhoenix.FilterFormTest do
       form_for(form, "action")
     end
 
-    test "a form recreated with the same params is equal to itself" do
-      form =
-        FilterForm.new(Post,
-          params: %{
-            field: :title,
-            value: "new post"
-          }
-        )
-
-      assert FilterForm.new(Post, params: form.params) == form
-    end
-
     test "the `:operator` and `:negated` inputs are available" do
       form =
         Post
@@ -207,6 +195,47 @@ defmodule AshPhoenix.FilterFormTest do
                |> inputs_for(:components)
 
       assert [{:operator, {"No such operator what_on_earth", []}}] = predicate_form.errors
+    end
+  end
+
+  describe "params_for_query/1" do
+    test "can be query encoded, and then rebuilt" do
+      form =
+        Post
+        |> FilterForm.new(
+          params: %{
+            field: :title,
+            value: "new post"
+          }
+        )
+
+      assert [predicate_form] =
+               form
+               |> form_for("action")
+               |> inputs_for(:components)
+
+      assert input_value(predicate_form, :field) == :title
+      assert input_value(predicate_form, :value) == "new post"
+      assert input_value(predicate_form, :operator) == :eq
+      assert input_value(predicate_form, :negated) == false
+
+      encoded =
+        form
+        |> FilterForm.params_for_query()
+        |> Plug.Conn.Query.encode()
+
+      decoded = Plug.Conn.Query.decode(encoded)
+
+      assert [predicate_form] =
+               Post
+               |> FilterForm.new(params: decoded)
+               |> form_for("action")
+               |> inputs_for(:components)
+
+      assert input_value(predicate_form, :field) == :title
+      assert input_value(predicate_form, :value) == "new post"
+      assert input_value(predicate_form, :operator) == :eq
+      assert input_value(predicate_form, :negated) == false
     end
   end
 end
