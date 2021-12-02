@@ -150,7 +150,7 @@ defmodule AshPhoenix.FormData.Helpers do
       nil ->
         case error do
           {_key, _value, _vars} = error ->
-            error
+            [error]
 
           error ->
             if AshPhoenix.FormData.Error.impl_for(error) do
@@ -162,22 +162,48 @@ defmodule AshPhoenix.FormData.Helpers do
     end
   end
 
-  # defp set_source_context(changeset, {relationship, original_changeset}) do
-  #   case original_changeset.context[:manage_relationship_source] do
-  #     nil ->
-  #       Ash.Changeset.set_context(changeset, %{
-  #         manage_relationship_source: [
-  #           {relationship.source, relationship.name, original_changeset}
-  #         ]
-  #       })
+  def transform_predicate_error(predicate, error, transform_errors) do
+    case transform_errors do
+      transformer when is_function(transformer, 2) ->
+        case transformer.(predicate, error) do
+          error when is_exception(error) ->
+            if AshPhoenix.FormData.Error.impl_for(error) do
+              List.wrap(to_form_error(error))
+            else
+              []
+            end
 
-  #     value ->
-  #       Ash.Changeset.set_context(changeset, %{
-  #         manage_relationship_source:
-  #           value ++ [{relationship.source, relationship.name, original_changeset}]
-  #       })
-  #   end
-  # end
+          {key, value, vars} ->
+            [{key, value, vars}]
+
+          list when is_list(list) ->
+            Enum.flat_map(list, fn
+              error when is_exception(error) ->
+                if AshPhoenix.FormData.Error.impl_for(error) do
+                  List.wrap(to_form_error(error))
+                else
+                  []
+                end
+
+              {key, value, vars} ->
+                [{key, value, vars}]
+            end)
+        end
+
+      nil ->
+        case error do
+          {_key, _value, _vars} = error ->
+            [error]
+
+          error ->
+            if AshPhoenix.FormData.Error.impl_for(error) do
+              List.wrap(to_form_error(error))
+            else
+              []
+            end
+        end
+    end
+  end
 
   defp to_form_error(exception) when is_exception(exception) do
     case AshPhoenix.FormData.Error.to_form_error(exception) do

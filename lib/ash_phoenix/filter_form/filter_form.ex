@@ -2,6 +2,7 @@ defmodule AshPhoenix.FilterForm do
   defstruct [
     :id,
     :resource,
+    :transform_errors,
     valid?: false,
     negated?: false,
     params: %{},
@@ -18,6 +19,16 @@ defmodule AshPhoenix.FilterForm do
       type: :any,
       doc: "Initial parameters to create the form with",
       default: %{}
+    ],
+    transform_errors: [
+      type: :any,
+      doc: """
+      Allows for manual manipulation and transformation of errors.
+
+      If possible, try to implement `AshPhoenix.FormData.Error` for the error (if it as a custom one, for example).
+      If that isn't possible, you can provide this function which will get the predicate and the error, and should
+      return a list of ash phoenix formatted errors, e.g `[{field :: atom, message :: String.t(), substituations :: Keyword.t()}]`
+      """
     ],
     remove_empty_groups?: [
       type: :boolean,
@@ -55,16 +66,20 @@ defmodule AshPhoenix.FilterForm do
       |> params_to_list()
       |> add_ids()
 
-    %__MODULE__{
+    form = %__MODULE__{
       id: params["id"] || params[:id],
       resource: resource,
       params: params,
       remove_empty_groups?: opts[:remove_empty_groups?],
-      components:
-        parse_components(resource, params["components"] || params[:components],
-          remove_empty_groups?: opts[:remove_empty_groups?]
-        ),
       operator: to_existing_atom(params["operator"] || params[:operator] || :and)
+    }
+
+    %{
+      form
+      | components:
+          parse_components(resource, form, params["components"] || params[:components],
+            remove_empty_groups?: opts[:remove_empty_groups?]
+          )
     }
     |> set_validity()
   end
@@ -142,11 +157,17 @@ defmodule AshPhoenix.FilterForm do
   @doc """
   Returns a flat list of all errors on all predicates in the filter.
   """
-  def errors(%__MODULE__{components: components}) do
-    Enum.flat_map(components, &errors/1)
+  def errors(form, opts \\ [])
+
+  def errors(%__MODULE__{components: components, transform_errors: transform_errors}, opts) do
+    Enum.flat_map(
+      components,
+      &errors(&1, Keyword.put_new(opts, :handle_errors, transform_errors))
+    )
   end
 
-  def errors(%Predicate{errors: errors}), do: errors
+  def errors(%Predicate{} = predicate, opts),
+    do: AshPhoenix.FilterForm.Predicate.errors(predicate, opts[:transform_errors])
 
   defp do_to_filter(%__MODULE__{components: []}, _), do: {:ok, true}
 
@@ -186,11 +207,16 @@ defmodule AshPhoenix.FilterForm do
   end
 
   defp do_to_filter(
-         %Predicate{field: field, value: value, operator: operator, negated?: negated?} =
-           predicate,
+         %Predicate{
+           field: field,
+           value: value,
+           operator: operator,
+           negated?: negated?,
+           path: path
+         } = predicate,
          resource
        ) do
-    ref = Ash.Query.expr(ref(^field, []))
+    ref = Ash.Query.expr(ref(^field, ^path))
 
     expr =
       if Ash.Filter.get_function(operator, resource) do
@@ -202,18 +228,10 @@ defmodule AshPhoenix.FilterForm do
               {:ok, operator}
 
             {:error, error} ->
-              {:error,
-               Ash.Error.Query.InvalidQuery.exception(
-                 field: field,
-                 message: "Error constructing operator: #{error}"
-               )}
+              {:error, error}
           end
         else
-          {:error,
-           Ash.Error.Query.InvalidQuery.exception(
-             field: field,
-             message: "No such function or operator #{operator}"
-           )}
+          {:error, {:operator, "No such function or operator #{operator}"}, []}
         end
       end
 
@@ -308,31 +326,54 @@ defmodule AshPhoenix.FilterForm do
     end
   end
 
-  defp parse_components(resource, component_params, form_opts) do
+  defp parse_components(resource, parent, component_params, form_opts) do
     component_params
     |> Kernel.||([])
-    |> Enum.map(&parse_component(resource, &1, form_opts))
+    |> Enum.map(&parse_component(resource, parent, &1, form_opts))
   end
 
-  defp parse_component(resource, params, form_opts) do
+  defp parse_component(resource, parent, params, form_opts) do
     if is_operator?(params) do
       # Eventually, components may have references w/ paths
       # also, we should validate references here
-      new_predicate(params)
+      new_predicate(params, parent)
     else
       new(resource, Keyword.put(form_opts, :params, params))
     end
   end
 
-  defp new_predicate(params) do
-    %AshPhoenix.FilterForm.Predicate{
+  defp new_predicate(params, form) do
+    predicate = %AshPhoenix.FilterForm.Predicate{
       id: params[:id] || params["id"] || Ash.UUID.generate(),
       field: to_existing_atom(params["field"] || params[:field]),
       value: params["value"] || params[:value],
+      path: parse_path(params),
       params: params,
       negated?: negated?(params),
       operator: to_existing_atom(params["operator"] || params[:operator] || :eq)
     }
+
+    %{predicate | errors: predicate_errors(predicate, form.resource)}
+  end
+
+  defp parse_path(params) do
+    path = params[:path] || params["path"]
+
+    case path do
+      "" ->
+        []
+
+      nil ->
+        []
+
+      path when is_list(path) ->
+        Enum.map(path, &to_existing_atom/1)
+
+      path ->
+        path
+        |> String.split()
+        |> Enum.map(&to_existing_atom/1)
+    end
   end
 
   defp negated?(params) do
@@ -365,7 +406,7 @@ defmodule AshPhoenix.FilterForm do
                     )
 
                   %Predicate{} ->
-                    new_predicate(params)
+                    new_predicate(params, form)
                 end
               else
                 component
@@ -375,7 +416,7 @@ defmodule AshPhoenix.FilterForm do
     else
       component =
         if is_operator?(params) do
-          new_predicate(params)
+          new_predicate(params, form)
         else
           new(form.resource, params: params, remove_empty_groups?: form.remove_empty_groups?)
         end
@@ -389,7 +430,12 @@ defmodule AshPhoenix.FilterForm do
   end
 
   defp to_existing_atom(value) when is_atom(value), do: value
-  defp to_existing_atom(value), do: String.to_existing_atom(value)
+
+  defp to_existing_atom(value) do
+    String.to_existing_atom(value)
+  rescue
+    _ -> value
+  end
 
   @doc "Returns the list of available predicates for the given resource, which may be functions or operators."
   def predicates(resource) do
@@ -410,12 +456,12 @@ defmodule AshPhoenix.FilterForm do
     end)
   end
 
-  @doc "Returns the list of available fields, which may be attribuets, calculations, or aggregates."
-  def fields(form) do
-    form.resource
+  @doc "Returns the list of available fields, which may be attributes, calculations, or aggregates."
+  def fields(resource) do
+    resource
     |> Ash.Resource.Info.public_aggregates()
-    |> Enum.concat(Ash.Resource.Info.public_calculations(form.resource))
-    |> Enum.concat(Ash.Resource.Info.public_attributes(form.resource))
+    |> Enum.concat(Ash.Resource.Info.public_calculations(resource))
+    |> Enum.concat(Ash.Resource.Info.public_attributes(resource))
     |> Enum.map(& &1.name)
   end
 
@@ -439,14 +485,16 @@ defmodule AshPhoenix.FilterForm do
 
     predicate_id = Ash.UUID.generate()
 
-    predicate = %Predicate{
-      id: predicate_id,
-      field: field,
-      value: value,
-      operator: operator_or_function
-    }
-
-    predicate = %{predicate | errors: predicate_errors(predicate, form.resource)}
+    predicate =
+      new_predicate(
+        %{
+          id: predicate_id,
+          field: field,
+          value: value,
+          operator: operator_or_function
+        },
+        form
+      )
 
     if opts[:to] && opts[:to] != form.id do
       {set_validity(%{
@@ -493,23 +541,35 @@ defmodule AshPhoenix.FilterForm do
   end
 
   defp predicate_errors(predicate, resource) do
-    errors =
-      case Ash.Resource.Info.public_field(resource, predicate.field) do
-        nil ->
-          [Ash.Error.Query.NoSuchAttribute.exception(resource: resource, name: predicate.field)]
+    case Ash.Resource.Info.related(resource, predicate.path) do
+      nil ->
+        [
+          {:operator, "Invalid path #{Enum.join(predicate.path, ".")}", []}
+        ]
 
-        _ ->
-          []
-      end
+      resource ->
+        errors =
+          case Ash.Resource.Info.public_field(resource, predicate.field) do
+            nil ->
+              [
+                {:field, "No such field #{predicate.field}", []}
+              ]
 
-    if Ash.Filter.get_function(predicate.operator, resource) do
-      errors
-    else
-      if Ash.Filter.get_operator(predicate.operator) do
-        errors
-      else
-        [Ash.Error.Query.NoSuchOperator.exception(name: predicate.operator) | errors]
-      end
+            _ ->
+              []
+          end
+
+        if Ash.Filter.get_function(predicate.operator, resource) do
+          errors
+        else
+          if Ash.Filter.get_operator(predicate.operator) do
+            errors
+          else
+            [
+              {:operator, "No such operator #{predicate.operator}", []} | errors
+            ]
+          end
+        end
     end
   end
 
@@ -626,7 +686,10 @@ defmodule AshPhoenix.FilterForm do
 
     @impl true
     def to_form(form, _, :components, _opts) do
-      Enum.map(form.components, &Phoenix.HTML.Form.form_for(&1, "action"))
+      Enum.map(
+        form.components,
+        &Phoenix.HTML.Form.form_for(&1, "action", transform_errors: form.transform_errors)
+      )
     end
 
     def to_form(_, _, other, _) do

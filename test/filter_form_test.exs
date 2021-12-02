@@ -110,6 +110,23 @@ defmodule AshPhoenix.FilterFormTest do
                contains(title, "new")
              )
     end
+
+    test "predicates can reference paths" do
+      form =
+        FilterForm.new(Post,
+          params: %{
+            field: :text,
+            operator: :contains,
+            path: "comments",
+            value: "new"
+          }
+        )
+
+      assert Ash.Query.equivalent_to?(
+               FilterForm.filter!(Post, form),
+               contains(comments.text, "new")
+             )
+    end
   end
 
   describe "form_data implementation" do
@@ -174,6 +191,22 @@ defmodule AshPhoenix.FilterFormTest do
       assert input_value(predicate_form, :value) == "new post"
       assert input_value(predicate_form, :operator) == :eq
       assert input_value(predicate_form, :negated) == false
+    end
+
+    test "using an unknown operator shows an error" do
+      assert [predicate_form] =
+               Post
+               |> FilterForm.new(
+                 params: %{
+                   field: :title,
+                   operator: "what_on_earth",
+                   value: "new post"
+                 }
+               )
+               |> form_for("action")
+               |> inputs_for(:components)
+
+      assert [{:operator, {"No such operator what_on_earth", []}}] = predicate_form.errors
     end
   end
 end
