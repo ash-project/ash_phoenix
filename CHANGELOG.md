@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.6.0-rc.1](https://github.com/ash-project/ash_phoenix/compare/v0.6.0-rc.0...v0.6.0-rc.1) (2021-12-02)
+
+
+
+
+### Improvements:
+
+* expose paths for filters
+
+* simple error handling patterns for filter forms
+
 ## [v0.6.0-rc.0](https://github.com/ash-project/ash_phoenix/compare/v0.5.19-rc.2...v0.6.0-rc.0) (2021-12-01)
 
 
