@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.6.0-rc.3](https://github.com/ash-project/ash_phoenix/compare/v0.6.0-rc.2...v0.6.0-rc.3) (2021-12-02)
+
+
+
+
+### Bug Fixes:
+
+* don't make operators externally, only `%Call{}` structs
+
 ## [v0.6.0-rc.2](https://github.com/ash-project/ash_phoenix/compare/v0.6.0-rc.1...v0.6.0-rc.2) (2021-12-02)
 
 
