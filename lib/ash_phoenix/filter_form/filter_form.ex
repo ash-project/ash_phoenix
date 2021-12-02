@@ -227,14 +227,8 @@ defmodule AshPhoenix.FilterForm do
       if Ash.Filter.get_function(operator, resource) do
         {:ok, %Ash.Query.Call{name: operator, args: [ref, value]}}
       else
-        if operator_module = Ash.Filter.get_operator(operator) do
-          case Ash.Query.Operator.new(operator_module, ref, value) do
-            {:ok, operator} ->
-              {:ok, operator}
-
-            {:error, error} ->
-              {:error, error}
-          end
+        if Ash.Filter.get_operator(operator) do
+          {:ok, %Ash.Query.Call{name: operator, args: [ref, value], operator?: true}}
         else
           {:error, {:operator, "No such function or operator #{operator}"}, []}
         end
