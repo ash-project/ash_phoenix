@@ -113,18 +113,18 @@ defmodule AshPhoenix.FilterForm do
 
   To add this to a query, remember to use `^`, for example:
   ```elixir
-  filter = AshPhoenix.FilterForm.to_filter(form)
+  filter = AshPhoenix.FilterForm.to_filter_expression(form)
 
   Ash.Query.filter(MyApp.Post, ^filter)
   ```
 
-  Alternatively, you can use the shorthand: `filter/2`.
+  Alternatively, you can use the shorthand: `filter/2` to apply the expression directly to a query.
   """
-  def to_filter(form) do
+  def to_filter_expression(form) do
     if form.valid? do
-      case do_to_filter(form, form.resource) do
+      case do_to_filter_expression(form, form.resource) do
         {:ok, expr} ->
-          {:ok, %Ash.Filter{expression: expr, resource: form.resource}}
+          {:ok, expr}
 
         {:error, form} ->
           {:error, form}
@@ -138,7 +138,7 @@ defmodule AshPhoenix.FilterForm do
   Same as `to_filter/1`
   """
   def to_filter!(form) do
-    case to_filter(form) do
+    case to_filter_expression(form) do
       {:ok, filter} ->
         filter
 
@@ -174,15 +174,15 @@ defmodule AshPhoenix.FilterForm do
   def errors(%Predicate{} = predicate, opts),
     do: AshPhoenix.FilterForm.Predicate.errors(predicate, opts[:transform_errors])
 
-  defp do_to_filter(%__MODULE__{components: []}, _), do: {:ok, true}
+  defp do_to_filter_expression(%__MODULE__{components: []}, _), do: {:ok, true}
 
-  defp do_to_filter(
+  defp do_to_filter_expression(
          %__MODULE__{components: components, operator: operator, negated?: negated?} = form,
          resource
        ) do
     {filters, components, errors?} =
       Enum.reduce(components, {[], [], false}, fn component, {filters, components, errors?} ->
-        case do_to_filter(component, resource) do
+        case do_to_filter_expression(component, resource) do
           {:ok, component_filter} ->
             {filters ++ [component_filter], components ++ [component], errors?}
 
@@ -211,7 +211,7 @@ defmodule AshPhoenix.FilterForm do
     end
   end
 
-  defp do_to_filter(
+  defp do_to_filter_expression(
          %Predicate{
            field: field,
            value: value,
@@ -230,7 +230,7 @@ defmodule AshPhoenix.FilterForm do
         if Ash.Filter.get_operator(operator) do
           {:ok, %Ash.Query.Call{name: operator, args: [ref, value], operator?: true}}
         else
-          {:error, {:operator, "No such function or operator #{operator}"}, []}
+          {:error, {:operator, "No such function or operator #{operator}", []}}
         end
       end
 
@@ -251,7 +251,7 @@ defmodule AshPhoenix.FilterForm do
   Converts the form into a filter, and filters the provided query or resource with that filter.
   """
   def filter(query, form) do
-    case to_filter(form) do
+    case to_filter_expression(form) do
       {:ok, filter} ->
         {:ok, Ash.Query.do_filter(query, filter)}
 
