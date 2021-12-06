@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.6.0-rc.5](https://github.com/ash-project/ash_phoenix/compare/v0.6.0-rc.4...v0.6.0-rc.5) (2021-12-06)
+
+
+
+
+### Bug Fixes:
+
+* set proper form ids and names
+
+* support only predicate in params
+
 ## [v0.6.0-rc.4](https://github.com/ash-project/ash_phoenix/compare/v0.6.0-rc.3...v0.6.0-rc.4) (2021-12-02)
 
 
