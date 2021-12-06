@@ -66,8 +66,8 @@ defmodule AshPhoenix.FilterForm.Predicate do
       %Phoenix.HTML.Form{
         source: predicate,
         impl: __MODULE__,
-        id: predicate.id,
-        name: predicate.id,
+        id: opts[:id] || predicate.id,
+        name: opts[:as] || predicate.id,
         errors: errors,
         data: predicate,
         params: predicate.params,

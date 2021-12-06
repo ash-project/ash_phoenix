@@ -57,6 +57,7 @@ defmodule AshPhoenix.FilterForm do
       if is_predicate?(params) do
         %{
           "operator" => "and",
+          "id" => Ash.UUID.generate(),
           "components" => %{"0" => params}
         }
       else
@@ -93,6 +94,7 @@ defmodule AshPhoenix.FilterForm do
       if is_predicate?(params) do
         %{
           "operator" => "and",
+          "id" => Ash.UUID.generate(),
           "components" => %{"0" => params}
         }
       else
@@ -695,8 +697,8 @@ defmodule AshPhoenix.FilterForm do
       %Phoenix.HTML.Form{
         source: form,
         impl: __MODULE__,
-        id: form.id,
-        name: form.id,
+        id: opts[:id] || form.id,
+        name: opts[:as] || form.id,
         errors: [],
         data: form,
         params: form.params,
@@ -706,10 +708,14 @@ defmodule AshPhoenix.FilterForm do
     end
 
     @impl true
-    def to_form(form, _, :components, _opts) do
+    def to_form(form, phoenix_form, :components, _opts) do
       Enum.map(
         form.components,
-        &Phoenix.HTML.Form.form_for(&1, "action", transform_errors: form.transform_errors)
+        &Phoenix.HTML.Form.form_for(&1, "action",
+          transform_errors: form.transform_errors,
+          as: phoenix_form.name <> "[components][#{&1.id}]",
+          id: phoenix_form.id <> "_components_#{&1.id}"
+        )
       )
     end
 

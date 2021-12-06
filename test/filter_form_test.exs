@@ -185,6 +185,23 @@ defmodule AshPhoenix.FilterFormTest do
       assert input_value(predicate_form, :negated) == false
     end
 
+    test "the form ids and names for nested components are correct" do
+      form =
+        Post
+        |> FilterForm.new(
+          params: %{
+            field: :title,
+            value: "new post"
+          }
+        )
+        |> form_for("action")
+
+      assert [predicate_form] = inputs_for(form, :components)
+
+      assert predicate_form.id == "#{form.id}_components_#{predicate_form.source.id}"
+      assert predicate_form.name == "#{form.id}[components][#{predicate_form.source.id}]"
+    end
+
     test "using an unknown operator shows an error" do
       assert [predicate_form] =
                Post
