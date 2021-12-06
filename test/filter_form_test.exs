@@ -14,8 +14,8 @@ defmodule AshPhoenix.FilterFormTest do
     test "a group can be added" do
       form = FilterForm.new(Post)
 
-      {form, group_id} = FilterForm.add_group(form, operator: :or)
-      {form, _} = FilterForm.add_predicate(form, :title, :eq, "new post", to: group_id)
+      {form, group_id} = FilterForm.add_group(form, operator: :or, return_id?: true)
+      form = FilterForm.add_predicate(form, :title, :eq, "new post", to: group_id)
 
       assert %FilterForm{
                components: [
@@ -35,8 +35,8 @@ defmodule AshPhoenix.FilterFormTest do
     test "a group can be removed" do
       form = FilterForm.new(Post)
 
-      {form, group_id} = FilterForm.add_group(form, operator: :or)
-      {form, _} = FilterForm.add_predicate(form, :title, :eq, "new post", to: group_id)
+      {form, group_id} = FilterForm.add_group(form, operator: :or, return_id?: true)
+      form = FilterForm.add_predicate(form, :title, :eq, "new post", to: group_id)
 
       form = FilterForm.remove_group(form, group_id)
 
@@ -48,8 +48,10 @@ defmodule AshPhoenix.FilterFormTest do
     test "a predicate can be removed from a group" do
       form = FilterForm.new(Post)
 
-      {form, group_id} = FilterForm.add_group(form, operator: :or)
-      {form, predicate_id} = FilterForm.add_predicate(form, :title, :eq, "new post", to: group_id)
+      {form, group_id} = FilterForm.add_group(form, operator: :or, return_id?: true)
+
+      {form, predicate_id} =
+        FilterForm.add_predicate(form, :title, :eq, "new post", to: group_id, return_id?: true)
 
       form = FilterForm.remove_predicate(form, predicate_id)
 
@@ -65,8 +67,10 @@ defmodule AshPhoenix.FilterFormTest do
     test "with `remove_empty_groups?: true` empty groups are removed on component removal" do
       form = FilterForm.new(Post, remove_empty_groups?: true)
 
-      {form, group_id} = FilterForm.add_group(form, operator: :or)
-      {form, predicate_id} = FilterForm.add_predicate(form, :title, :eq, "new post", to: group_id)
+      {form, group_id} = FilterForm.add_group(form, operator: :or, return_id?: true)
+
+      {form, predicate_id} =
+        FilterForm.add_predicate(form, :title, :eq, "new post", to: group_id, return_id?: true)
 
       form = FilterForm.remove_predicate(form, predicate_id)
 
@@ -96,6 +100,36 @@ defmodule AshPhoenix.FilterFormTest do
       assert Ash.Query.equivalent_to?(
                FilterForm.filter!(Post, form),
                title == "new post"
+             )
+    end
+
+    test "the is_nil predicate correctly chooses the operator" do
+      form =
+        FilterForm.new(Post,
+          params: %{
+            field: :title,
+            operator: :is_nil,
+            value: "true"
+          }
+        )
+
+      assert Ash.Query.equivalent_to?(
+               FilterForm.filter!(Post, form),
+               is_nil(title)
+             )
+
+      form =
+        FilterForm.new(Post,
+          params: %{
+            field: :title,
+            operator: :is_nil,
+            value: "false"
+          }
+        )
+
+      assert Ash.Query.equivalent_to?(
+               IO.inspect(FilterForm.filter!(Post, form)),
+               not is_nil(title)
              )
     end
 

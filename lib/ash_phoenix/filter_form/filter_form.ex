@@ -233,11 +233,11 @@ defmodule AshPhoenix.FilterForm do
     ref = Ash.Query.expr(ref(^field, ^path))
 
     expr =
-      if Ash.Filter.get_function(operator, resource) do
-        {:ok, %Ash.Query.Call{name: operator, args: [ref, value]}}
+      if Ash.Filter.get_operator(operator) do
+        {:ok, %Ash.Query.Call{name: operator, args: [ref, value], operator?: true}}
       else
-        if Ash.Filter.get_operator(operator) do
-          {:ok, %Ash.Query.Call{name: operator, args: [ref, value], operator?: true}}
+        if Ash.Filter.get_function(operator, resource) do
+          {:ok, %Ash.Query.Call{name: operator, args: [ref, value]}}
         else
           {:error, {:operator, "No such function or operator #{operator}", []}}
         end
@@ -502,6 +502,11 @@ defmodule AshPhoenix.FilterForm do
       type: :string,
       doc:
         "The group id to add the predicate to. If not set, will be added to the top level group."
+    ],
+    return_id?: [
+      type: :boolean,
+      default: false,
+      doc: "If set to `true`, the function returns `{form, predicate_id}`"
     ]
   ]
 
@@ -528,13 +533,20 @@ defmodule AshPhoenix.FilterForm do
         form
       )
 
-    if opts[:to] && opts[:to] != form.id do
-      {set_validity(%{
-         form
-         | components: Enum.map(form.components, &do_add_predicate(&1, opts[:to], predicate))
-       }), predicate_id}
+    new_form =
+      if opts[:to] && opts[:to] != form.id do
+        set_validity(%{
+          form
+          | components: Enum.map(form.components, &do_add_predicate(&1, opts[:to], predicate))
+        })
+      else
+        set_validity(%{form | components: form.components ++ [predicate]})
+      end
+
+    if opts[:return_id?] do
+      {new_form, predicate_id}
     else
-      {set_validity(%{form | components: form.components ++ [predicate]}), predicate_id}
+      new_form
     end
   end
 
@@ -624,6 +636,11 @@ defmodule AshPhoenix.FilterForm do
       type: {:one_of, [:and, :or]},
       default: :and,
       doc: "The operator that the group should have internally."
+    ],
+    return_id?: [
+      type: :boolean,
+      default: false,
+      doc: "If set to `true`, the function returns `{form, predicate_id}`"
     ]
   ]
 
@@ -640,13 +657,20 @@ defmodule AshPhoenix.FilterForm do
     group_id = Ash.UUID.generate()
     group = %__MODULE__{operator: opts[:operator], id: group_id}
 
-    if opts[:to] && opts[:to] != form.id do
-      {set_validity(%{
-         form
-         | components: Enum.map(form.components, &do_add_group(&1, opts[:to], group))
-       }), group_id}
+    new_form =
+      if opts[:to] && opts[:to] != form.id do
+        set_validity(%{
+          form
+          | components: Enum.map(form.components, &do_add_group(&1, opts[:to], group))
+        })
+      else
+        set_validity(%{form | components: form.components ++ [group]})
+      end
+
+    if opts[:return_id?] do
+      {new_form, group_id}
     else
-      {set_validity(%{form | components: form.components ++ [group]}), group_id}
+      new_form
     end
   end
 
