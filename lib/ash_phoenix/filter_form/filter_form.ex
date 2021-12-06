@@ -718,11 +718,10 @@ defmodule AshPhoenix.FilterForm do
 
     @impl true
     def to_form(form, _phoenix_form, :components, _opts) do
-      form.components
-      |> Enum.with_index()
-      |> Enum.map(fn {component, index} ->
-        Phoenix.HTML.Form.form_for(component, "action", transform_errors: form.transform_errors)
-      end)
+      Enum.map(
+        form.components,
+        &Phoenix.HTML.Form.form_for(&1, "action", transform_errors: form.transform_errors)
+      )
     end
 
     def to_form(_, _, other, _) do
