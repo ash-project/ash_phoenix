@@ -21,6 +21,11 @@ defmodule AshPhoenix.FilterForm do
       doc: "Initial parameters to create the form with",
       default: %{}
     ],
+    as: [
+      type: :string,
+      default: "filter",
+      doc: "Set the parameter name for the form."
+    ],
     transform_errors: [
       type: :any,
       doc: """

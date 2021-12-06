@@ -167,6 +167,16 @@ defmodule AshPhoenix.FilterFormTest do
       assert input_value(form, :operator) == :and
     end
 
+    test "the filter name can be overridden" do
+      filter_form =
+        FilterForm.new(Post,
+          params: %{field: :field, operator: :contains, value: ""},
+          as: "resource_filter"
+        )
+
+      assert filter_form.name == "resource_filter"
+    end
+
     test "the `:components` are available as nested forms" do
       form =
         Post
@@ -180,6 +190,7 @@ defmodule AshPhoenix.FilterFormTest do
 
       assert [predicate_form] = inputs_for(form, :components)
 
+      assert form.name == "filter"
       assert form.name == form.source.name
       assert form.id == form.source.id
       assert predicate_form.name == predicate_form.source.id
