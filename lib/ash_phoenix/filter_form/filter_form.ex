@@ -104,7 +104,7 @@ defmodule AshPhoenix.FilterForm do
     %{
       form
       | params: params,
-        components: validate_components(form.components, params["components"]),
+        components: validate_components(form, params["components"]),
         operator: to_existing_atom(params["operator"] || :and)
     }
     |> set_validity()
@@ -304,7 +304,9 @@ defmodule AshPhoenix.FilterForm do
           end)
         else
           if is_map(components) do
-            components
+            Map.new(components, fn {key, value} ->
+              {key, sanitize_params(value)}
+            end)
           end
         end
 
@@ -375,47 +377,36 @@ defmodule AshPhoenix.FilterForm do
   end
 
   defp validate_components(form, component_params) do
+    form_without_components = %{form | components: []}
+
     component_params
-    |> Kernel.||([])
-    |> Enum.map(&validate_component(form, &1))
+    |> Enum.sort_by(fn {key, _} ->
+      String.to_integer(key)
+    end)
+    |> Enum.map(&elem(&1, 1))
+    |> Enum.map(&validate_component(form_without_components, &1, form.components))
   end
 
-  defp validate_component(form, params) do
+  defp validate_component(form, params, current_components) do
     id = params[:id] || params["id"]
 
     match_component =
-      id && Enum.find(form.components, fn %{id: component_id} -> component_id == id end)
+      id && Enum.find(current_components, fn %{id: component_id} -> component_id == id end)
 
     if match_component do
-      %{
-        form
-        | components:
-            Enum.map(form.components, fn component ->
-              if match_component.id == component.id do
-                case component do
-                  %__MODULE__{} ->
-                    new(form.resource,
-                      params: params,
-                      remove_empty_groups?: form.remove_empty_groups?
-                    )
+      case match_component do
+        %__MODULE__{} ->
+          validate(form, params)
 
-                  %Predicate{} ->
-                    new_predicate(params, form)
-                end
-              else
-                component
-              end
-            end)
-      }
-    else
-      component =
-        if is_predicate?(params) do
+        %Predicate{} ->
           new_predicate(params, form)
-        else
-          new(form.resource, params: params, remove_empty_groups?: form.remove_empty_groups?)
-        end
-
-      %{form | components: form.components ++ [component]}
+      end
+    else
+      if is_predicate?(params) do
+        new_predicate(params, form)
+      else
+        new(form.resource, params: params, remove_empty_groups?: form.remove_empty_groups?)
+      end
     end
   end
 
@@ -709,14 +700,15 @@ defmodule AshPhoenix.FilterForm do
 
     @impl true
     def to_form(form, phoenix_form, :components, _opts) do
-      Enum.map(
-        form.components,
-        &Phoenix.HTML.Form.form_for(&1, "action",
+      form.components
+      |> Enum.with_index()
+      |> Enum.map(fn {component, index} ->
+        Phoenix.HTML.Form.form_for(component, "action",
           transform_errors: form.transform_errors,
-          as: phoenix_form.name <> "[components][#{&1.id}]",
-          id: phoenix_form.id <> "_components_#{&1.id}"
+          as: phoenix_form.name <> "[components][#{index}]",
+          id: phoenix_form.id <> "_components_#{index}"
         )
-      )
+      end)
     end
 
     def to_form(_, _, other, _) do

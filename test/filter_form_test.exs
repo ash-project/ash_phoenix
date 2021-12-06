@@ -198,8 +198,8 @@ defmodule AshPhoenix.FilterFormTest do
 
       assert [predicate_form] = inputs_for(form, :components)
 
-      assert predicate_form.id == "#{form.id}_components_#{predicate_form.source.id}"
-      assert predicate_form.name == "#{form.id}[components][#{predicate_form.source.id}]"
+      assert predicate_form.id == "#{form.id}_components_0"
+      assert predicate_form.name == "#{form.id}[components][0]"
     end
 
     test "using an unknown operator shows an error" do
@@ -216,6 +216,40 @@ defmodule AshPhoenix.FilterFormTest do
                |> inputs_for(:components)
 
       assert [{:operator, {"No such operator what_on_earth", []}}] = predicate_form.errors
+    end
+  end
+
+  describe "validate/1" do
+    test "will update the forms accordingly" do
+      form =
+        Post
+        |> FilterForm.new(
+          params: %{
+            field: :title,
+            value: "new post"
+          }
+        )
+
+      predicate = Enum.at(form.components, 0)
+
+      form =
+        FilterForm.validate(form, %{
+          "components" => %{
+            "0" => %{
+              id: predicate.id,
+              field: :title,
+              value: "new post 2"
+            }
+          }
+        })
+
+      new_predicate = Enum.at(form.components, 0)
+
+      assert %{
+               predicate
+               | value: "new post 2",
+                 params: Map.put(predicate.params, "value", "new post 2")
+             } == new_predicate
     end
   end
 
