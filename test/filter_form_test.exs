@@ -193,7 +193,7 @@ defmodule AshPhoenix.FilterFormTest do
       assert form.name == "filter"
       assert form.name == form.source.name
       assert form.id == form.source.id
-      assert predicate_form.name == predicate_form.source.id
+      assert predicate_form.name == form.name <> "[components][0]"
       assert(input_value(predicate_form, :field) == :title)
 
       assert input_value(predicate_form, :value) == "new post"
@@ -215,7 +215,7 @@ defmodule AshPhoenix.FilterFormTest do
       assert [predicate_form] = inputs_for(form, :components)
 
       assert predicate_form.id == predicate_form.source.id
-      assert predicate_form.name == predicate_form.source.id
+      assert predicate_form.name == form.name <> "[components][0]"
     end
 
     test "using an unknown operator shows an error" do
