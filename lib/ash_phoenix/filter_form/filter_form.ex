@@ -87,17 +87,17 @@ defmodule AshPhoenix.FilterForm do
   At present, no validation actually occurs, but this will eventually be added.
   """
   def validate(form, params \\ %{}) do
+    params = sanitize_params(params)
+
     params =
       if is_predicate?(params) do
         %{
-          operator: :and,
-          components: %{"0" => params}
+          "operator" => "and",
+          "components" => %{"0" => params}
         }
       else
         params
       end
-
-    params = sanitize_params(params)
 
     %{
       form

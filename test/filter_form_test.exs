@@ -77,7 +77,11 @@ defmodule AshPhoenix.FilterFormTest do
   describe "to_filter/1" do
     test "An empty form returns the filter `true`" do
       form = FilterForm.new(Post)
-      assert Ash.Query.equivalent_to?(FilterForm.filter!(Post, form), true)
+
+      assert Ash.Query.equivalent_to?(
+               FilterForm.filter!(Post, form),
+               true
+             )
     end
 
     test "A form with a single predicate returns the corresponding filter" do
