@@ -168,18 +168,23 @@ defmodule AshPhoenix.FilterFormTest do
     end
 
     test "the `:components` are available as nested forms" do
-      assert [predicate_form] =
-               Post
-               |> FilterForm.new(
-                 params: %{
-                   field: :title,
-                   value: "new post"
-                 }
-               )
-               |> form_for("action")
-               |> inputs_for(:components)
+      form =
+        Post
+        |> FilterForm.new(
+          params: %{
+            field: :title,
+            value: "new post"
+          }
+        )
+        |> form_for("action")
 
-      assert input_value(predicate_form, :field) == :title
+      assert [predicate_form] = inputs_for(form, :components)
+
+      assert form.name == form.source.name
+      assert form.id == form.source.id
+      assert predicate_form.name == predicate_form.source.id
+      assert(input_value(predicate_form, :field) == :title)
+
       assert input_value(predicate_form, :value) == "new post"
       assert input_value(predicate_form, :operator) == :eq
       assert input_value(predicate_form, :negated) == false
@@ -198,8 +203,8 @@ defmodule AshPhoenix.FilterFormTest do
 
       assert [predicate_form] = inputs_for(form, :components)
 
-      assert predicate_form.id == "#{form.id}_components_0"
-      assert predicate_form.name == "#{form.id}[components][0]"
+      assert predicate_form.id == predicate_form.source.id
+      assert predicate_form.name == predicate_form.source.id
     end
 
     test "using an unknown operator shows an error" do

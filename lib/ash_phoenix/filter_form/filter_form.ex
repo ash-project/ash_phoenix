@@ -3,6 +3,7 @@ defmodule AshPhoenix.FilterForm do
     :id,
     :resource,
     :transform_errors,
+    name: "filter",
     valid?: false,
     negated?: false,
     params: %{},
@@ -66,6 +67,7 @@ defmodule AshPhoenix.FilterForm do
 
     form = %__MODULE__{
       id: params["id"],
+      name: opts[:as] || "filter",
       resource: resource,
       params: params,
       remove_empty_groups?: opts[:remove_empty_groups?],
@@ -334,7 +336,12 @@ defmodule AshPhoenix.FilterForm do
       # also, we should validate references here
       new_predicate(params, parent)
     else
-      new(resource, Keyword.put(form_opts, :params, params))
+      params = Map.put_new(params, "id", Ash.UUID.generate())
+
+      new(
+        resource,
+        Keyword.merge(form_opts, params: params, as: parent.name <> "[#{params["id"]}]")
+      )
     end
   end
 
@@ -405,7 +412,13 @@ defmodule AshPhoenix.FilterForm do
       if is_predicate?(params) do
         new_predicate(params, form)
       else
-        new(form.resource, params: params, remove_empty_groups?: form.remove_empty_groups?)
+        params = Map.put_new(params, "id", Ash.UUID.generate())
+
+        new(form.resource,
+          params: params,
+          as: form.name <> "[#{params["id"]}]",
+          remove_empty_groups?: form.remove_empty_groups?
+        )
       end
     end
   end
@@ -689,7 +702,7 @@ defmodule AshPhoenix.FilterForm do
         source: form,
         impl: __MODULE__,
         id: opts[:id] || form.id,
-        name: opts[:as] || form.id,
+        name: opts[:as] || form.name,
         errors: [],
         data: form,
         params: form.params,
@@ -699,15 +712,11 @@ defmodule AshPhoenix.FilterForm do
     end
 
     @impl true
-    def to_form(form, phoenix_form, :components, _opts) do
+    def to_form(form, _phoenix_form, :components, _opts) do
       form.components
       |> Enum.with_index()
       |> Enum.map(fn {component, index} ->
-        Phoenix.HTML.Form.form_for(component, "action",
-          transform_errors: form.transform_errors,
-          as: phoenix_form.name <> "[components][#{index}]",
-          id: phoenix_form.id <> "_components_#{index}"
-        )
+        Phoenix.HTML.Form.form_for(component, "action", transform_errors: form.transform_errors)
       end)
     end
 
