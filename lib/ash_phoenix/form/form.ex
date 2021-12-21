@@ -1666,7 +1666,7 @@ defmodule AshPhoenix.Form do
     |> Map.drop(Enum.map(form.form_keys, &elem(&1, 0)))
     |> Map.delete(:last_editor_save)
     |> Enum.any?(fn {key, value} ->
-      original_value = Map.get(changeset.data, key) || default(changeset.resource, key)
+      original_value = Map.get(changeset.data, key, default(changeset.resource, key))
 
       Comp.not_equal?(value, original_value)
     end)
