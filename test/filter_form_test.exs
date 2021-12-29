@@ -7,9 +7,6 @@ defmodule AshPhoenix.FilterFormTest do
 
   require Ash.Query
 
-  describe "simple form_for" do
-  end
-
   describe "groups" do
     test "a group can be added" do
       form = FilterForm.new(Post)
@@ -128,7 +125,7 @@ defmodule AshPhoenix.FilterFormTest do
         )
 
       assert Ash.Query.equivalent_to?(
-               IO.inspect(FilterForm.filter!(Post, form)),
+               FilterForm.filter!(Post, form),
                not is_nil(title)
              )
     end

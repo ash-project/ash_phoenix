@@ -9,9 +9,22 @@ defmodule AshPhoenix.Form do
   3. To validate the form (e.g with `on-change` for liveview), pass the input to `AshPhoenix.Form.validate(form, params)`
   4. On form submission, pass the input to `AshPhoenix.Form.validate(form, params)` and then use `AshPhoenix.Form.submit(form, ApiModule)`
 
+  ### Working with related data
   If your resource action accepts related data, (for example a managed relationship argument, or an embedded resource attribute), you can
-  use Phoenix's `inputs_for` for that field, *but* you must explicitly configure the behavior of it using the `forms` option.
-  See `for_create/3` for more.
+  use Phoenix's `inputs_for` for that field, *but* you must do one of two things:
+
+  1. Tell AshPhoenix.Form to automatically derive this behavior from your action, for example:
+
+  ```elixir
+  form =
+    user
+    |> AshPhoenix.Form.for_update(:update,
+      api: MyApi,
+      forms: [auto?: true]
+      ])
+  ```
+
+  2. Explicitly configure the behavior of it using the `forms` option. See `for_create/3` for more.
 
   For example:
 
