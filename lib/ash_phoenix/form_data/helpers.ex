@@ -35,7 +35,7 @@ defmodule AshPhoenix.FormData.Helpers do
 
   defp match_path_filter?(path, path_filter, form_keys \\ []) do
     path == path_filter ||
-      (!Enum.empty?(form_keys) &&
+      (!Enum.empty?(form_keys) && Enum.count(path) > Enum.count(path_filter) &&
          !form_would_capture?(form_keys, path, path_filter))
   end
 
@@ -63,8 +63,11 @@ defmodule AshPhoenix.FormData.Helpers do
     errors
     |> Enum.filter(fn error ->
       if Map.has_key?(error, :path) && path_filter do
-        match_path_filter?(error.path, path_filter, form_keys) ||
-          Enum.any?(additional_path_filters, &match_path_filter?(error.path, &1))
+        match? =
+          match_path_filter?(error.path, path_filter, form_keys) ||
+            Enum.any?(additional_path_filters, &match_path_filter?(error.path, &1))
+
+        match?
       else
         false
       end
