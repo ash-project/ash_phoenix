@@ -5,6 +5,31 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.6.0-rc.6](https://github.com/ash-project/ash_phoenix/compare/v0.6.0-rc.5...v0.6.0-rc.6) (2022-01-18)
+
+
+
+
+### Bug Fixes:
+
+* properly restrict errors to the current form
+
+* Fix logic for change detection of boolean defaults (#31)
+
+* check for operators first
+
+* properly set nested names
+
+* allow the `as` option to be set
+
+* properly set params on validate
+
+### Improvements:
+
+* don't return ids by default
+
+* better default name, just use ids elsewhere
+
 ## [v0.6.0-rc.5](https://github.com/ash-project/ash_phoenix/compare/v0.6.0-rc.4...v0.6.0-rc.5) (2021-12-06)
 
 
