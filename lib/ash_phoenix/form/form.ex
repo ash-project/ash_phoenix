@@ -963,6 +963,16 @@ defmodule AshPhoenix.Form do
       default: false,
       doc: "Submit the form even if it is invalid in its current state."
     ],
+    override_params: [
+      type: :any,
+      doc: """
+      If specified, then the params are not extracted from the form.
+
+      How this different from `params`: providing `params` is simply results in calling `validate(form, params)` before proceeding.
+      The values that are passed into the action are then extracted from the form using `params/2`. With `override_params`, the form
+      is not validated again, and the `override_params` are passed directly into the action.
+      """
+    ],
     params: [
       type: :any,
       doc: """
@@ -1044,7 +1054,7 @@ defmodule AshPhoenix.Form do
             form.resource
             |> Ash.Changeset.for_create(
               form.source.action.name,
-              params(form),
+              opts[:override_params] || params(form),
               changeset_opts
             )
             |> before_submit.()
@@ -1054,7 +1064,7 @@ defmodule AshPhoenix.Form do
             form.original_data
             |> Ash.Changeset.for_update(
               form.source.action.name,
-              params(form),
+              opts[:override_params] || params(form),
               changeset_opts
             )
             |> before_submit.()
@@ -1064,7 +1074,7 @@ defmodule AshPhoenix.Form do
             form.original_data
             |> Ash.Changeset.for_destroy(
               form.source.action.name,
-              params(form),
+              opts[:override_params] || params(form),
               changeset_opts
             )
             |> before_submit.()
@@ -1074,7 +1084,7 @@ defmodule AshPhoenix.Form do
             form.resource
             |> Ash.Query.for_read(
               form.source.action.name,
-              params(form),
+              opts[:override_params] || params(form),
               changeset_opts
             )
             |> before_submit.()
@@ -1509,40 +1519,44 @@ defmodule AshPhoenix.Form do
                 Map.put(params, to_string(config[:for] || key), nested_params)
               end
             else
-              Map.put(params, to_string(config[:for] || key), nil)
+              params
             end
 
           :list ->
             for_name = to_string(config[:for] || key)
 
-            if indexed_lists? do
-              params
-              |> Map.put_new(for_name, %{})
-              |> Map.update!(for_name, fn current ->
-                if indexer do
-                  Enum.reduce(form.forms[key], current, fn form, current ->
-                    Map.put(current, indexer.(form), params(form, opts))
-                  end)
-                else
-                  max =
-                    current
-                    |> Map.keys()
-                    |> Enum.map(&String.to_integer/1)
-                    |> Enum.max(fn -> -1 end)
+            if form.forms[key] do
+              if indexed_lists? do
+                params
+                |> Map.put_new(for_name, %{})
+                |> Map.update!(for_name, fn current ->
+                  if indexer do
+                    Enum.reduce(form.forms[key], current, fn form, current ->
+                      Map.put(current, indexer.(form), params(form, opts))
+                    end)
+                  else
+                    max =
+                      current
+                      |> Map.keys()
+                      |> Enum.map(&String.to_integer/1)
+                      |> Enum.max(fn -> -1 end)
 
-                  form.forms[key]
-                  |> Enum.reduce({current, max + 1}, fn form, {current, i} ->
-                    {Map.put(current, to_string(i), params(form, opts)), i + 1}
-                  end)
-                  |> elem(0)
-                end
-              end)
+                    form.forms[key]
+                    |> Enum.reduce({current, max + 1}, fn form, {current, i} ->
+                      {Map.put(current, to_string(i), params(form, opts)), i + 1}
+                    end)
+                    |> elem(0)
+                  end
+                end)
+              else
+                params
+                |> Map.put_new(for_name, [])
+                |> Map.update!(for_name, fn current ->
+                  current ++ Enum.map(form.forms[key] || [], &params(&1, opts))
+                end)
+              end
             else
               params
-              |> Map.put_new(for_name, [])
-              |> Map.update!(for_name, fn current ->
-                current ++ Enum.map(form.forms[key] || [], &params(&1, opts))
-              end)
             end
         end
       end)
@@ -2463,74 +2477,68 @@ defmodule AshPhoenix.Form do
          id,
          transform_errors
        ) do
-    form_values =
-      if Keyword.has_key?(opts, :data) do
-        update_action =
-          opts[:update_action] ||
-            raise AshPhoenix.Form.NoActionConfigured,
-              path: Enum.reverse(trail, [key]),
-              action: :update
+    if Keyword.has_key?(opts, :data) do
+      update_action =
+        opts[:update_action] ||
+          raise AshPhoenix.Form.NoActionConfigured,
+            path: Enum.reverse(trail, [key]),
+            action: :update
 
-        data =
-          if opts[:data] do
-            if is_function(opts[:data]) do
-              if Enum.at(prev_data_trail, 0) do
-                case call_data(opts[:data], prev_data_trail) do
-                  %Ash.NotLoaded{} ->
-                    raise AshPhoenix.Form.NoDataLoaded,
-                      path: Enum.reverse(trail, [key])
+      data =
+        if opts[:data] do
+          if is_function(opts[:data]) do
+            if Enum.at(prev_data_trail, 0) do
+              case call_data(opts[:data], prev_data_trail) do
+                %Ash.NotLoaded{} ->
+                  raise AshPhoenix.Form.NoDataLoaded,
+                    path: Enum.reverse(trail, [key])
 
-                  other ->
-                    other
-                end
-              else
-                nil
+                other ->
+                  other
               end
             else
-              opts[:data]
+              nil
             end
+          else
+            opts[:data]
           end
+        end
 
-        if data do
-          if data do
-            if (opts[:type] || :single) == :single do
+      if data do
+        form_values =
+          if (opts[:type] || :single) == :single do
+            for_action(data, update_action,
+              errors: error?,
+              prev_data_trail: prev_data_trail,
+              forms: opts[:forms] || [],
+              manage_relationship_source: manage_relationship_source(source_changeset, opts),
+              transform_errors: transform_errors,
+              as: name <> "[#{key}]",
+              id: id <> "_#{key}"
+            )
+          else
+            data
+            |> Enum.with_index()
+            |> Enum.map(fn {data, index} ->
               for_action(data, update_action,
                 errors: error?,
                 prev_data_trail: prev_data_trail,
                 forms: opts[:forms] || [],
-                manage_relationship_source: manage_relationship_source(source_changeset, opts),
                 transform_errors: transform_errors,
-                as: name <> "[#{key}]",
-                id: id <> "_#{key}"
+                manage_relationship_source: manage_relationship_source(source_changeset, opts),
+                as: name <> "[#{key}][#{index}]",
+                id: id <> "_#{key}_#{index}"
               )
-            else
-              data
-              |> Enum.with_index()
-              |> Enum.map(fn {data, index} ->
-                for_action(data, update_action,
-                  errors: error?,
-                  prev_data_trail: prev_data_trail,
-                  forms: opts[:forms] || [],
-                  transform_errors: transform_errors,
-                  manage_relationship_source: manage_relationship_source(source_changeset, opts),
-                  as: name <> "[#{key}][#{index}]",
-                  id: id <> "_#{key}_#{index}"
-                )
-              end)
-            end
+            end)
           end
-        else
-          nil
-        end
-      else
-        if (opts[:type] || :single) == :single do
-          nil
-        else
-          []
-        end
-      end
 
-    {Map.put(forms, key, form_values), params}
+        {Map.put(forms, key, form_values), params}
+      else
+        {forms, params}
+      end
+    else
+      {forms, params}
+    end
   end
 
   defp handle_form_with_params(
