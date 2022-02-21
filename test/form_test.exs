@@ -355,7 +355,7 @@ defmodule AshPhoenix.FormTest do
         |> Form.add_form(:post, params: %{})
         |> Form.validate(%{"text" => "text"})
 
-      assert Form.params(form) == %{"text" => "text", "post" => nil}
+      assert Form.params(form) == %{"text" => "text"}
     end
 
     test "nested forms submit empty list values when not present in input params" do
