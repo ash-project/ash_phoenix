@@ -20,6 +20,11 @@ defmodule AshPhoenix.LiveView do
       type: :boolean,
       doc: "A boolean flag indicating whether a refetch is allowed to happen. Defaults to `true`"
     ],
+    after_fetch: [
+      type: :any,
+      doc:
+        "A two argument function that takes the results, and the socket, and returns the new socket. Can be used to set assigns based on the result of the query."
+    ],
     results: [
       type: {:in, [:keep, :lose]},
       doc:
@@ -172,8 +177,18 @@ defmodule AshPhoenix.LiveView do
       }
 
       socket
-      |> assign(assign, result)
+      |> assign_result(assign, result, opts)
       |> assign(:ash_live_config, Map.put(live_config, assign, this_config))
+    end
+  end
+
+  defp assign_result(socket, assign, result, opts) do
+    socket = assign(socket, assign, result)
+
+    if opts[:after_fetch] do
+      opts[:after_fetch].(result, socket)
+    else
+      socket
     end
   end
 
@@ -211,7 +226,7 @@ defmodule AshPhoenix.LiveView do
     new_live_config = Map.update!(live_config, assign, &Map.put(&1, :opts, new_opts))
 
     socket
-    |> assign(assign, new_result)
+    |> assign_result(assign, new_result, config.opts)
     |> assign(:ash_live_config, new_live_config)
   end
 
@@ -461,7 +476,7 @@ defmodule AshPhoenix.LiveView do
         new_full_config = Map.put(socket.assigns.ash_live_config, assign, new_config)
 
         socket
-        |> assign(assign, result)
+        |> assign_result(config.assign, result, config.opts)
         |> assign(:ash_live_config, new_full_config)
     end
   end
