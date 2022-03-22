@@ -2478,63 +2478,120 @@ defmodule AshPhoenix.Form do
          transform_errors
        ) do
     if Keyword.has_key?(opts, :data) do
-      update_action =
-        opts[:update_action] ||
-          raise AshPhoenix.Form.NoActionConfigured,
-            path: Enum.reverse(trail, [key]),
-            action: :update
+      cond do
+        opts[:update_action] ->
+          update_action = opts[:update_action]
 
-      data =
-        if opts[:data] do
-          if is_function(opts[:data]) do
-            if Enum.at(prev_data_trail, 0) do
-              case call_data(opts[:data], prev_data_trail) do
-                %Ash.NotLoaded{} ->
-                  raise AshPhoenix.Form.NoDataLoaded,
-                    path: Enum.reverse(trail, [key])
+          data =
+            if opts[:data] do
+              if is_function(opts[:data]) do
+                if Enum.at(prev_data_trail, 0) do
+                  case call_data(opts[:data], prev_data_trail) do
+                    %Ash.NotLoaded{} ->
+                      raise AshPhoenix.Form.NoDataLoaded,
+                        path: Enum.reverse(trail, [key])
 
-                other ->
-                  other
+                    other ->
+                      other
+                  end
+                else
+                  nil
+                end
+              else
+                opts[:data]
               end
-            else
-              nil
             end
-          else
-            opts[:data]
-          end
-        end
 
-      if data do
-        form_values =
-          if (opts[:type] || :single) == :single do
-            for_action(data, update_action,
-              errors: error?,
-              prev_data_trail: prev_data_trail,
-              forms: opts[:forms] || [],
-              manage_relationship_source: manage_relationship_source(source_changeset, opts),
-              transform_errors: transform_errors,
-              as: name <> "[#{key}]",
-              id: id <> "_#{key}"
-            )
+          if data do
+            form_values =
+              if (opts[:type] || :single) == :single do
+                for_action(data, update_action,
+                  errors: error?,
+                  prev_data_trail: prev_data_trail,
+                  forms: opts[:forms] || [],
+                  manage_relationship_source: manage_relationship_source(source_changeset, opts),
+                  transform_errors: transform_errors,
+                  as: name <> "[#{key}]",
+                  id: id <> "_#{key}"
+                )
+              else
+                data
+                |> Enum.with_index()
+                |> Enum.map(fn {data, index} ->
+                  for_action(data, update_action,
+                    errors: error?,
+                    prev_data_trail: prev_data_trail,
+                    forms: opts[:forms] || [],
+                    transform_errors: transform_errors,
+                    manage_relationship_source:
+                      manage_relationship_source(source_changeset, opts),
+                    as: name <> "[#{key}][#{index}]",
+                    id: id <> "_#{key}_#{index}"
+                  )
+                end)
+              end
+
+            {Map.put(forms, key, form_values), params}
           else
-            data
-            |> Enum.with_index()
-            |> Enum.map(fn {data, index} ->
-              for_action(data, update_action,
-                errors: error?,
-                prev_data_trail: prev_data_trail,
-                forms: opts[:forms] || [],
-                transform_errors: transform_errors,
-                manage_relationship_source: manage_relationship_source(source_changeset, opts),
-                as: name <> "[#{key}][#{index}]",
-                id: id <> "_#{key}_#{index}"
-              )
-            end)
+            {forms, params}
           end
 
-        {Map.put(forms, key, form_values), params}
-      else
-        {forms, params}
+        opts[:read_action] ->
+          read_action = opts[:read_action]
+
+          data =
+            if opts[:data] do
+              if is_function(opts[:data]) do
+                if Enum.at(prev_data_trail, 0) do
+                  case call_data(opts[:data], prev_data_trail) do
+                    %Ash.NotLoaded{} ->
+                      raise AshPhoenix.Form.NoDataLoaded,
+                        path: Enum.reverse(trail, [key])
+
+                    other ->
+                      other
+                  end
+                else
+                  nil
+                end
+              else
+                opts[:data]
+              end
+            end
+
+          if data do
+            form_values =
+              if (opts[:type] || :single) == :single do
+                for_action(data, read_action,
+                  errors: error?,
+                  prev_data_trail: prev_data_trail,
+                  forms: opts[:forms] || [],
+                  manage_relationship_source: manage_relationship_source(source_changeset, opts),
+                  transform_errors: transform_errors,
+                  as: name <> "[#{key}]",
+                  id: id <> "_#{key}"
+                )
+              else
+                data
+                |> Enum.with_index()
+                |> Enum.map(fn {data, index} ->
+                  for_action(data, read_action,
+                    errors: error?,
+                    prev_data_trail: prev_data_trail,
+                    forms: opts[:forms] || [],
+                    transform_errors: transform_errors,
+                    manage_relationship_source:
+                      manage_relationship_source(source_changeset, opts),
+                    as: name <> "[#{key}][#{index}]",
+                    id: id <> "_#{key}_#{index}"
+                  )
+                end)
+              end
+
+            {Map.put(forms, key, form_values), params}
+          else
+            {forms, params}
+          end
       end
     else
       {forms, params}
