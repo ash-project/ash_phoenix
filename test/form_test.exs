@@ -56,9 +56,10 @@ defmodule AshPhoenix.FormTest do
           ]
         ]
       )
-      |> form_for("action")
 
-    assert [comment_form] = inputs_for(form, :comments)
+    assert Form.params(form) == %{"comments" => [%{"id" => comment.id}]}
+
+    assert [comment_form] = inputs_for(form_for(form, "blah"), :comments)
 
     assert Phoenix.HTML.Form.input_value(comment_form, :text) == "comment"
   end

@@ -2563,8 +2563,11 @@ defmodule AshPhoenix.Form do
           if data do
             form_values =
               if (opts[:type] || :single) == :single do
+                pkey = Ash.Resource.Info.primary_key(data.__struct__)
+
                 for_action(data, read_action,
                   errors: error?,
+                  params: Map.new(pkey, &{to_string(&1), Map.get(data, &1)}),
                   prev_data_trail: prev_data_trail,
                   forms: opts[:forms] || [],
                   data: data,
@@ -2574,12 +2577,18 @@ defmodule AshPhoenix.Form do
                   id: id <> "_#{key}"
                 )
               else
+                pkey =
+                  unless Enum.empty?(data) do
+                    Ash.Resource.Info.primary_key(Enum.at(data, 0).__struct__)
+                  end
+
                 data
                 |> Enum.with_index()
                 |> Enum.map(fn {data, index} ->
                   for_action(data, read_action,
                     errors: error?,
                     prev_data_trail: prev_data_trail,
+                    params: Map.new(pkey, &{to_string(&1), Map.get(data, &1)}),
                     forms: opts[:forms] || [],
                     data: data,
                     transform_errors: transform_errors,
