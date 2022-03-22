@@ -1594,6 +1594,12 @@ defmodule AshPhoenix.Form do
       default: :create,
       doc:
         "If `type` is set to `:read`, the form will be created for a read action. A hidden field will be set in the form called `_form_type` to track this information."
+    ],
+    data: [
+      type: :any,
+      doc: """
+      The data to set backing the form. Generally you'd only want to do this if you are adding a form with `type: :read` additionally.
+      """
     ]
   ]
 
@@ -2012,10 +2018,18 @@ defmodule AshPhoenix.Form do
       |> Map.update!(key, fn forms ->
         {resource, action} = add_form_resource_and_action(opts, config, key, trail)
 
+        data_or_resource =
+          if opts[:data] do
+            opts[:data]
+          else
+            resource
+          end
+
         new_form =
-          for_action(resource, action,
+          for_action(data_or_resource, action,
             params: opts[:params] || %{},
             forms: config[:forms] || [],
+            data: opts[:data],
             manage_relationship_source: manage_relationship_source(form, config),
             transform_errors: transform_errors
           )
