@@ -3133,7 +3133,7 @@ defmodule AshPhoenix.Form do
     @impl true
     def to_form(form, opts) do
       hidden =
-        if form.type in [:update, :destroy] do
+        if form.type in [:read, :update, :destroy] && form.data do
           pkey =
             form.resource
             |> Ash.Resource.Info.public_attributes()

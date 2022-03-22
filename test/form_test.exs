@@ -57,11 +57,13 @@ defmodule AshPhoenix.FormTest do
         ]
       )
 
-    assert Form.params(form) == %{"comments" => [%{"id" => comment.id}]}
-
     assert [comment_form] = inputs_for(form_for(form, "blah"), :comments)
 
     assert Phoenix.HTML.Form.input_value(comment_form, :text) == "comment"
+
+    form = Form.validate(form, %{"comments" => [%{"id" => comment.id}]})
+
+    assert Form.params(form) == %{"comments" => [%{"id" => comment.id}]}
   end
 
   describe "the .changed? field is updated as data changes" do
