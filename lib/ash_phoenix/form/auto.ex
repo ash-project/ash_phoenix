@@ -138,7 +138,7 @@ defmodule AshPhoenix.Form.Auto do
             |> add_update_action(manage_opts, relationship, auto_opts)
             |> add_nested_forms(auto_opts)
 
-          if opts[:read_action] || opts[:update_action] || opts[:destroy_action] do
+          if opts[:update_action] || opts[:destroy_action] do
             Keyword.put(
               opts,
               :data,
