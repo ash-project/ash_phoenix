@@ -675,6 +675,7 @@ defmodule AshPhoenix.Form do
       resource: resource,
       action: action,
       type: :read,
+      data: opts[:data],
       params: params,
       errors: opts[:errors],
       transform_errors: opts[:transform_errors],
@@ -2566,6 +2567,7 @@ defmodule AshPhoenix.Form do
                   errors: error?,
                   prev_data_trail: prev_data_trail,
                   forms: opts[:forms] || [],
+                  data: data,
                   manage_relationship_source: manage_relationship_source(source_changeset, opts),
                   transform_errors: transform_errors,
                   as: name <> "[#{key}]",
@@ -2579,6 +2581,7 @@ defmodule AshPhoenix.Form do
                     errors: error?,
                     prev_data_trail: prev_data_trail,
                     forms: opts[:forms] || [],
+                    data: data,
                     transform_errors: transform_errors,
                     manage_relationship_source:
                       manage_relationship_source(source_changeset, opts),
@@ -3230,13 +3233,21 @@ defmodule AshPhoenix.Form do
       end
     end
 
-    def input_value(%{source: %Ash.Query{} = query}, _form, field) do
+    def input_value(%{source: %Ash.Query{} = query, data: data}, _form, field) do
       case Ash.Query.fetch_argument(query, field) do
         {:ok, value} ->
           value
 
         :error ->
-          Map.get(query.params, to_string(field))
+          case Map.fetch(query.params, to_string(field)) do
+            {:ok, value} ->
+              value
+
+            :error ->
+              if data do
+                Map.get(data, field)
+              end
+          end
       end
     end
 

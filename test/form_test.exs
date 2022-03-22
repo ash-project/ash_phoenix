@@ -31,6 +31,38 @@ defmodule AshPhoenix.FormTest do
     assert form.valid? == false
   end
 
+  test "it supports forms with data and a `type: :replace`" do
+    post =
+      Post
+      |> Ash.Changeset.new(%{text: "post"})
+      |> Api.create!()
+
+    comment =
+      Comment
+      |> Ash.Changeset.new(%{text: "comment"})
+      |> Ash.Changeset.replace_relationship(:post, post)
+      |> Api.create!()
+
+    form =
+      post
+      |> Form.for_update(:update_with_replace,
+        api: Api,
+        forms: [
+          comments: [
+            read_resource: Comment,
+            type: :list,
+            read_action: :read,
+            data: [comment]
+          ]
+        ]
+      )
+      |> form_for("action")
+
+    assert [comment_form] = inputs_for(form, :comments)
+
+    assert Phoenix.HTML.Form.input_value(comment_form, :text) == "comment"
+  end
+
   describe "the .changed? field is updated as data changes" do
     test "it is false for a create form with no changes" do
       form =
