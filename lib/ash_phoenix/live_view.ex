@@ -476,7 +476,7 @@ defmodule AshPhoenix.LiveView do
         new_full_config = Map.put(socket.assigns.ash_live_config, assign, new_config)
 
         socket
-        |> assign_result(config.assign, result, config.opts)
+        |> assign_result(assign, result, config.opts)
         |> assign(:ash_live_config, new_full_config)
     end
   end
