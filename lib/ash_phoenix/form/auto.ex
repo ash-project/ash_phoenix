@@ -491,7 +491,7 @@ defmodule AshPhoenix.Form.Auto do
   end
 
   defp find_manage_change(argument, action) do
-    Enum.find_value(action.changes, fn
+    Enum.find_value(Map.get(action, :changes, []), fn
       %{change: {Ash.Resource.Change.ManageRelationship, opts}} ->
         if opts[:argument] == argument.name do
           opts
