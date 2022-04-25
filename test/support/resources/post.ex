@@ -9,6 +9,7 @@ defmodule AshPhoenix.Test.Post do
   attributes do
     uuid_primary_key(:id)
     attribute(:text, :string, allow_nil?: false)
+    attribute(:title, :string)
   end
 
   actions do
@@ -19,7 +20,13 @@ defmodule AshPhoenix.Test.Post do
       change(manage_relationship(:linked_posts, type: :direct_control))
     end
 
+    update :update_with_replace do
+      argument(:comments, {:array, :map})
+      change(manage_relationship(:comments, type: :replace))
+    end
+
     update :update do
+      primary?(true)
       argument(:comments, {:array, :map})
       change(manage_relationship(:comments, type: :direct_control))
     end

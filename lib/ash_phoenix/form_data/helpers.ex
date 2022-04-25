@@ -33,10 +33,62 @@ defmodule AshPhoenix.FormData.Helpers do
     |> Macro.underscore()
   end
 
-  def transform_errors(form, errors, path_filter \\ nil) do
+  defp match_path_filter?(path, path_filter, form_keys \\ []) do
+    path == path_filter ||
+      (!Enum.empty?(form_keys) && Enum.count(path) > Enum.count(path_filter) &&
+         !form_would_capture?(form_keys, path, path_filter))
+  end
+
+  defp form_would_capture?(form_keys, path, path_filter) do
+    Enum.any?(form_keys, fn {key, config} ->
+      key = config[:for] || key
+
+      if config[:type] == :list do
+        List.starts_with?(path, path_filter ++ [key]) &&
+          is_integer(path |> Enum.drop(Enum.count(path_filter) + 1) |> Enum.at(0))
+      else
+        List.starts_with?(path, path_filter ++ [key])
+      end
+    end)
+  end
+
+  def transform_errors(form, errors, path_filter \\ nil, form_keys \\ []) do
+    additional_path_filters =
+      form_keys
+      |> Enum.filter(fn {_key, config} -> config[:type] == :list end)
+      |> Enum.map(fn {key, _config} ->
+        [key]
+      end)
+
     errors
-    |> Enum.reject(fn error ->
-      Map.has_key?(error, :path) && path_filter && error.path != path_filter
+    |> Enum.filter(fn error ->
+      if Map.has_key?(error, :path) && path_filter do
+        match? =
+          match_path_filter?(error.path, path_filter, form_keys) ||
+            Enum.any?(additional_path_filters, &match_path_filter?(error.path, &1))
+
+        match?
+      else
+        false
+      end
+    end)
+    |> Enum.map(fn error ->
+      if error.path in additional_path_filters do
+        error =
+          if Map.has_key?(error, :field) do
+            %{error | field: List.last(Enum.at(additional_path_filters, 0))}
+          else
+            error
+          end
+
+        if Map.has_key?(error, :fields) do
+          %{error | fields: [List.last(Enum.at(additional_path_filters, 0))]}
+        else
+          error
+        end
+      else
+        error
+      end
     end)
     |> Enum.flat_map(&transform_error(form, &1))
     |> Enum.filter(fn
@@ -70,8 +122,6 @@ defmodule AshPhoenix.FormData.Helpers do
     end)
   end
 
-  def transform_error(_form, {_key, _value, _vars} = error), do: error
-
   def transform_error(form, error) do
     case form.transform_errors do
       transformer when is_function(transformer, 2) ->
@@ -101,30 +151,62 @@ defmodule AshPhoenix.FormData.Helpers do
         end
 
       nil ->
-        if AshPhoenix.FormData.Error.impl_for(error) do
-          List.wrap(to_form_error(error))
-        else
-          []
+        case error do
+          {_key, _value, _vars} = error ->
+            [error]
+
+          error ->
+            if AshPhoenix.FormData.Error.impl_for(error) do
+              List.wrap(to_form_error(error))
+            else
+              []
+            end
         end
     end
   end
 
-  # defp set_source_context(changeset, {relationship, original_changeset}) do
-  #   case original_changeset.context[:manage_relationship_source] do
-  #     nil ->
-  #       Ash.Changeset.set_context(changeset, %{
-  #         manage_relationship_source: [
-  #           {relationship.source, relationship.name, original_changeset}
-  #         ]
-  #       })
+  def transform_predicate_error(predicate, error, transform_errors) do
+    case transform_errors do
+      transformer when is_function(transformer, 2) ->
+        case transformer.(predicate, error) do
+          error when is_exception(error) ->
+            if AshPhoenix.FormData.Error.impl_for(error) do
+              List.wrap(to_form_error(error))
+            else
+              []
+            end
 
-  #     value ->
-  #       Ash.Changeset.set_context(changeset, %{
-  #         manage_relationship_source:
-  #           value ++ [{relationship.source, relationship.name, original_changeset}]
-  #       })
-  #   end
-  # end
+          {key, value, vars} ->
+            [{key, value, vars}]
+
+          list when is_list(list) ->
+            Enum.flat_map(list, fn
+              error when is_exception(error) ->
+                if AshPhoenix.FormData.Error.impl_for(error) do
+                  List.wrap(to_form_error(error))
+                else
+                  []
+                end
+
+              {key, value, vars} ->
+                [{key, value, vars}]
+            end)
+        end
+
+      nil ->
+        case error do
+          {_key, _value, _vars} = error ->
+            [error]
+
+          error ->
+            if AshPhoenix.FormData.Error.impl_for(error) do
+              List.wrap(to_form_error(error))
+            else
+              []
+            end
+        end
+    end
+  end
 
   defp to_form_error(exception) when is_exception(exception) do
     case AshPhoenix.FormData.Error.to_form_error(exception) do

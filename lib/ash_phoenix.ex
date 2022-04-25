@@ -86,7 +86,8 @@ defmodule AshPhoenix do
     end
   end
 
-  defp replace_vars(message, vars) do
+  @doc false
+  def replace_vars(message, vars) do
     Enum.reduce(vars || [], message, fn {key, value}, acc ->
       String.replace(acc, "%{#{key}}", to_string(value))
     end)

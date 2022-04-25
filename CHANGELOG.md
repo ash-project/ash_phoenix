@@ -5,6 +5,184 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.7.0](https://github.com/ash-project/ash_phoenix/compare/v0.6.0-rc.7...v0.7.0) (2022-03-17)
+
+
+
+
+## [v0.6.0-rc.7](https://github.com/ash-project/ash_phoenix/compare/v0.6.0-rc.6...v0.6.0-rc.7) (2022-02-17)
+
+
+
+
+### Bug Fixes:
+
+* don't create forms unnecessarily
+
+## [v0.6.0-rc.6](https://github.com/ash-project/ash_phoenix/compare/v0.6.0-rc.5...v0.6.0-rc.6) (2022-01-18)
+
+
+
+
+### Bug Fixes:
+
+* properly restrict errors to the current form
+
+* Fix logic for change detection of boolean defaults (#31)
+
+* check for operators first
+
+* properly set nested names
+
+* allow the `as` option to be set
+
+* properly set params on validate
+
+### Improvements:
+
+* don't return ids by default
+
+* better default name, just use ids elsewhere
+
+## [v0.6.0-rc.5](https://github.com/ash-project/ash_phoenix/compare/v0.6.0-rc.4...v0.6.0-rc.5) (2021-12-06)
+
+
+
+
+### Bug Fixes:
+
+* set proper form ids and names
+
+* support only predicate in params
+
+## [v0.6.0-rc.4](https://github.com/ash-project/ash_phoenix/compare/v0.6.0-rc.3...v0.6.0-rc.4) (2021-12-02)
+
+
+
+
+### Improvements:
+
+* `to_filter` -> `to_filter_expression`
+
+## [v0.6.0-rc.3](https://github.com/ash-project/ash_phoenix/compare/v0.6.0-rc.2...v0.6.0-rc.3) (2021-12-02)
+
+
+
+
+### Bug Fixes:
+
+* don't make operators externally, only `%Call{}` structs
+
+## [v0.6.0-rc.2](https://github.com/ash-project/ash_phoenix/compare/v0.6.0-rc.1...v0.6.0-rc.2) (2021-12-02)
+
+
+
+
+### Improvements:
+
+* better sanitized parameters
+
+* add params_for_query
+
+## [v0.6.0-rc.1](https://github.com/ash-project/ash_phoenix/compare/v0.6.0-rc.0...v0.6.0-rc.1) (2021-12-02)
+
+
+
+
+### Improvements:
+
+* expose paths for filters
+
+* simple error handling patterns for filter forms
+
+## [v0.6.0-rc.0](https://github.com/ash-project/ash_phoenix/compare/v0.5.19-rc.2...v0.6.0-rc.0) (2021-12-01)
+
+
+
+
+### Features:
+
+* new `FilterForm` for building forms to produce `Ash.Filter`s
+
+## [v0.5.19-rc.2](https://github.com/ash-project/ash_phoenix/compare/v0.5.19-rc.1...v0.5.19-rc.2) (2021-11-13)
+
+
+
+
+### Bug Fixes:
+
+* typo on checking if errors are set to the same value as before
+
+* pass matcher in correct argument position
+
+### Improvements:
+
+* support custom matcher experimental
+
+## [v0.5.19-rc.1](https://github.com/ash-project/ash_phoenix/compare/v0.5.19-rc.0...v0.5.19-rc.1) (2021-11-08)
+
+
+
+
+### Improvements:
+
+* don't rebuild a form when params haven't changed
+
+## [v0.5.19-rc.0](https://github.com/ash-project/ash_phoenix/compare/v0.5.18...v0.5.19-rc.0) (2021-11-08)
+
+
+
+
+### Improvements:
+
+* use existing forms on `validate`, instead of rebuilding
+
+## [v0.5.18](https://github.com/ash-project/ash_phoenix/compare/v0.5.17...v0.5.18) (2021-11-06)
+
+
+
+
+### Improvements:
+
+* enrich but also simplify `changed?` behavior
+
+## [v0.5.17](https://github.com/ash-project/ash_phoenix/compare/v0.5.16...v0.5.17) (2021-11-06)
+
+
+
+
+### Improvements:
+
+* add a `.changed?` field
+
+## [v0.5.16](https://github.com/ash-project/ash_phoenix/compare/v0.5.15...v0.5.16) (2021-10-21)
+
+
+
+
+### Bug Fixes:
+
+* fix some error transforming logic
+
+* forms now receive an error if no nested path matches the error path
+
+## [v0.5.15](https://github.com/ash-project/ash_phoenix/compare/v0.5.14...v0.5.15) (2021-09-30)
+
+
+
+
+### Bug Fixes:
+
+* ensure `transform_errors` is never unset
+
+### Improvements:
+
+* always pass errors to `transform_errors/2`
+
+* improve typespec on errors/2 (#27)
+
+* Allow Phoenix 1.6.0 (#25)
+
 ## [v0.5.14](https://github.com/ash-project/ash_phoenix/compare/v0.5.13...v0.5.14) (2021-09-15)
 
 
