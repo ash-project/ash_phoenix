@@ -2360,6 +2360,8 @@ defmodule AshPhoenix.Form do
     end
   end
 
+  defp do_decode_path(nil, _, _, _), do: nil
+
   defp do_decode_path(_, _, [], _), do: []
 
   defp do_decode_path([], original_path, _, _) do
