@@ -2418,7 +2418,7 @@ defmodule AshPhoenix.Form do
         raise "Invalid Path: #{original_path}"
 
       {key, config} ->
-        if config[:type] || :single == :single do
+        if Keyword.get(config, :type, :single) == :single do
           [key | do_decode_path(form.forms[key], original_path, rest, config[:sparse?])]
         else
           [key | do_decode_path(form.forms[key] || [], original_path, rest, config[:sparse?])]
