@@ -421,7 +421,6 @@ defmodule AshPhoenix.Form do
       source:
         resource
         |> Ash.Changeset.new()
-        |> set_managed_relationship_context(opts)
         |> Ash.Changeset.for_create(
           action,
           params,
@@ -490,7 +489,6 @@ defmodule AshPhoenix.Form do
       source:
         data
         |> Ash.Changeset.new()
-        |> set_managed_relationship_context(opts)
         |> Ash.Changeset.for_update(
           action,
           params,
@@ -559,7 +557,6 @@ defmodule AshPhoenix.Form do
       source:
         data
         |> Ash.Changeset.new()
-        |> set_managed_relationship_context(opts)
         |> Ash.Changeset.for_destroy(
           action,
           params,
@@ -732,7 +729,6 @@ defmodule AshPhoenix.Form do
           :create ->
             form.resource
             |> Ash.Changeset.new()
-            |> set_managed_relationship_context(opts)
             |> Ash.Changeset.for_create(
               form.action,
               params,
@@ -742,7 +738,6 @@ defmodule AshPhoenix.Form do
           :update ->
             form.data
             |> Ash.Changeset.new()
-            |> set_managed_relationship_context(opts)
             |> Ash.Changeset.for_update(
               form.action,
               params,
@@ -752,7 +747,6 @@ defmodule AshPhoenix.Form do
           :destroy ->
             form.data
             |> Ash.Changeset.new()
-            |> set_managed_relationship_context(opts)
             |> Ash.Changeset.for_destroy(
               form.action,
               params,
@@ -830,8 +824,6 @@ defmodule AshPhoenix.Form do
                           forms: opts[:forms] || [],
                           errors: errors?,
                           prev_data_trail: prev_data_trail,
-                          manage_relationship_source:
-                            manage_relationship_source(form.source, opts),
                           transform_errors: form.transform_errors,
                           as: form.name <> "[#{key}][#{index}]",
                           id: form.id <> "_#{key}_#{index}"
@@ -885,7 +877,6 @@ defmodule AshPhoenix.Form do
                     forms: opts[:forms] || [],
                     errors: errors?,
                     prev_data_trail: prev_data_trail,
-                    manage_relationship_source: manage_relationship_source(form.source, opts),
                     transform_errors: form.transform_errors,
                     as: form.name <> "[#{key}]",
                     id: form.id <> "_#{key}"
@@ -1651,7 +1642,14 @@ defmodule AshPhoenix.Form do
     |> Map.drop(Enum.map(form.form_keys, &elem(&1, 0)))
     |> Map.delete(:last_editor_save)
     |> Enum.any?(fn {key, value} ->
-      original_value = Map.get(changeset.data, key, default(changeset.resource, key))
+      original_value =
+        case Map.get(changeset.data, key) do
+          nil ->
+            default(changeset.resource, key)
+
+          value ->
+            value
+        end
 
       Comp.not_equal?(value, original_value)
     end)
@@ -1981,7 +1979,6 @@ defmodule AshPhoenix.Form do
             params: opts[:params] || %{},
             forms: config[:forms] || [],
             data: opts[:data],
-            manage_relationship_source: manage_relationship_source(form, config),
             transform_errors: transform_errors
           )
 
@@ -2078,38 +2075,6 @@ defmodule AshPhoenix.Form do
         config
       end
     end)
-  end
-
-  defp manage_relationship_source(%Ash.Changeset{} = changeset, config) do
-    case config[:managed_relationship] do
-      {source, relationship} ->
-        (changeset.context[:manage_relationship_source] || []) ++
-          [{source, relationship, changeset}]
-
-      _ ->
-        nil
-    end
-  end
-
-  defp manage_relationship_source(form, config) do
-    case config[:managed_relationship] do
-      {source, relationship} when form.type != :read ->
-        (form.source.context[:manage_relationship_source] || []) ++
-          [{source, relationship, form.source}]
-
-      _ ->
-        nil
-    end
-  end
-
-  defp set_managed_relationship_context(changeset, opts) do
-    if opts[:manage_relationship_source] do
-      Ash.Changeset.set_context(changeset, %{
-        manage_relationship_source: opts[:manage_relationship_source]
-      })
-    else
-      changeset
-    end
   end
 
   defp add_form_resource_and_action(opts, config, key, trail) do
