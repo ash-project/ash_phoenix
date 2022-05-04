@@ -162,7 +162,6 @@ defmodule AshPhoenix.Form do
     :id,
     :transform_errors,
     :original_data,
-    :manage_relationship_source_changeset,
     any_removed?: false,
     added?: false,
     changed?: false,
@@ -390,20 +389,6 @@ defmodule AshPhoenix.Form do
         :as
       ])
 
-    manage_relationship_source_changeset =
-      if Enum.any?(opts[:forms] || [], fn {_, config} ->
-           config[:managed_relationship]
-         end) do
-        resource
-        |> Ash.Changeset.new()
-        |> set_managed_relationship_context(opts)
-        |> Ash.Changeset.for_create(
-          action,
-          opts[:params] || %{},
-          changeset_opts
-        )
-      end
-
     name = opts[:as] || "form"
     id = opts[:id] || opts[:as] || "form"
 
@@ -413,7 +398,6 @@ defmodule AshPhoenix.Form do
         opts[:forms] || [],
         !!opts[:errors],
         [],
-        manage_relationship_source_changeset,
         name,
         id,
         opts[:transform_errors]
@@ -426,7 +410,6 @@ defmodule AshPhoenix.Form do
       api: opts[:api],
       params: params,
       errors: opts[:errors],
-      manage_relationship_source_changeset: manage_relationship_source_changeset,
       transform_errors: opts[:transform_errors],
       name: name,
       forms: forms,
@@ -470,20 +453,6 @@ defmodule AshPhoenix.Form do
     changeset_opts =
       Keyword.drop(opts, [:forms, :transform_errors, :errors, :id, :method, :for, :as])
 
-    manage_relationship_source_changeset =
-      if Enum.any?(opts[:forms] || [], fn {_, config} ->
-           config[:managed_relationship]
-         end) do
-        data
-        |> Ash.Changeset.new()
-        |> set_managed_relationship_context(opts)
-        |> Ash.Changeset.for_update(
-          action,
-          opts[:params] || %{},
-          changeset_opts
-        )
-      end
-
     name = opts[:as] || "form"
     id = opts[:id] || opts[:as] || "form"
 
@@ -495,7 +464,6 @@ defmodule AshPhoenix.Form do
         [
           data | opts[:prev_data_trail] || []
         ],
-        manage_relationship_source_changeset,
         name,
         id,
         opts[:transform_errors],
@@ -511,7 +479,6 @@ defmodule AshPhoenix.Form do
       params: params,
       errors: opts[:errors],
       transform_errors: opts[:transform_errors],
-      manage_relationship_source_changeset: manage_relationship_source_changeset,
       forms: forms,
       form_keys: List.wrap(opts[:forms]),
       original_data: data,
@@ -555,20 +522,6 @@ defmodule AshPhoenix.Form do
     changeset_opts =
       Keyword.drop(opts, [:forms, :transform_errors, :errors, :id, :method, :for, :as])
 
-    manage_relationship_source_changeset =
-      if Enum.any?(opts[:forms] || [], fn {_, config} ->
-           config[:managed_relationship]
-         end) do
-        data
-        |> Ash.Changeset.new()
-        |> set_managed_relationship_context(opts)
-        |> Ash.Changeset.for_update(
-          action,
-          opts[:params] || %{},
-          changeset_opts
-        )
-      end
-
     name = opts[:as] || "form"
     id = opts[:id] || opts[:as] || "form"
 
@@ -580,7 +533,6 @@ defmodule AshPhoenix.Form do
         [
           data | opts[:prev_data_trail] || []
         ],
-        manage_relationship_source_changeset,
         name,
         id,
         opts[:transform_errors],
@@ -594,7 +546,6 @@ defmodule AshPhoenix.Form do
       type: :destroy,
       params: params,
       errors: opts[:errors],
-      manage_relationship_source_changeset: manage_relationship_source_changeset,
       transform_errors: opts[:transform_errors],
       original_data: data,
       forms: forms,
@@ -2439,7 +2390,6 @@ defmodule AshPhoenix.Form do
          form_keys,
          error?,
          prev_data_trail,
-         source_changeset,
          name,
          id,
          transform_errors,
@@ -2457,7 +2407,6 @@ defmodule AshPhoenix.Form do
             trail,
             prev_data_trail,
             error?,
-            source_changeset,
             name,
             id,
             transform_errors
@@ -2472,7 +2421,6 @@ defmodule AshPhoenix.Form do
             trail,
             prev_data_trail,
             error?,
-            source_changeset,
             name,
             id,
             transform_errors
@@ -2489,7 +2437,6 @@ defmodule AshPhoenix.Form do
          trail,
          prev_data_trail,
          error?,
-         source_changeset,
          name,
          id,
          transform_errors
@@ -2526,7 +2473,6 @@ defmodule AshPhoenix.Form do
                   errors: error?,
                   prev_data_trail: prev_data_trail,
                   forms: opts[:forms] || [],
-                  manage_relationship_source: manage_relationship_source(source_changeset, opts),
                   transform_errors: transform_errors,
                   as: name <> "[#{key}]",
                   id: id <> "_#{key}"
@@ -2540,8 +2486,6 @@ defmodule AshPhoenix.Form do
                     prev_data_trail: prev_data_trail,
                     forms: opts[:forms] || [],
                     transform_errors: transform_errors,
-                    manage_relationship_source:
-                      manage_relationship_source(source_changeset, opts),
                     as: name <> "[#{key}][#{index}]",
                     id: id <> "_#{key}_#{index}"
                   )
@@ -2587,7 +2531,6 @@ defmodule AshPhoenix.Form do
                   prev_data_trail: prev_data_trail,
                   forms: opts[:forms] || [],
                   data: data,
-                  manage_relationship_source: manage_relationship_source(source_changeset, opts),
                   transform_errors: transform_errors,
                   as: name <> "[#{key}]",
                   id: id <> "_#{key}"
@@ -2608,8 +2551,6 @@ defmodule AshPhoenix.Form do
                     forms: opts[:forms] || [],
                     data: data,
                     transform_errors: transform_errors,
-                    manage_relationship_source:
-                      manage_relationship_source(source_changeset, opts),
                     as: name <> "[#{key}][#{index}]",
                     id: id <> "_#{key}_#{index}"
                   )
@@ -2635,7 +2576,6 @@ defmodule AshPhoenix.Form do
          trail,
          prev_data_trail,
          error?,
-         source_changeset,
          name,
          id,
          transform_errors
@@ -2649,7 +2589,6 @@ defmodule AshPhoenix.Form do
           trail,
           prev_data_trail,
           error?,
-          source_changeset,
           name,
           id,
           transform_errors
@@ -2662,7 +2601,6 @@ defmodule AshPhoenix.Form do
           trail,
           prev_data_trail,
           error?,
-          source_changeset,
           name,
           id,
           transform_errors
@@ -2679,7 +2617,6 @@ defmodule AshPhoenix.Form do
          trail,
          prev_data_trail,
          error?,
-         source_changeset,
          name,
          id,
          transform_errors
@@ -2702,7 +2639,6 @@ defmodule AshPhoenix.Form do
           forms: opts[:forms] || [],
           errors: error?,
           prev_data_trail: prev_data_trail,
-          manage_relationship_source: manage_relationship_source(source_changeset, opts),
           transform_errors: transform_errors,
           as: name <> "[#{key}]",
           id: id <> "_#{key}"
@@ -2724,7 +2660,6 @@ defmodule AshPhoenix.Form do
           forms: opts[:forms] || [],
           errors: error?,
           prev_data_trail: prev_data_trail,
-          manage_relationship_source: manage_relationship_source(source_changeset, opts),
           transform_errors: transform_errors,
           as: name <> "[#{key}]",
           id: id <> "_#{key}"
@@ -2752,7 +2687,6 @@ defmodule AshPhoenix.Form do
             forms: opts[:forms] || [],
             errors: error?,
             prev_data_trail: prev_data_trail,
-            manage_relationship_source: manage_relationship_source(source_changeset, opts),
             transform_errors: transform_errors,
             as: name <> "[#{key}][#{index}]",
             id: id <> "_#{key}_#{index}"
@@ -2774,7 +2708,6 @@ defmodule AshPhoenix.Form do
             forms: opts[:forms] || [],
             errors: error?,
             prev_data_trail: prev_data_trail,
-            manage_relationship_source: manage_relationship_source(source_changeset, opts),
             transform_errors: transform_errors,
             as: name <> "[#{key}][#{index}]",
             id: id <> "_#{key}_#{index}"
@@ -2791,7 +2724,6 @@ defmodule AshPhoenix.Form do
          trail,
          prev_data_trail,
          error?,
-         source_changeset,
          name,
          id,
          transform_errors
@@ -2822,7 +2754,6 @@ defmodule AshPhoenix.Form do
               forms: opts[:forms] || [],
               errors: error?,
               prev_data_trail: prev_data_trail,
-              manage_relationship_source: manage_relationship_source(source_changeset, opts),
               transform_errors: transform_errors,
               as: name <> "[#{key}]",
               id: id <> "_#{key}"
@@ -2840,7 +2771,6 @@ defmodule AshPhoenix.Form do
               forms: opts[:forms] || [],
               errors: error?,
               prev_data_trail: prev_data_trail,
-              manage_relationship_source: manage_relationship_source(source_changeset, opts),
               transform_errors: transform_errors,
               as: name <> "[#{key}]",
               id: id <> "_#{key}"
@@ -2865,7 +2795,6 @@ defmodule AshPhoenix.Form do
               forms: opts[:forms] || [],
               errors: error?,
               prev_data_trail: prev_data_trail,
-              manage_relationship_source: manage_relationship_source(source_changeset, opts),
               transform_errors: transform_errors,
               as: name <> "[#{key}]",
               id: id <> "_#{key}"
@@ -2888,7 +2817,6 @@ defmodule AshPhoenix.Form do
               forms: opts[:forms] || [],
               errors: error?,
               prev_data_trail: prev_data_trail,
-              manage_relationship_source: manage_relationship_source(source_changeset, opts),
               transform_errors: transform_errors,
               as: name <> "[#{key}]",
               id: id <> "_#{key}"
@@ -2921,7 +2849,6 @@ defmodule AshPhoenix.Form do
               forms: opts[:forms] || [],
               errors: error?,
               prev_data_trail: prev_data_trail,
-              manage_relationship_source: manage_relationship_source(source_changeset, opts),
               transform_errors: transform_errors,
               as: name <> "[#{key}][#{index}]",
               id: id <> "_#{key}_#{index}"
@@ -2948,7 +2875,6 @@ defmodule AshPhoenix.Form do
                   forms: opts[:forms] || [],
                   errors: error?,
                   prev_data_trail: prev_data_trail,
-                  manage_relationship_source: manage_relationship_source(source_changeset, opts),
                   transform_errors: transform_errors,
                   as: name <> "[#{key}][#{index}]",
                   id: id <> "_#{key}_#{index}"
@@ -2971,8 +2897,6 @@ defmodule AshPhoenix.Form do
                     errors: error?,
                     prev_data_trail: prev_data_trail,
                     transform_errors: transform_errors,
-                    manage_relationship_source:
-                      manage_relationship_source(source_changeset, opts),
                     as: name <> "[#{key}][#{index}]",
                     id: id <> "_#{key}_#{index}"
                   )
@@ -2989,8 +2913,6 @@ defmodule AshPhoenix.Form do
                     errors: error?,
                     prev_data_trail: prev_data_trail,
                     transform_errors: transform_errors,
-                    manage_relationship_source:
-                      manage_relationship_source(source_changeset, opts),
                     as: name <> "[#{key}][#{index}]",
                     id: id <> "_#{key}_#{index}"
                   )
@@ -3017,7 +2939,6 @@ defmodule AshPhoenix.Form do
                   errors: error?,
                   transform_errors: transform_errors,
                   prev_data_trail: prev_data_trail,
-                  manage_relationship_source: manage_relationship_source(source_changeset, opts),
                   as: name <> "[#{key}][#{index}]",
                   id: id <> "_#{key}_#{index}"
                 )

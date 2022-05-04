@@ -136,6 +136,7 @@ defmodule AshPhoenix.Form.Auto do
             |> add_create_action(manage_opts, relationship, auto_opts)
             |> add_read_action(manage_opts, relationship, auto_opts)
             |> add_update_action(manage_opts, relationship, auto_opts)
+            |> add_destroy_action(manage_opts, relationship, auto_opts)
             |> add_nested_forms(auto_opts)
 
           if opts[:read_action] || opts[:update_action] || opts[:destroy_action] do
@@ -291,6 +292,30 @@ defmodule AshPhoenix.Form.Auto do
         opts
         |> Keyword.put(:update_resource, resource)
         |> Keyword.put(:update_action, action_name)
+        |> Keyword.update!(
+          :forms,
+          &(&1 ++
+              auto(resource, action_name, auto_opts))
+        )
+        |> add_join_form(relationship, rest)
+    end
+  end
+
+  defp add_destroy_action(opts, manage_opts, relationship, auto_opts) do
+    manage_opts
+    |> Ash.Changeset.ManagedRelationshipHelpers.on_missing_destination_actions(relationship)
+    |> List.wrap()
+    |> Enum.sort_by(&(elem(&1, 0) == :join))
+    |> case do
+      [] ->
+        opts
+
+      [{source_dest_or_join, action_name} | rest] ->
+        resource = rel_to_resource(source_dest_or_join, relationship)
+
+        opts
+        |> Keyword.put(:destroy_resource, resource)
+        |> Keyword.put(:destroy_action, action_name)
         |> Keyword.update!(
           :forms,
           &(&1 ++
