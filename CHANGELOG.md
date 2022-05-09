@@ -5,6 +5,49 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.7.1](https://github.com/ash-project/ash_phoenix/compare/v0.7.0...v0.7.1) (2022-05-09)
+
+
+
+
+### Bug Fixes:
+
+* synthetically cast attributes in read forms
+
+* raise explicitly on non-existent action
+
+* bad key access in `keep_live`
+
+* show hidden fields for read actions
+
+* add pkey ids as params when creating read forms from data
+
+* track data properly for reads generated from data
+
+* handle read_actions with data
+
+* fetch data for read_actions as well
+
+### Improvements:
+
+* remove more managed relationship context
+
+* set a _form error field
+
+* removed source changesets as they are gone from ash
+
+* add destroy_action/destroy_resource for forms
+
+* fix & clarify logic in do_decode_path/4 (#35)
+
+* handle nil paths in do_decode_path/4 (#34)
+
+* use Map.get instead of direct key access (#33)
+
+* support `data` option on `add_form`
+
+* add `after_fetch` option to keep_live
+
 ## [v0.7.0](https://github.com/ash-project/ash_phoenix/compare/v0.6.0-rc.7...v0.7.0) (2022-03-17)
 
 
