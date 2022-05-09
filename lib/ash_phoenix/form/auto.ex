@@ -81,12 +81,18 @@ defmodule AshPhoenix.Form.Auto do
   end
 
   def related(resource, action, auto_opts) do
+    passed_in_action = action
+
     action =
       if is_atom(action) do
         Ash.Resource.Info.action(resource, action)
       else
         action
       end
+
+    if is_nil(action) && is_atom(passed_in_action) do
+      raise "No such action :#{passed_in_action} for #{inspect(resource)}"
+    end
 
     action.arguments
     |> Enum.reject(& &1.private?)

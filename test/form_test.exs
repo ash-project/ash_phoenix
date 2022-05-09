@@ -23,6 +23,16 @@ defmodule AshPhoenix.FormTest do
     end
   end
 
+  test "a read will validate attributes" do
+    form =
+      Post
+      |> Form.for_read(:read)
+      |> Form.validate(%{"text" => [1, 2, 3]})
+      |> form_for("action")
+
+    assert form.errors[:text] == {"is invalid", []}
+  end
+
   test "validation errors are attached to fields" do
     form = Form.for_create(PostWithDefault, :create, api: Api)
     form = AshPhoenix.Form.validate(form, %{"text" => ""}, errors: form.submitted_once?)

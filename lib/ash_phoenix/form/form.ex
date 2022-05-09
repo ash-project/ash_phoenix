@@ -639,12 +639,51 @@ defmodule AshPhoenix.Form do
         Ash.Query.for_read(
           resource,
           action,
-          opts[:params] || %{},
+          params || %{},
           query_opts
         )
+        |> add_errors_for_unhandled_params(params)
     }
     |> set_changed?()
     |> set_validity()
+  end
+
+  defp add_errors_for_unhandled_params(%{action: nil} = query, _params), do: query
+
+  defp add_errors_for_unhandled_params(query, params) do
+    arguments = Enum.map(query.action.arguments, &to_string(&1.name))
+
+    remaining_params = Map.drop(params, arguments)
+
+    Enum.reduce(remaining_params, query, fn {key, value}, query ->
+      attribute = Ash.Resource.Info.public_attribute(query.resource, key)
+
+      if attribute do
+        case Ash.Changeset.cast_input(attribute.type, value, attribute.constraints, query) do
+          {:ok, casted} ->
+            %{query | params: Map.put(query.params, key, casted)}
+
+          {:error, error} ->
+            messages =
+              if Keyword.keyword?(error) do
+                [error]
+              else
+                List.wrap(error)
+              end
+
+            messages
+            |> Enum.reduce(query, fn message, query ->
+              message
+              |> Ash.Changeset.error_to_exception_opts(attribute)
+              |> Enum.reduce(query, fn opts, query ->
+                Ash.Query.add_error(query, Ash.Error.Changes.InvalidAttribute.exception(opts))
+              end)
+            end)
+        end
+      else
+        query
+      end
+    end)
   end
 
   @doc "A utility to get the list of attributes the action underlying the form accepts"
@@ -760,6 +799,7 @@ defmodule AshPhoenix.Form do
               params,
               source_opts
             )
+            |> add_errors_for_unhandled_params(params)
         end
 
       %{
@@ -2078,8 +2118,26 @@ defmodule AshPhoenix.Form do
   end
 
   defp add_form_resource_and_action(opts, config, key, trail) do
+    default =
+      cond do
+        config[:create_action] && (config[:create_resource] || config[:resource]) ->
+          :create
+
+        config[:read_action] && (config[:read_resource] || config[:resource]) ->
+          :read
+
+        config[:update_action] && (config[:update_resource] || config[:resource]) ->
+          :update
+
+        config[:destroy_action] && (config[:destroy_resource] || config[:resource]) ->
+          :destroy
+
+        true ->
+          :create
+      end
+
     action =
-      case opts[:type] || :create do
+      case opts[:type] || default do
         :create ->
           config[:create_action] ||
             raise AshPhoenix.Form.NoActionConfigured,
@@ -2106,7 +2164,7 @@ defmodule AshPhoenix.Form do
       end
 
     resource =
-      case opts[:type] || :create do
+      case opts[:type] || default do
         :create ->
           config[:create_resource] || config[:resource] ||
             raise AshPhoenix.Form.NoResourceConfigured, path: Enum.reverse(trail, [key])
