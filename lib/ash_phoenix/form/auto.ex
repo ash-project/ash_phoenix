@@ -515,10 +515,8 @@ defmodule AshPhoenix.Form.Auto do
     Enum.filter(attributes, &(&1.name not in reject || []))
   end
 
-  defp only_accepted(attributes, %{accept: accept, reject: reject}) do
-    attributes
-    |> Enum.filter(&(&1.name in accept))
-    |> Enum.filter(&(&1.name not in reject || []))
+  defp only_accepted(attributes, %{accept: accept}) do
+    Enum.filter(attributes, &(&1.name in accept))
   end
 
   defp find_manage_change(argument, action) do

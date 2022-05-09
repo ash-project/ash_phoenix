@@ -18,7 +18,7 @@ defmodule AshPhoenix.Form.NoFormConfigured do
 
     Available forms:
 
-    #{available |> Enum.map(&"* #{&1}") |> Enum.join("\n")}
+    #{available |> Enum.map_join("\n", &"* #{&1}")}
 
     Example Setup:
 

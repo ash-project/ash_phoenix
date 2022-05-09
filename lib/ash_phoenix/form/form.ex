@@ -2393,7 +2393,11 @@ defmodule AshPhoenix.Form do
 
       {key, config} ->
         if Keyword.get(config, :type, :single) == :single do
-          [key | do_decode_path(form.forms[key], original_path, rest, config[:sparse?])]
+          if rest == [] do
+            [key]
+          else
+            [key | do_decode_path(form.forms[key], original_path, rest, config[:sparse?])]
+          end
         else
           [key | do_decode_path(form.forms[key] || [], original_path, rest, config[:sparse?])]
         end
@@ -3098,7 +3102,7 @@ defmodule AshPhoenix.Form do
             form.resource
             |> Ash.Resource.Info.public_attributes()
             |> Enum.filter(& &1.primary_key?)
-            |> Enum.filter(&(!&1.private?))
+            |> Enum.reject(& &1.private?)
             |> Enum.map(& &1.name)
 
           form.data
