@@ -875,10 +875,10 @@ defmodule AshPhoenix.Form do
                       validated =
                         validate(matching_form, params,
                           errors?: errors?,
-                          prev_data_trail?: prev_data_trail,
-                          as: form.name <> "[#{key}][#{index}]",
-                          id: form.id <> "_#{key}_#{index}"
+                          prev_data_trail?: prev_data_trail
                         )
+                        |> Map.put(:as, form.name <> "[#{key}][#{index}]")
+                        |> Map.put(:id, form.id <> "_#{key}_#{index}")
 
                       Map.update(forms, key, [validated], fn nested_forms ->
                         nested_forms ++
