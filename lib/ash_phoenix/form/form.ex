@@ -876,7 +876,8 @@ defmodule AshPhoenix.Form do
                         validate(matching_form, params,
                           errors?: errors?,
                           prev_data_trail?: prev_data_trail,
-                          matcher: matcher
+                          as: form.name <> "[#{key}][#{index}]",
+                          id: form.id <> "_#{key}_#{index}"
                         )
 
                       Map.update(forms, key, [validated], fn nested_forms ->
@@ -1464,6 +1465,7 @@ defmodule AshPhoenix.Form do
     indexer = opts[:indexer]
     indexed_lists? = opts[:indexed_lists?] || not is_nil(indexer) || false
     transform = opts[:transform]
+    produce = opts[:produce]
     only_touched? = Keyword.get(opts, :only_touched?, true)
 
     form_keys =
@@ -1544,10 +1546,17 @@ defmodule AshPhoenix.Form do
         end
       end)
 
+    with_produced_params =
+      if produce do
+        Map.merge(produce.(form), untransformed_params)
+      else
+        untransformed_params
+      end
+
     if transform do
-      Map.new(untransformed_params, transform)
+      Map.new(with_produced_params, transform)
     else
-      untransformed_params
+      with_produced_params
     end
   end
 
