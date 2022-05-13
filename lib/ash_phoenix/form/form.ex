@@ -1488,6 +1488,8 @@ defmodule AshPhoenix.Form do
       form.form_keys
       |> only_touched(form, only_touched?)
       |> Enum.reduce(params, fn {key, config}, params ->
+        for_name = to_string(config[:for] || key)
+
         case config[:type] || :single do
           :single ->
             if form.forms[key] do
@@ -1501,15 +1503,17 @@ defmodule AshPhoenix.Form do
               if form.form_keys[key][:merge?] do
                 Map.merge(nested_params || %{}, params)
               else
-                Map.put(params, to_string(config[:for] || key), nested_params)
+                Map.put(params, for_name, nested_params)
               end
             else
-              params
+              if is_touched?(form, key) do
+                Map.put(params, for_name, nil)
+              else
+                params
+              end
             end
 
           :list ->
-            for_name = to_string(config[:for] || key)
-
             if form.forms[key] do
               if indexed_lists? do
                 params
@@ -1541,7 +1545,11 @@ defmodule AshPhoenix.Form do
                 end)
               end
             else
-              params
+              if is_touched?(form, key) do
+                Map.put(params, for_name, [])
+              else
+                params
+              end
             end
         end
       end)
@@ -1565,11 +1573,13 @@ defmodule AshPhoenix.Form do
 
   defp only_touched(form_keys, true, form) do
     Enum.filter(form_keys, fn {key, _} ->
-      MapSet.member?(form.touched_forms, to_string(key))
+      is_touched?(form, key)
     end)
   end
 
   defp only_touched(form_keys, _, _), do: form_keys
+
+  defp is_touched?(form, key), do: MapSet.member?(form.touched_forms, to_string(key))
 
   @add_form_opts [
     prepend: [
