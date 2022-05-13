@@ -1553,7 +1553,7 @@ defmodule AshPhoenix.Form do
             else
               if is_nil(form.forms[key]) &&
                    Enum.member?(Keyword.get(form.opts, :include_when_empty, []), key) do
-                Map.put(params, to_string(config[:for] || key), nil)
+                Map.put(params, to_string(config[:for] || key), [])
               else
                 params
               end
