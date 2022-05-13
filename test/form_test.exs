@@ -3,7 +3,7 @@ defmodule AshPhoenix.FormTest do
   import Phoenix.HTML.Form, only: [form_for: 2, inputs_for: 2]
 
   alias AshPhoenix.Form
-  alias AshPhoenix.Test.{Api, Comment, OtherApi, Post, PostWithDefault}
+  alias AshPhoenix.Test.{Api, Author, Comment, OtherApi, Post, PostWithDefault}
   alias Phoenix.HTML.FormData
 
   describe "form_for fields" do
@@ -1131,6 +1131,27 @@ defmodule AshPhoenix.FormTest do
                |> inputs_for(:post)
                |> hd()
                |> inputs_for(:comments)
+    end
+  end
+
+  describe "issue #9000" do
+    test "when `remove_form`ing an existing `:single` relationship, a nil value is included in the params - if the form key is in the `include_when_empty` form opt" do
+      post =
+        Post
+        |> Ash.Changeset.new(%{text: "post"})
+        |> Ash.Changeset.set_argument(:author, %{email: "nigel@elixir-lang.org"})
+        |> Api.create!()
+
+      form =
+        post
+        |> Form.for_update(:update, api: Api, forms: [auto?: true], include_when_empty: [:author])
+
+      params =
+        form
+        |> Form.remove_form([:author])
+        |> Form.params()
+
+      assert is_nil(Map.get(params, "author", "doesnt exist!"))
     end
   end
 

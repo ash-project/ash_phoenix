@@ -3,6 +3,7 @@ defmodule AshPhoenix.Test.Registry do
   use Ash.Registry
 
   entries do
+    entry(AshPhoenix.Test.Author)
     entry(AshPhoenix.Test.Comment)
     entry(AshPhoenix.Test.Post)
     entry(AshPhoenix.Test.PostLink)

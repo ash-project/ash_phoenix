@@ -225,6 +225,11 @@ defmodule AshPhoenix.Form do
       return a list of ash phoenix formatted errors, e.g `[{field :: atom, message :: String.t(), substituations :: Keyword.t()}]`
       """
     ],
+    include_when_empty: [
+      type: {:list, :atom},
+      doc:
+        "Include values for these forms even when empty, this makes it easy to unrelate resources from the form resource with a remove_form"
+    ],
     method: [
       type: :string,
       doc:
@@ -1504,7 +1509,12 @@ defmodule AshPhoenix.Form do
                 Map.put(params, to_string(config[:for] || key), nested_params)
               end
             else
-              params
+              if is_nil(form.forms[key]) &&
+                   Enum.member?(Keyword.get(form.opts, :include_when_empty, []), key) do
+                Map.put(params, to_string(config[:for] || key), nil)
+              else
+                params
+              end
             end
 
           :list ->
@@ -1541,7 +1551,12 @@ defmodule AshPhoenix.Form do
                 end)
               end
             else
-              params
+              if is_nil(form.forms[key]) &&
+                   Enum.member?(Keyword.get(form.opts, :include_when_empty, []), key) do
+                Map.put(params, to_string(config[:for] || key), nil)
+              else
+                params
+              end
             end
         end
       end)
