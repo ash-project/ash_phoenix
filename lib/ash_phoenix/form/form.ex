@@ -1548,7 +1548,10 @@ defmodule AshPhoenix.Form do
 
     with_produced_params =
       if produce do
-        Map.merge(produce.(form), untransformed_params)
+        Map.merge(
+          produce.(form),
+          untransformed_params
+        )
       else
         untransformed_params
       end
@@ -1619,11 +1622,7 @@ defmodule AshPhoenix.Form do
         do_add_form(form, path, opts, [], form.transform_errors)
       end
 
-    %{
-      form
-      | touched_forms: touched_forms(form.forms, opts[:params] || %{}, form.opts)
-    }
-    |> set_changed?()
+    set_changed?(form)
   end
 
   @doc """
@@ -1872,6 +1871,7 @@ defmodule AshPhoenix.Form do
       | forms: new_forms,
         any_removed?: form.any_removed? || any_removed?,
         form_keys: new_config,
+        touched_forms: MapSet.put(form.touched_forms, to_string(key)),
         opts: Keyword.put(form.opts, :forms, new_config)
     }
   end
@@ -1912,6 +1912,7 @@ defmodule AshPhoenix.Form do
       form
       | forms: new_forms,
         any_removed?: form.any_removed? || any_removed?,
+        touched_forms: MapSet.put(form.touched_forms, to_string(key)),
         form_keys: new_config,
         opts: Keyword.put(form.opts, :forms, new_config)
     }
@@ -1932,7 +1933,7 @@ defmodule AshPhoenix.Form do
         List.update_at(forms, i, &do_remove_form(&1, rest, [i, key | trail]))
       end)
 
-    %{form | forms: new_forms}
+    %{form | forms: new_forms, touched_forms: MapSet.put(form.touched_forms, to_string(key))}
   end
 
   defp do_remove_form(form, [key | rest], trail) do
@@ -1948,7 +1949,7 @@ defmodule AshPhoenix.Form do
       |> Map.put_new(key, [])
       |> Map.update!(key, &do_remove_form(&1, rest, [key | trail]))
 
-    %{form | forms: new_forms}
+    %{form | forms: new_forms, touched_forms: MapSet.put(form.touched_forms, to_string(key))}
   end
 
   defp do_remove_form(_form, path, trail) do
@@ -1983,7 +1984,7 @@ defmodule AshPhoenix.Form do
         )
       end)
 
-    %{form | forms: new_forms}
+    %{form | forms: new_forms, touched_forms: MapSet.put(form.touched_forms, key)}
   end
 
   defp do_add_form(form, [key], opts, trail, transform_errors) do
@@ -2058,7 +2059,8 @@ defmodule AshPhoenix.Form do
       form
       | forms: new_forms,
         form_keys: new_config,
-        opts: Keyword.put(form.opts, :forms, new_config)
+        opts: Keyword.put(form.opts, :forms, new_config),
+        touched_forms: MapSet.put(form.touched_forms, key)
     }
   end
 
@@ -2075,7 +2077,7 @@ defmodule AshPhoenix.Form do
       |> Map.put_new(key, [])
       |> Map.update!(key, &do_add_form(&1, rest, opts, [key | trail], transform_errors))
 
-    %{form | forms: new_forms}
+    %{form | forms: new_forms, touched_forms: MapSet.put(form.touched_forms, key)}
   end
 
   defp do_add_form(_form, path, _opts, trail, _) do
