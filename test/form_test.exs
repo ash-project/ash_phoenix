@@ -1132,6 +1132,25 @@ defmodule AshPhoenix.FormTest do
                |> hd()
                |> inputs_for(:comments)
     end
+
+    test "when `remove_form`ing an existing `:single` relationship, a nil value is included in the params - if the form has been touched" do
+      post =
+        Post
+        |> Ash.Changeset.new(%{text: "post"})
+        |> Ash.Changeset.set_argument(:author, %{email: "nigel@elixir-lang.org"})
+        |> Api.create!()
+
+      form =
+        post
+        |> Form.for_update(:update, api: Api, forms: [auto?: true])
+
+      params =
+        form
+        |> Form.remove_form([:author])
+        |> Form.params()
+
+      assert is_nil(Map.get(params, "author", "shouldn't exist"))
+    end
   end
 
   describe "issue #259" do
