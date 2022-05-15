@@ -14,14 +14,18 @@ defmodule AshPhoenix.Test.Comment do
     end
 
     create :create do
+      primary?(true)
       argument(:post, :map)
       change(manage_relationship(:post, type: :direct_control))
     end
 
     update :update do
+      primary?(true)
       argument(:post, :map)
       change(manage_relationship(:post, type: :direct_control))
     end
+
+    defaults([:destroy])
   end
 
   attributes do
