@@ -78,11 +78,11 @@ defmodule AshPhoenix.MixProject do
       {:phoenix_live_view, "~> 0.15"},
       {:git_ops, "~> 2.4.4", only: :dev},
       {:ex_doc, "~> 0.23", only: :dev, runtime: false},
-      {:ex_check, "~> 0.12.0", only: :dev},
+      {:ex_check, "~> 0.14", only: :dev},
       {:credo, ">= 0.0.0", only: :dev, runtime: false},
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},
       {:sobelow, ">= 0.0.0", only: :dev, runtime: false},
-      {:excoveralls, "~> 0.13.0", only: [:dev, :test]}
+      {:excoveralls, "~> 0.14", only: [:dev, :test]}
     ]
   end
 
