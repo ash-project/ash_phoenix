@@ -1032,7 +1032,15 @@ defmodule AshPhoenix.Form do
         """
       end
 
-      result =
+      case Ash.Api.resource(form.api, form.resource) do
+        {:ok, _} ->
+          :ok
+
+        {:error, error} ->
+          raise error
+      end
+
+      {original_changeset_or_query, result} =
         case form.type do
           :create ->
             form.resource
@@ -1042,7 +1050,7 @@ defmodule AshPhoenix.Form do
               changeset_opts
             )
             |> before_submit.()
-            |> form.api.create()
+            |> with_changeset(&form.api.create/1)
 
           :update ->
             form.original_data
@@ -1052,7 +1060,7 @@ defmodule AshPhoenix.Form do
               changeset_opts
             )
             |> before_submit.()
-            |> form.api.update()
+            |> with_changeset(&form.api.update/1)
 
           :destroy ->
             form.original_data
@@ -1063,6 +1071,7 @@ defmodule AshPhoenix.Form do
             )
             |> before_submit.()
             |> form.api.destroy()
+            |> with_changeset(&form.api.update/1)
 
           :read ->
             form.resource
@@ -1072,7 +1081,7 @@ defmodule AshPhoenix.Form do
               changeset_opts
             )
             |> before_submit.()
-            |> form.api.create()
+            |> with_changeset(&form.api.read/1)
         end
 
       case result do
@@ -1085,7 +1094,7 @@ defmodule AshPhoenix.Form do
           if opts[:raise?] do
             raise Ash.Error.to_error_class(query.errors, query: query)
           else
-            query = %{query | errors: []}
+            query = %{(query || original_changeset_or_query) | errors: []}
 
             errors =
               error
@@ -1107,7 +1116,7 @@ defmodule AshPhoenix.Form do
           if opts[:raise?] do
             raise Ash.Error.to_error_class(changeset.errors, changeset: changeset)
           else
-            changeset = %{changeset | errors: []}
+            changeset = %{(changeset || original_changeset_or_query) | errors: []}
 
             errors =
               error
@@ -1143,6 +1152,10 @@ defmodule AshPhoenix.Form do
          |> synthesize_action_errors()}
       end
     end
+  end
+
+  defp with_changeset(changeset, func) do
+    {changeset, func.(changeset)}
   end
 
   @doc """
