@@ -13,7 +13,10 @@ defmodule AshPhoenix.Test.Post do
   end
 
   actions do
+    defaults([:read, :destroy])
+
     create :create do
+      primary?(true)
       argument(:author, :map, allow_nil?: true)
       argument(:comments, {:array, :map})
       argument(:linked_posts, {:array, :map})
