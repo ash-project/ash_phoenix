@@ -832,7 +832,7 @@ defmodule AshPhoenix.Form do
     Enum.reduce(form.form_keys, {%{}, params}, fn {key, opts}, {forms, params} ->
       forms =
         case fetch_key(params, opts[:as] || key) do
-          {:ok, form_params} ->
+          {:ok, form_params} when form_params != nil ->
             if opts[:type] == :list do
               form_params =
                 if is_list(form_params) do
@@ -929,7 +929,7 @@ defmodule AshPhoenix.Form do
               end
             end
 
-          :error ->
+          _ ->
             case opts[:type] do
               :list ->
                 Map.put(forms, key, [])
@@ -1616,6 +1616,11 @@ defmodule AshPhoenix.Form do
       default: %{},
       doc: "The initial parameters to add the form with."
     ],
+    validate?: [
+      type: :boolean,
+      default: true,
+      doc: "Validates the new full form."
+    ],
     type: [
       type: {:one_of, [:read, :create]},
       default: :create,
@@ -1655,8 +1660,22 @@ defmodule AshPhoenix.Form do
         do_add_form(form, path, opts, [], form.transform_errors)
       end
 
-    set_changed?(form)
+    form = set_changed?(form)
+
+    if opts[:validate?] do
+      validate(form, params(form))
+    else
+      form
+    end
   end
+
+  @remove_form_opts [
+    validate?: [
+      type: :boolean,
+      default: true,
+      doc: "Validates the new full form."
+    ]
+  ]
 
   @doc """
   Removes a form at the provided path.
@@ -1671,7 +1690,9 @@ defmodule AshPhoenix.Form do
   Enum.reduce(removed_form_paths, form, &AshPhoenix.Form.remove_form(&2, &1))
   ```
   """
-  def remove_form(form, path) do
+  def remove_form(form, path, opts \\ []) do
+    opts = Ash.OptionsHelpers.validate!(opts, @remove_form_opts)
+
     if has_form?(form, path) do
       form =
         if is_binary(path) do
@@ -1682,7 +1703,13 @@ defmodule AshPhoenix.Form do
           do_remove_form(form, path, [])
         end
 
-      set_changed?(form)
+      form = set_changed?(form)
+
+      if opts[:validate?] do
+        validate(form, params(form))
+      else
+        form
+      end
     else
       form
     end

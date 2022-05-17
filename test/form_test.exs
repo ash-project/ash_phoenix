@@ -395,7 +395,7 @@ defmodule AshPhoenix.FormTest do
              ]
     end
 
-    test "nested forms don't submit empty values when not present in forms" do
+    test "nested forms submit empty values when they have been touched, even if not included in future params" do
       form =
         Comment
         |> Form.for_create(:create,
@@ -409,7 +409,7 @@ defmodule AshPhoenix.FormTest do
         |> Form.add_form(:post, params: %{})
         |> Form.validate(%{"text" => "text"})
 
-      assert Form.params(form) == %{"text" => "text"}
+      assert Form.params(form) == %{"text" => "text", "post" => nil}
     end
 
     test "nested forms submit empty list values when not present in input params" do
@@ -1152,13 +1152,13 @@ defmodule AshPhoenix.FormTest do
       form =
         post
         |> Form.for_update(:update, api: Api, forms: [auto?: true])
+        |> Form.remove_form([:author])
 
       params =
         form
-        |> Form.remove_form([:author])
         |> Form.params()
 
-      assert is_nil(Map.get(params, "author", "shouldn't exist"))
+      assert %{"author" => nil} = params
     end
 
     test "when add_forming a required argument, the added form should be valid without needing to manually validate it" do
