@@ -1166,7 +1166,7 @@ defmodule AshPhoenix.FormTest do
         Post
         |> Form.for_create(:create_author_required, api: Api, forms: [auto?: true])
         |> Form.validate(%{"text" => "foo"})
-        |> Form.add_form([:author], params: %{"id" => Ash.UUID.generate()})
+        |> Form.add_form([:author], params: %{"email" => "james@foo.com"})
 
       assert form.valid? == true
     end
