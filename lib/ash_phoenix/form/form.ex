@@ -172,6 +172,8 @@ defmodule AshPhoenix.Form do
     just_submitted?: false
   ]
 
+  alias AshPhoenix.Form.InvalidPath
+
   @type t :: %__MODULE__{
           resource: Ash.Resource.t(),
           action: atom,
@@ -1211,6 +1213,14 @@ defmodule AshPhoenix.Form do
     end
   end
 
+  @spec has_form?(t(), list(atom | integer) | String.t()) :: boolean
+  def has_form?(form, path) do
+    not is_nil(get_form(form, path))
+  rescue
+    InvalidPath ->
+      false
+  end
+
   @spec get_form(t(), list(atom | integer) | String.t()) :: t() | nil
   def get_form(form, path) do
     path =
@@ -1662,16 +1672,20 @@ defmodule AshPhoenix.Form do
   ```
   """
   def remove_form(form, path) do
-    form =
-      if is_binary(path) do
-        path = parse_path!(form, path)
-        do_remove_form(form, path, [])
-      else
-        path = List.wrap(path)
-        do_remove_form(form, path, [])
-      end
+    if has_form?(form, path) do
+      form =
+        if is_binary(path) do
+          path = parse_path!(form, path)
+          do_remove_form(form, path, [])
+        else
+          path = List.wrap(path)
+          do_remove_form(form, path, [])
+        end
 
-    set_changed?(form)
+      set_changed?(form)
+    else
+      form
+    end
   end
 
   defp forms_for_type(opts, type) do
@@ -1976,7 +1990,7 @@ defmodule AshPhoenix.Form do
   end
 
   defp do_remove_form(_form, path, trail) do
-    raise ArgumentError, message: "Invalid Path: #{inspect(Enum.reverse(trail, path))}"
+    raise InvalidPath, path: Enum.reverse(trail, path)
   end
 
   defp do_add_form(form, [key, i | rest], opts, trail, transform_errors) when is_integer(i) do
@@ -2104,7 +2118,7 @@ defmodule AshPhoenix.Form do
   end
 
   defp do_add_form(_form, path, _opts, trail, _) do
-    raise ArgumentError, message: "Invalid Path: #{inspect(Enum.reverse(trail, List.wrap(path)))}"
+    raise InvalidPath, path: Enum.reverse(trail, List.wrap(path))
   end
 
   defp do_prepend_data(form, key) do
@@ -2363,8 +2377,7 @@ defmodule AshPhoenix.Form do
         do_decode_path(form, original_path, rest, false)
 
       _other ->
-        raise ArgumentError,
-              "Form name does not match beginning of path: #{inspect(original_path)}"
+        raise InvalidPath, path: original_path
     end
   end
 
