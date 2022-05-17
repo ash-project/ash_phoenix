@@ -25,6 +25,11 @@ defmodule AshPhoenix.Test.Post do
       change(manage_relationship(:author, type: :direct_control, on_missing: :unrelate))
     end
 
+    create :create_author_required do
+      argument(:author, :map, allow_nil?: false)
+      change(manage_relationship(:author, type: :direct_control, on_missing: :unrelate))
+    end
+
     update :update_with_replace do
       argument(:comments, {:array, :map})
       change(manage_relationship(:comments, type: :replace))

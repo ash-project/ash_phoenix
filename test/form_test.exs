@@ -1160,6 +1160,16 @@ defmodule AshPhoenix.FormTest do
 
       assert is_nil(Map.get(params, "author", "shouldn't exist"))
     end
+
+    test "when add_forming a required argument, the added form should be valid without needing to manually validate it" do
+      form =
+        Post
+        |> Form.for_create(:create_author_required, api: Api, forms: [auto?: true])
+        |> Form.validate(%{"text" => "foo"})
+        |> Form.add_form([:author], params: %{"id" => Ash.UUID.generate()})
+
+      assert form.valid? == true
+    end
   end
 
   describe "issue #259" do
