@@ -5,6 +5,29 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.7.2](https://github.com/ash-project/ash_phoenix/compare/v0.7.1...v0.7.2) (2022-05-17)
+
+
+
+
+### Bug Fixes:
+
+* validate after adding/removing forms
+
+* don't remove a form unless one exists
+
+* raise error on non-existant resource for api
+
+* respect touched forms in params generation (#37)
+
+* explicitly set `as` and `id` in matched form
+
+* sequence manually matched forms
+
+### Improvements:
+
+* add `produce` option to `params`
+
 ## [v0.7.1](https://github.com/ash-project/ash_phoenix/compare/v0.7.0...v0.7.1) (2022-05-09)
 
 
