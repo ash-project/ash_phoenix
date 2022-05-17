@@ -190,6 +190,15 @@ defmodule AshPhoenix.FormTest do
       assert form.changed?
     end
 
+    test "removing a non-existant form should not change touched_forms" do
+      form =
+        Post
+        |> Form.for_create(:create, api: Api, forms: [auto?: true])
+        |> AshPhoenix.Form.remove_form([:author])
+
+      assert MapSet.member?(form.touched_forms, "author") == false
+    end
+
     test "removing a form that was added does not mark the form as changed" do
       post =
         Post
