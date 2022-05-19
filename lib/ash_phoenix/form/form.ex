@@ -1940,7 +1940,12 @@ defmodule AshPhoenix.Form do
         end
       end)
 
-    new_forms = Map.put(form.forms, key, nil)
+    new_forms =
+      if (form.form_keys[:type] || :single) == :single do
+        Map.put(form.forms, key, nil)
+      else
+        Map.put(form.forms, key, [])
+      end
 
     %{
       form
