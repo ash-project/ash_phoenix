@@ -1621,6 +1621,12 @@ defmodule AshPhoenix.Form do
       default: true,
       doc: "Validates the new full form."
     ],
+    validate_opts: [
+      type: :any,
+      default: [],
+      doc:
+        "Options to pass to `validate`. Only used if `validate?` is set to `true` (the default)"
+    ],
     type: [
       type: {:one_of, [:read, :create]},
       default: :create,
@@ -1663,7 +1669,7 @@ defmodule AshPhoenix.Form do
     form = set_changed?(form)
 
     if opts[:validate?] do
-      validate(form, params(form))
+      validate(form, params(form), opts[:validate_opts] || [])
     else
       form
     end
@@ -1674,6 +1680,12 @@ defmodule AshPhoenix.Form do
       type: :boolean,
       default: true,
       doc: "Validates the new full form."
+    ],
+    validate_opts: [
+      type: :any,
+      default: [],
+      doc:
+        "Options to pass to `validate`. Only used if `validate?` is set to `true` (the default)"
     ]
   ]
 
@@ -1706,7 +1718,7 @@ defmodule AshPhoenix.Form do
       form = set_changed?(form)
 
       if opts[:validate?] do
-        validate(form, params(form))
+        validate(form, params(form), opts[:validate_opts] || [])
       else
         form
       end
