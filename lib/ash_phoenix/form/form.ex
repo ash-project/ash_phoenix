@@ -2101,11 +2101,15 @@ defmodule AshPhoenix.Form do
           end
 
         new_form =
-          for_action(data_or_resource, action,
-            params: opts[:params] || %{},
-            forms: config[:forms] || [],
-            data: opts[:data],
-            transform_errors: transform_errors
+          for_action(
+            data_or_resource,
+            action,
+            Keyword.merge(opts[:validate_opts] || [],
+              params: opts[:params] || %{},
+              forms: config[:forms] || [],
+              data: opts[:data],
+              transform_errors: transform_errors
+            )
           )
 
         case config[:type] || :single do
