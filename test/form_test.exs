@@ -6,6 +6,28 @@ defmodule AshPhoenix.FormTest do
   alias AshPhoenix.Test.{Api, Comment, OtherApi, Post, PostWithDefault}
   alias Phoenix.HTML.FormData
 
+  describe "validate_opts" do
+    test "errors are not set on the parent and child form" do
+      form =
+        Post
+        |> Form.for_create(:create,
+          api: Api,
+          forms: [
+            comments: [
+              type: :list,
+              resource: Comment,
+              create_action: :create
+            ]
+          ]
+        )
+        |> Form.add_form([:comments], validate_opts: [errors: false])
+        |> form_for("action")
+
+      assert form.errors == []
+      assert Form.errors(form.source, for_path: [:comments, 0]) == []
+    end
+  end
+
   describe "form_for fields" do
     test "it should show simple field values" do
       form =
