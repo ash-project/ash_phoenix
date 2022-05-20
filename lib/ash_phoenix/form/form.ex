@@ -876,7 +876,7 @@ defmodule AshPhoenix.Form do
                     matching_form ->
                       validated =
                         validate(matching_form, params,
-                          errors?: errors?,
+                          errors: errors?,
                           prev_data_trail?: prev_data_trail
                         )
                         |> Map.put(:as, form.name <> "[#{key}][#{index}]")
