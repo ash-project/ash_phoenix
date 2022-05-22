@@ -899,7 +899,7 @@ defmodule AshPhoenix.Form do
             else
               if form.forms[key] do
                 new_form =
-                  validate(form.forms[key], form_params, errors?: errors?, matcher: matcher)
+                  validate(form.forms[key], form_params, errors: errors?, matcher: matcher)
 
                 Map.put(forms, key, new_form)
               else
