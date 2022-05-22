@@ -93,7 +93,7 @@ defmodule AshPhoenix.FormTest do
   end
 
   describe "has_form?" do
-    test "has_form? checks for the existence of a list of forms" do
+    test "checks for the existence of a list of forms" do
       form =
         Post
         |> Form.for_create(:create,
@@ -112,7 +112,7 @@ defmodule AshPhoenix.FormTest do
       assert Form.has_form?(form, [:comments, 0])
     end
 
-    test "has_form? checks for the existence of a single form" do
+    test "checks for the existence of a single form" do
       form =
         Comment
         |> Form.for_create(:create,
