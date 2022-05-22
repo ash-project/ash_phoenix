@@ -47,6 +47,89 @@ defmodule AshPhoenix.FormTest do
     end
   end
 
+  describe "get_forms" do
+    test "gets a list of forms" do
+      form =
+        Post
+        |> Form.for_create(:create,
+          api: Api,
+          forms: [
+            comments: [
+              type: :list,
+              resource: Comment,
+              create_action: :create
+            ]
+          ]
+        )
+
+      assert Form.get_forms(form, [:comments]) == []
+      assert Form.get_forms(form, [:comments, 0]) == []
+
+      form = Form.add_form(form, [:comments])
+
+      assert Enum.count(Form.get_forms(form, [:comments])) == 1
+      assert Enum.count(Form.get_forms(form, [:comments, 0])) == 1
+    end
+
+    test "gets a single form" do
+      form =
+        Comment
+        |> Form.for_create(:create,
+          forms: [
+            post: [
+              type: :single,
+              resource: Post,
+              create_action: :create
+            ]
+          ]
+        )
+
+      assert Form.get_forms(form, [:post]) == []
+
+      form = Form.add_form(form, [:post])
+
+      assert Enum.count(Form.get_forms(form, [:post])) == 1
+    end
+  end
+
+  describe "has_form?" do
+    test "has_form? checks for the existence of a list of forms" do
+      form =
+        Post
+        |> Form.for_create(:create,
+          api: Api,
+          forms: [
+            comments: [
+              type: :list,
+              resource: Comment,
+              create_action: :create
+            ]
+          ]
+        )
+        |> Form.add_form([:comments])
+
+      assert Form.has_form?(form, [:comments])
+      assert Form.has_form?(form, [:comments, 0])
+    end
+
+    test "has_form? checks for the existence of a single form" do
+      form =
+        Comment
+        |> Form.for_create(:create,
+          forms: [
+            post: [
+              type: :single,
+              resource: Post,
+              create_action: :create
+            ]
+          ]
+        )
+        |> Form.add_form([:post])
+
+      assert Form.has_form?(form, [:post])
+    end
+  end
+
   describe "form_for fields" do
     test "it should show simple field values" do
       form =

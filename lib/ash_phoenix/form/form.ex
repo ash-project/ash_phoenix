@@ -1265,6 +1265,11 @@ defmodule AshPhoenix.Form do
     end
   end
 
+  @spec get_form(t(), list(atom | integer) | String.t()) :: [t()]
+  def get_forms(_form, _path) do
+    []
+  end
+
   defp add_index(form_params, index, opts) do
     if opts[:sparse?] do
       Map.put(form_params, "_index", to_string(index))
