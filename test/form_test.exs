@@ -7,7 +7,7 @@ defmodule AshPhoenix.FormTest do
   alias Phoenix.HTML.FormData
 
   describe "validate_opts" do
-    test "errors are not set on the parent and child form" do
+    test "errors are not set on the parent and list child form" do
       form =
         Post
         |> Form.for_create(:create,
@@ -25,6 +25,25 @@ defmodule AshPhoenix.FormTest do
 
       assert form.errors == []
       assert Form.errors(form.source, for_path: [:comments, 0]) == []
+    end
+
+    test "errors are not set on the parent and single child form" do
+      form =
+        Comment
+        |> Form.for_create(:create,
+          forms: [
+            post: [
+              type: :single,
+              resource: Post,
+              create_action: :create
+            ]
+          ]
+        )
+        |> Form.add_form([:post], validate_opts: [errors: false])
+        |> form_for("action")
+
+      assert form.errors == []
+      assert Form.errors(form.source, for_path: [:post]) == []
     end
   end
 
