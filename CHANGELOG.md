@@ -5,6 +5,27 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.7.2-rc.1](https://github.com/ash-project/ash_phoenix/compare/v0.7.2-rc.0...v0.7.2-rc.1) (2022-05-23)
+
+
+
+
+### Bug Fixes:
+
+* properly call destroy action with changeset
+
+* Fix validate_opts when single form (#44)
+
+* pass error state down to nested forms properly
+
+* ensure list forms are always `[]` after remove_form
+
+* add opts to `for_action` in `add_form`
+
+### Improvements:
+
+* add `validate_opts` to `add/remove_form`
+
 ## [v0.7.2-rc.0](https://github.com/ash-project/ash_phoenix/compare/v0.7.1...v0.7.2-rc.0) (2022-05-17)
 
 
