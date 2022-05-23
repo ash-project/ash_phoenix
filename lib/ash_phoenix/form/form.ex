@@ -1072,8 +1072,7 @@ defmodule AshPhoenix.Form do
               changeset_opts
             )
             |> before_submit.()
-            |> form.api.destroy()
-            |> with_changeset(&form.api.update/1)
+            |> with_changeset(&form.api.destroy/1)
 
           :read ->
             form.resource
