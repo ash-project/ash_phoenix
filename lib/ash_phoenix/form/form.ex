@@ -2682,6 +2682,9 @@ defmodule AshPhoenix.Form do
           else
             {forms, params}
           end
+
+        true ->
+          {forms, params}
       end
     else
       {forms, params}
