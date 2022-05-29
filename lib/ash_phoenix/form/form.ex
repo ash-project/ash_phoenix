@@ -1865,11 +1865,11 @@ defmodule AshPhoenix.Form do
     touched_forms = opts[:touched_forms] || MapSet.new()
 
     touched_forms =
-      Enum.reduce(forms, touched_forms, fn {key, form_or_forms}, touched_forms ->
-        if form_or_forms in [nil, []] do
-          touched_forms
-        else
+      Enum.reduce(forms, touched_forms, fn {key, _form_or_forms}, touched_forms ->
+        if Map.has_key?(params, to_string(key)) do
           MapSet.put(touched_forms, to_string(key))
+        else
+          touched_forms
         end
       end)
 
@@ -2945,6 +2945,9 @@ defmodule AshPhoenix.Form do
               as: name <> "[#{key}]",
               id: id <> "_#{key}"
             )
+
+          other ->
+            raise "unexpected form type for form with no data #{other} with params: #{inspect(form_params)}"
         end
       end
     else

@@ -922,7 +922,7 @@ defmodule AshPhoenix.FormTest do
 
       form =
         comment
-        |> Form.for_update(:create,
+        |> Form.for_update(:update,
           forms: [
             post: [
               data: comment.post,
@@ -1006,7 +1006,7 @@ defmodule AshPhoenix.FormTest do
 
       form =
         comment
-        |> Form.for_update(:create,
+        |> Form.for_update(:update,
           forms: [
             posts: [
               data: comment.post,

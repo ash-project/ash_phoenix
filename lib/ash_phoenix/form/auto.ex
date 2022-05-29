@@ -352,6 +352,7 @@ defmodule AshPhoenix.Form.Auto do
         Keyword.update!(opts, :forms, fn forms ->
           Keyword.put(forms, :_join,
             resource: relationship.through,
+            type: :single,
             managed_relationship: {relationship.source, relationship.name},
             create_action: action.name
           )
