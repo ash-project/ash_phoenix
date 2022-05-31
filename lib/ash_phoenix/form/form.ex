@@ -1331,9 +1331,18 @@ defmodule AshPhoenix.Form do
         gather_errors(form, opts[:format])
 
       [] ->
-        form
-        |> Phoenix.HTML.Form.form_for("foo")
-        |> Map.get(:errors)
+        errors =
+          if form.errors do
+            if form.just_submitted? do
+              form.submit_errors
+            else
+              transform_errors(form, form.source.errors, [], form.form_keys)
+            end
+          else
+            []
+          end
+
+        errors
         |> List.wrap()
         |> format_errors(opts[:format])
 
@@ -1499,7 +1508,7 @@ defmodule AshPhoenix.Form do
 
     params =
       if hidden? do
-        hidden = Phoenix.HTML.Form.form_for(form, "foo").hidden
+        hidden = hidden_fields(form)
         hidden_stringified = hidden |> Map.new(fn {field, value} -> {to_string(field), value} end)
         Map.merge(hidden_stringified, params)
       else
@@ -1831,6 +1840,38 @@ defmodule AshPhoenix.Form do
 
       true ->
         attribute.default
+    end
+  end
+
+  def hidden_fields(form) do
+    hidden =
+      if form.type in [:read, :update, :destroy] && form.data do
+        pkey =
+          form.resource
+          |> Ash.Resource.Info.public_attributes()
+          |> Enum.filter(& &1.primary_key?)
+          |> Enum.reject(& &1.private?)
+          |> Enum.map(& &1.name)
+
+        form.data
+        |> Map.take(pkey)
+        |> Enum.to_list()
+      else
+        []
+      end
+
+    hidden = Keyword.put(hidden, :_form_type, to_string(form.type))
+
+    hidden =
+      case form.touched_forms |> Enum.join(",") do
+        "" -> hidden
+        fields -> Keyword.put(hidden, :_touched, fields)
+      end
+
+    if form.params["_index"] && form.params["_index"] != "" do
+      Keyword.put(hidden, :_index, form.params["_index"])
+    else
+      hidden
     end
   end
 
@@ -3196,36 +3237,7 @@ defmodule AshPhoenix.Form do
 
     @impl true
     def to_form(form, opts) do
-      hidden =
-        if form.type in [:read, :update, :destroy] && form.data do
-          pkey =
-            form.resource
-            |> Ash.Resource.Info.public_attributes()
-            |> Enum.filter(& &1.primary_key?)
-            |> Enum.reject(& &1.private?)
-            |> Enum.map(& &1.name)
-
-          form.data
-          |> Map.take(pkey)
-          |> Enum.to_list()
-        else
-          []
-        end
-
-      hidden = Keyword.put(hidden, :_form_type, to_string(form.type))
-
-      hidden =
-        case form.touched_forms |> Enum.join(",") do
-          "" -> hidden
-          fields -> Keyword.put(hidden, :_touched, fields)
-        end
-
-      hidden =
-        if form.params["_index"] && form.params["_index"] != "" do
-          Keyword.put(hidden, :_index, form.params["_index"])
-        else
-          hidden
-        end
+      hidden = AshPhoenix.Form.hidden_fields(form)
 
       errors =
         if form.errors do
