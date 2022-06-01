@@ -949,6 +949,11 @@ defmodule AshPhoenix.Form do
       default: false,
       doc: "Submit the form even if it is invalid in its current state."
     ],
+    api_opts: [
+      type: :keyword_list,
+      default: [],
+      doc: "Opts to pass to the call to the api when submitting"
+    ],
     override_params: [
       type: :any,
       doc: """
@@ -1003,7 +1008,11 @@ defmodule AshPhoenix.Form do
   #{Ash.OptionsHelpers.docs(@submit_opts)}
   """
   @spec submit(t(), Keyword.t()) ::
-          {:ok, Ash.Resource.record()} | :ok | {:error, t()}
+          {:ok, Ash.Resource.record()}
+          | {:ok, list(Ash.Notifier.Notification.t())}
+          | {:ok, Ash.Resource.record(), list(Ash.Notifier.Notification.t())}
+          | :ok
+          | {:error, t()}
   def submit(form, opts \\ []) do
     form =
       if opts[:params] do
@@ -1052,7 +1061,7 @@ defmodule AshPhoenix.Form do
               changeset_opts
             )
             |> before_submit.()
-            |> with_changeset(&form.api.create/1)
+            |> with_changeset(&form.api.create(&1, opts[:api_opts] || []))
 
           :update ->
             form.original_data
@@ -1062,7 +1071,7 @@ defmodule AshPhoenix.Form do
               changeset_opts
             )
             |> before_submit.()
-            |> with_changeset(&form.api.update/1)
+            |> with_changeset(&form.api.update(&1, opts[:api_opts] || []))
 
           :destroy ->
             form.original_data
@@ -1072,7 +1081,7 @@ defmodule AshPhoenix.Form do
               changeset_opts
             )
             |> before_submit.()
-            |> with_changeset(&form.api.destroy/1)
+            |> with_changeset(&form.api.destroy(&1, opts[:api_opts] || []))
 
           :read ->
             form.resource
@@ -1082,7 +1091,7 @@ defmodule AshPhoenix.Form do
               changeset_opts
             )
             |> before_submit.()
-            |> with_changeset(&form.api.read/1)
+            |> with_changeset(&form.api.read(&1, opts[:api_opts] || []))
         end
 
       case result do
@@ -1167,6 +1176,9 @@ defmodule AshPhoenix.Form do
     case submit(form, Keyword.put(opts, :raise?, true)) do
       {:ok, value} ->
         value
+
+      {:ok, result, notifications} ->
+        {result, notifications}
 
       :ok ->
         :ok
