@@ -809,6 +809,7 @@ defmodule AshPhoenix.Form do
         | source: new_source,
           forms: forms,
           params: params,
+          added?: form.added?,
           errors: !!opts[:errors],
           submit_errors: nil,
           touched_forms: touched_forms(forms, params, touched_forms: form.touched_forms)
@@ -1686,14 +1687,11 @@ defmodule AshPhoenix.Form do
         do_add_form(form, path, opts, [], form.transform_errors)
       end
 
-    form = set_changed?(form)
-
     if opts[:validate?] do
       validate(form, params(form), opts[:validate_opts] || [])
     else
-      form
+      set_changed?(form)
     end
-    |> set_changed?()
   end
 
   @remove_form_opts [
@@ -1746,7 +1744,6 @@ defmodule AshPhoenix.Form do
     else
       form
     end
-    |> set_changed?()
   end
 
   defp forms_for_type(opts, type) do
