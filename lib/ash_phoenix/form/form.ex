@@ -1693,6 +1693,7 @@ defmodule AshPhoenix.Form do
     else
       form
     end
+    |> set_changed?()
   end
 
   @remove_form_opts [
@@ -1745,6 +1746,7 @@ defmodule AshPhoenix.Form do
     else
       form
     end
+    |> set_changed?()
   end
 
   defp forms_for_type(opts, type) do
