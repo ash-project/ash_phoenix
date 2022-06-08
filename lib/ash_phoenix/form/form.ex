@@ -1511,6 +1511,7 @@ defmodule AshPhoenix.Form do
     transform = opts[:transform]
     produce = opts[:produce]
     only_touched? = Keyword.get(opts, :only_touched?, true)
+    filter = opts[:filter] || fn _ -> true end
 
     form_keys =
       form.form_keys
@@ -1536,13 +1537,10 @@ defmodule AshPhoenix.Form do
 
         case config[:type] || :single do
           :single ->
-            if form.forms[key] do
-              nested_params =
-                if form.forms[key] do
-                  params(form.forms[key], opts)
-                else
-                  nil
-                end
+            nested_form = form.forms[key]
+
+            if nested_form && filter.(nested_form) do
+              nested_params = params(nested_form, opts)
 
               if form.form_keys[key][:merge?] do
                 Map.merge(nested_params || %{}, params)
@@ -1559,12 +1557,14 @@ defmodule AshPhoenix.Form do
 
           :list ->
             if form.forms[key] do
+              forms = Enum.filter(form.forms[key] || [], filter)
+
               if indexed_lists? do
                 params
                 |> Map.put_new(for_name, %{})
                 |> Map.update!(for_name, fn current ->
                   if indexer do
-                    Enum.reduce(form.forms[key], current, fn form, current ->
+                    Enum.reduce(forms, current, fn form, current ->
                       Map.put(current, indexer.(form), params(form, opts))
                     end)
                   else
@@ -1574,7 +1574,7 @@ defmodule AshPhoenix.Form do
                       |> Enum.map(&String.to_integer/1)
                       |> Enum.max(fn -> -1 end)
 
-                    form.forms[key]
+                    forms
                     |> Enum.reduce({current, max + 1}, fn form, {current, i} ->
                       {Map.put(current, to_string(i), params(form, opts)), i + 1}
                     end)
@@ -1585,7 +1585,7 @@ defmodule AshPhoenix.Form do
                 params
                 |> Map.put_new(for_name, [])
                 |> Map.update!(for_name, fn current ->
-                  current ++ Enum.map(form.forms[key] || [], &params(&1, opts))
+                  current ++ Enum.map(forms, &params(&1, opts))
                 end)
               end
             else
