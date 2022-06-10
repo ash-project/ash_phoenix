@@ -1510,6 +1510,7 @@ defmodule AshPhoenix.Form do
     indexed_lists? = opts[:indexed_lists?] || not is_nil(indexer) || false
     transform = opts[:transform]
     produce = opts[:produce]
+    set_params = opts[:set_params]
     only_touched? = Keyword.get(opts, :only_touched?, true)
     filter = opts[:filter] || fn _ -> true end
 
@@ -1608,10 +1609,17 @@ defmodule AshPhoenix.Form do
         untransformed_params
       end
 
+    with_set_params =
+      if set_params do
+        Map.merge(with_produced_params, set_params.(form))
+      else
+        with_produced_params
+      end
+
     if transform do
-      Map.new(with_produced_params, transform)
+      Map.new(with_set_params, transform)
     else
-      with_produced_params
+      with_set_params
     end
   end
 
