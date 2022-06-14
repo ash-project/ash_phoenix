@@ -1549,7 +1549,7 @@ defmodule AshPhoenix.Form do
                 Map.put(params, for_name, nested_params)
               end
             else
-              if is_touched?(form, key) do
+              if is_touched?(form, key) || !only_touched? do
                 Map.put(params, for_name, nil)
               else
                 params
@@ -1590,7 +1590,7 @@ defmodule AshPhoenix.Form do
                 end)
               end
             else
-              if is_touched?(form, key) do
+              if is_touched?(form, key) || !only_touched? do
                 Map.put(params, for_name, [])
               else
                 params
