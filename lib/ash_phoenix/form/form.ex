@@ -1522,6 +1522,13 @@ defmodule AshPhoenix.Form do
     params = Map.drop(form.params, form_keys)
 
     params =
+      if only_touched? do
+        Map.take(params, Enum.to_list(form.touched_forms))
+      else
+        params
+      end
+
+    params =
       if hidden? do
         hidden = hidden_fields(form)
         hidden_stringified = hidden |> Map.new(fn {field, value} -> {to_string(field), value} end)
@@ -1933,21 +1940,27 @@ defmodule AshPhoenix.Form do
         end
       end)
 
-    touched =
+    touched_forms =
+      if is_map(params) do
+        Enum.reduce(Map.keys(params) -- ["_touched"], touched_forms, &MapSet.put(&2, &1))
+      else
+        touched_forms
+      end
+
+    form_touched =
       if is_map(params) do
         params["_touched"]
       end
 
-    case touched do
-      touched_from_params when is_binary(touched_from_params) ->
-        touched_from_params
-        |> String.split(",")
-        |> Enum.reduce(touched_forms, fn key, touched_forms ->
-          MapSet.put(touched_forms, key)
-        end)
-
-      _ ->
-        touched_forms
+    if is_binary(form_touched) do
+      form_touched
+      |> String.split(",")
+      |> Enum.concat(Map.keys(params) -- [""])
+      |> Enum.reduce(touched_forms, fn key, touched_forms ->
+        MapSet.put(touched_forms, key)
+      end)
+    else
+      touched_forms
     end
   end
 
