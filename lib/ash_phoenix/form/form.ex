@@ -988,6 +988,15 @@ defmodule AshPhoenix.Form do
       ```
       """
     ],
+    read_one?: [
+      type: :boolean,
+      default: false,
+      doc: """
+      If submitting a read form, a single result will be returned (via read_one) instead of a list of results.
+
+      Ignored for non-read forms.
+      """
+    ],
     before_submit: [
       type: {:fun, 1},
       doc:
@@ -1085,14 +1094,25 @@ defmodule AshPhoenix.Form do
             |> with_changeset(&form.api.destroy(&1, opts[:api_opts] || []))
 
           :read ->
-            form.resource
-            |> Ash.Query.for_read(
-              form.source.action.name,
-              opts[:override_params] || params(form),
-              changeset_opts
-            )
-            |> before_submit.()
-            |> with_changeset(&form.api.read(&1, opts[:api_opts] || []))
+            if opts[:read_one?] do
+              form.resource
+              |> Ash.Query.for_read(
+                form.source.action.name,
+                opts[:override_params] || params(form),
+                changeset_opts
+              )
+              |> before_submit.()
+              |> with_changeset(&form.api.read_one(&1, opts[:api_opts] || []))
+            else
+              form.resource
+              |> Ash.Query.for_read(
+                form.source.action.name,
+                opts[:override_params] || params(form),
+                changeset_opts
+              )
+              |> before_submit.()
+              |> with_changeset(&form.api.read(&1, opts[:api_opts] || []))
+            end
         end
 
       case result do
