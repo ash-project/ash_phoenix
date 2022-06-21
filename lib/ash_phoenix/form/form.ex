@@ -172,7 +172,6 @@ defmodule AshPhoenix.Form do
     just_submitted?: false
   ]
 
-  require Logger
   alias AshPhoenix.Form.InvalidPath
 
   @type t :: %__MODULE__{
@@ -395,11 +394,9 @@ defmodule AshPhoenix.Form do
     name = opts[:as] || "form"
     id = opts[:id] || opts[:as] || "form"
 
-    params = initial_params(resource, action, opts[:params] || %{}, opts[:forms])
-
     {forms, params} =
       handle_forms(
-        params,
+        opts[:params] || %{},
         opts[:forms] || [],
         !!opts[:errors],
         [],
@@ -460,11 +457,9 @@ defmodule AshPhoenix.Form do
     name = opts[:as] || "form"
     id = opts[:id] || opts[:as] || "form"
 
-    params = initial_params(resource, action, opts[:params] || %{}, opts[:forms])
-
     {forms, params} =
       handle_forms(
-        params,
+        opts[:params] || %{},
         opts[:forms] || [],
         !!opts[:errors],
         [
@@ -530,11 +525,9 @@ defmodule AshPhoenix.Form do
     name = opts[:as] || "form"
     id = opts[:id] || opts[:as] || "form"
 
-    params = initial_params(resource, action, opts[:params] || %{}, opts[:forms])
-
     {forms, params} =
       handle_forms(
-        params,
+        opts[:params] || %{},
         opts[:forms] || [],
         !!opts[:errors],
         [
@@ -605,11 +598,9 @@ defmodule AshPhoenix.Form do
     name = opts[:as] || "form"
     id = opts[:id] || opts[:as] || "form"
 
-    params = initial_params(resource, action, opts[:params] || %{}, opts[:forms])
-
     {forms, params} =
       handle_forms(
-        params,
+        opts[:params] || %{},
         opts[:forms] || [],
         !!opts[:errors],
         [],
@@ -657,72 +648,6 @@ defmodule AshPhoenix.Form do
     }
     |> set_changed?()
     |> set_validity()
-  end
-
-  defp initial_params(resource, action, params, forms) do
-    forms =
-      forms
-      |> List.wrap()
-
-    params_to_keep =
-      forms
-      |> Keyword.keys()
-      |> Enum.map(&to_string/1)
-      |> Enum.reduce(%{}, fn key, acc ->
-        case fetch_key(params, key) do
-          {:ok, value} ->
-            Map.put(acc, to_string(key), value)
-
-          :error ->
-            acc
-        end
-      end)
-
-    action =
-      if is_atom(action) do
-        Ash.Resource.Info.action(resource, action)
-      else
-        action
-      end
-
-    arguments =
-      action.arguments
-      |> Enum.reject(& &1.private?)
-
-    attributes =
-      if action.type == :read do
-        Ash.Resource.Info.public_attributes(resource)
-      else
-        AshPhoenix.Form.Auto.accepted_attributes(resource, action)
-      end
-
-    arguments
-    |> Enum.concat(attributes)
-    |> Enum.reject(fn field ->
-      Enum.any?(forms, fn {key, config} ->
-        (config[:for] || key) == field.name
-      end)
-    end)
-    |> Enum.reduce(params_to_keep, fn field, acc ->
-      case fetch_key(params, field.name) do
-        {:ok, value} ->
-          value =
-            if is_list(value) do
-              Enum.map(value, &IO.iodata_to_binary(Phoenix.HTML.Safe.to_iodata(&1)))
-            else
-              IO.iodata_to_binary(Phoenix.HTML.Safe.to_iodata(value))
-            end
-
-          Map.put(
-            acc,
-            to_string(field.name),
-            value
-          )
-
-        :error ->
-          acc
-      end
-    end)
   end
 
   defp add_errors_for_unhandled_params(%{action: nil} = query, _params), do: query
@@ -807,12 +732,10 @@ defmodule AshPhoenix.Form do
           nested_form.id == root_form.id <> "_#{key}_#{index}"
         end
 
-    new_params = initial_params(form.resource, form.action, new_params || %{}, form.form_keys)
-
     {forms, params} =
       validate_nested_forms(
         form,
-        new_params,
+        new_params || %{},
         !!opts[:errors],
         opts[:prev_data_trail] || [],
         matcher
@@ -1617,7 +1540,7 @@ defmodule AshPhoenix.Form do
     form_keys =
       form.form_keys
       |> Keyword.keys()
-      |> Enum.map(&to_string/1)
+      |> Enum.flat_map(&[&1, to_string(&1)])
 
     params = Map.drop(form.params, form_keys)
 
