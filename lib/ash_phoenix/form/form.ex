@@ -1516,9 +1516,6 @@ defmodule AshPhoenix.Form do
     |> Phoenix.HTML.Form.input_value(field)
   end
 
-  defp one_or_many_params(forms) when is_list(forms), do: Enum.map(forms, &params/1)
-  defp one_or_many_params(form), do: params(form)
-
   @doc """
   Returns the parameters from the form that would be submitted to the action.
 
@@ -2709,10 +2706,9 @@ defmodule AshPhoenix.Form do
                 end)
               end
 
-            {Map.put(forms, key, form_values),
-             Map.put(params, to_string(key), one_or_many_params(form_values))}
+            {Map.put(forms, key, form_values), params}
           else
-            {forms, Map.delete(params, to_string(key))}
+            {forms, params}
           end
 
         opts[:read_action] ->
@@ -2775,17 +2771,16 @@ defmodule AshPhoenix.Form do
                 end)
               end
 
-            {Map.put(forms, key, form_values),
-             Map.put(params, to_string(key), one_or_many_params(form_values))}
+            {Map.put(forms, key, form_values), params}
           else
-            {forms, Map.delete(params, to_string(key))}
+            {forms, params}
           end
 
         true ->
-          {forms, Map.delete(params, to_string(key))}
+          {forms, params}
       end
     else
-      {forms, Map.delete(params, to_string(key))}
+      {forms, params}
     end
   end
 
@@ -2829,8 +2824,7 @@ defmodule AshPhoenix.Form do
         )
       end
 
-    {Map.put(forms, key, form_values),
-     Map.put(params, to_string(key), one_or_many_params(form_values))}
+    {Map.put(forms, key, form_values), Map.delete(params, [key, to_string(key)])}
   end
 
   defp handle_form_with_params_and_no_data(
