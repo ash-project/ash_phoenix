@@ -117,6 +117,43 @@ defmodule AshPhoenix.FormTest do
     assert Form.params(form) == %{"comments" => [%{"id" => comment.id}]}
   end
 
+  describe "field stringification" do
+    test "params are stringified on the way in" do
+      form =
+        Post
+        |> Form.for_create(:create, params: %{text: "post"})
+
+      assert form.params == %{"text" => "post"}
+
+      assert Form.params(form) == %{"text" => "post"}
+
+      form =
+        form
+        |> Form.validate(%{text: "post2"})
+
+      assert form.params == %{"text" => "post2"}
+      assert Form.params(form) == %{"text" => "post2"}
+    end
+
+    test "it stringifies nested forms" do
+      form =
+        Comment
+        |> Form.for_create(:create,
+          api: Api,
+          forms: [
+            post: [
+              resource: Post,
+              create_action: :create
+            ]
+          ]
+        )
+        |> Form.add_form(:post, params: %{text: "post"})
+
+      assert form.params == %{"post" => %{"text" => "post"}}
+      assert AshPhoenix.Form.params(form) == %{"post" => %{"text" => "post"}}
+    end
+  end
+
   describe "the .changed? field is updated as data changes" do
     test "it is false for a create form with no changes" do
       form =
