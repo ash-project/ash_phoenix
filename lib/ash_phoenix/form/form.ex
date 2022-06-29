@@ -902,6 +902,10 @@ defmodule AshPhoenix.Form do
                         new_nested_forms = nested_forms ++ [validated]
                         IO.inspect(Enum.count(new_nested_forms), label: "count after adding")
 
+                        IO.inspect(Enum.map(new_nested_forms, &params/1),
+                          label: "params after adding"
+                        )
+
                         nested_forms ++
                           [validated]
                       end)
