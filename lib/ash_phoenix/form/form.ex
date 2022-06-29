@@ -847,7 +847,7 @@ defmodule AshPhoenix.Form do
                 end
 
               new_forms =
-                Enum.reduce(form_params, %{}, fn {index, params}, forms ->
+                Enum.reduce(form_params, forms, fn {index, params}, forms ->
                   case Enum.find(form.forms[key] || [], &matcher.(&1, params, form, key, index)) do
                     nil ->
                       create_action =
@@ -1517,6 +1517,29 @@ defmodule AshPhoenix.Form do
   end
 
   @doc """
+  Toggles the form to be ignored or not ignored.
+
+  To set this manually in an html form, use the field `:_ignored` and set it
+  to the string "true". Any other value will not result in the form being ignored.
+  """
+  @spec ignore(t()) :: t()
+  def ignore(form) do
+    if ignored?(form) do
+      %{form | params: Map.delete(form.params, "_ignore")}
+    else
+      %{form | params: Map.put(form.params, "_ignore", "true")}
+    end
+  end
+
+  @doc """
+  Returns true if the form is ignored
+  """
+  @spec ignored?(t()) :: boolean
+  def ignored?(form) do
+    form.params["_ignore"] == "true"
+  end
+
+  @doc """
   Returns the parameters from the form that would be submitted to the action.
 
   This can be useful if you want to get the parameters and manipulate them/build a custom changeset
@@ -1534,130 +1557,135 @@ defmodule AshPhoenix.Form do
     only_touched? = Keyword.get(opts, :only_touched?, true)
     filter = opts[:filter] || fn _ -> true end
 
-    form_keys =
-      form.form_keys
-      |> Keyword.keys()
-      |> Enum.flat_map(&[&1, to_string(&1)])
+    if form.params["_hidden"] do
+      raise "Cannot hide the top level form"
+    else
+      form_keys =
+        form.form_keys
+        |> Keyword.keys()
+        |> Enum.flat_map(&[&1, to_string(&1)])
 
-    params = Map.drop(form.params, form_keys)
+      params = Map.drop(form.params, form_keys)
 
-    params =
-      if only_touched? do
-        Map.take(params, Enum.to_list(form.touched_forms))
-      else
-        params
-      end
+      params =
+        if only_touched? do
+          Map.take(params, Enum.to_list(form.touched_forms))
+        else
+          params
+        end
 
-    params =
-      if hidden? do
-        hidden = hidden_fields(form)
+      params =
+        if hidden? do
+          hidden = hidden_fields(form)
 
-        hidden_stringified = hidden |> Map.new(fn {field, value} -> {to_string(field), value} end)
+          hidden_stringified =
+            hidden |> Map.new(fn {field, value} -> {to_string(field), value} end)
 
-        Map.merge(hidden_stringified, params)
-      else
-        params
-      end
+          Map.merge(hidden_stringified, params)
+        else
+          params
+        end
 
-    untransformed_params =
-      form.form_keys
-      |> only_touched(form, only_touched?)
-      |> Enum.reduce(params, fn {key, config}, params ->
-        for_name = to_string(config[:for] || key)
+      untransformed_params =
+        form.form_keys
+        |> only_touched(form, only_touched?)
+        |> Enum.reduce(params, fn {key, config}, params ->
+          for_name = to_string(config[:for] || key)
 
-        case config[:type] || :single do
-          :single ->
-            nested_form = form.forms[key]
+          case config[:type] || :single do
+            :single ->
+              nested_form = form.forms[key]
 
-            if nested_form && filter.(nested_form) do
-              nested_params = params(nested_form, opts)
+              if nested_form && filter.(nested_form) do
+                nested_params = params(nested_form, opts)
 
-              if nested_params["_ignore"] == "true" do
-                Map.put(params, for_name, nil)
-              else
-                if form.form_keys[key][:merge?] do
-                  Map.merge(nested_params || %{}, params)
+                if nested_params["_ignore"] == "true" do
+                  Map.put(params, for_name, nil)
                 else
-                  Map.put(params, for_name, nested_params)
+                  if form.form_keys[key][:merge?] do
+                    Map.merge(nested_params || %{}, params)
+                  else
+                    Map.put(params, for_name, nested_params)
+                  end
+                end
+              else
+                if is_touched?(form, key) || !only_touched? do
+                  Map.put(params, for_name, nil)
+                else
+                  params
                 end
               end
-            else
-              if is_touched?(form, key) || !only_touched? do
-                Map.put(params, for_name, nil)
+
+            :list ->
+              if form.forms[key] do
+                forms =
+                  form.forms[key]
+                  |> Kernel.||([])
+                  |> Enum.filter(fn form ->
+                    filter.(form) && form.params["_ignore"] != "true"
+                  end)
+
+                if indexed_lists? do
+                  params
+                  |> Map.put_new(for_name, %{})
+                  |> Map.update!(for_name, fn current ->
+                    if indexer do
+                      Enum.reduce(forms, current, fn form, current ->
+                        Map.put(current, indexer.(form), params(form, opts))
+                      end)
+                    else
+                      max =
+                        current
+                        |> Map.keys()
+                        |> Enum.map(&String.to_integer/1)
+                        |> Enum.max(fn -> -1 end)
+
+                      forms
+                      |> Enum.reduce({current, max + 1}, fn form, {current, i} ->
+                        {Map.put(current, to_string(i), params(form, opts)), i + 1}
+                      end)
+                      |> elem(0)
+                    end
+                  end)
+                else
+                  params
+                  |> Map.put_new(for_name, [])
+                  |> Map.update!(for_name, fn current ->
+                    current ++ Enum.map(forms, &params(&1, opts))
+                  end)
+                end
               else
-                params
+                if is_touched?(form, key) || !only_touched? do
+                  Map.put(params, for_name, [])
+                else
+                  params
+                end
               end
-            end
+          end
+        end)
 
-          :list ->
-            if form.forms[key] do
-              forms =
-                form.forms[key]
-                |> Kernel.||([])
-                |> Enum.filter(fn form ->
-                  filter.(form) && form.params["_ignore"] != "true"
-                end)
-
-              if indexed_lists? do
-                params
-                |> Map.put_new(for_name, %{})
-                |> Map.update!(for_name, fn current ->
-                  if indexer do
-                    Enum.reduce(forms, current, fn form, current ->
-                      Map.put(current, indexer.(form), params(form, opts))
-                    end)
-                  else
-                    max =
-                      current
-                      |> Map.keys()
-                      |> Enum.map(&String.to_integer/1)
-                      |> Enum.max(fn -> -1 end)
-
-                    forms
-                    |> Enum.reduce({current, max + 1}, fn form, {current, i} ->
-                      {Map.put(current, to_string(i), params(form, opts)), i + 1}
-                    end)
-                    |> elem(0)
-                  end
-                end)
-              else
-                params
-                |> Map.put_new(for_name, [])
-                |> Map.update!(for_name, fn current ->
-                  current ++ Enum.map(forms, &params(&1, opts))
-                end)
-              end
-            else
-              if is_touched?(form, key) || !only_touched? do
-                Map.put(params, for_name, [])
-              else
-                params
-              end
-            end
-        end
-      end)
-
-    with_produced_params =
-      if produce do
-        Map.merge(
-          produce.(form),
+      with_produced_params =
+        if produce do
+          Map.merge(
+            produce.(form),
+            untransformed_params
+          )
+        else
           untransformed_params
-        )
-      else
-        untransformed_params
-      end
+        end
 
-    with_set_params =
-      if set_params do
-        Map.merge(with_produced_params, set_params.(form))
-      else
-        with_produced_params
-      end
+      with_set_params =
+        if set_params do
+          Map.merge(with_produced_params, set_params.(form))
+        else
+          with_produced_params
+        end
 
-    if transform do
-      Map.new(with_set_params, transform)
-    else
-      with_set_params
+      if transform do
+        Map.new(with_set_params, transform)
+      else
+        with_set_params
+      end
     end
   end
 
