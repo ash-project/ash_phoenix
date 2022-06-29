@@ -833,7 +833,7 @@ defmodule AshPhoenix.Form do
     form.form_keys
     |> Enum.uniq_by(&elem(&1, 0))
     |> Enum.map(&elem(&1, 0))
-    |> IO.inspect()
+    |> IO.inspect(label: "keys being managed")
 
     form.form_keys
     |> Enum.uniq_by(&elem(&1, 0))
@@ -899,6 +899,9 @@ defmodule AshPhoenix.Form do
                         |> Map.put(:id, form.id <> "_#{key}_#{index}")
 
                       Map.update(forms, key, [validated], fn nested_forms ->
+                        new_nested_forms = nested_forms ++ [validated]
+                        IO.inspect(Enum.count(new_nested_forms), label: "count after adding")
+
                         nested_forms ++
                           [validated]
                       end)
