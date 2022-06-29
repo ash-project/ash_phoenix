@@ -153,7 +153,11 @@ defmodule AshPhoenix.FormTest do
 
     form = Form.validate(form, %{"comments" => [%{"id" => comment.id, "_ignore" => "false"}]})
 
-    assert Form.params(form) == %{"comments" => [%{"id" => comment.id}]}
+    assert Form.params(form) == %{"comments" => [%{"id" => comment.id, "_ignore" => "false"}]}
+
+    form = Form.validate(form, %{"comments" => [%{"id" => comment.id, "_ignore" => "true"}]})
+
+    assert Form.params(form) == %{"comments" => []}
   end
 
   describe "the .changed? field is updated as data changes" do
