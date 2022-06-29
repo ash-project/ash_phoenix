@@ -49,12 +49,11 @@ defmodule AshPhoenix.Form.Auto do
   if you are using liveview, you could actually look up the record using the input from the read action, and then use `AshPhoenix.Form.update_form/3`
   to set that looked up record as the data of the `_update` form.
 
-  ### Many to Many Relationshisp
+  ### Many to Many Relationships
 
   In the case that a manage_change option points to a join relationship, that form is presented via a special nested form called
   `_join`. So the first form in `inputs_for(form, :relationship)` would be for the destination, and then inside of that you could say
   `inputs_for(nested_form, :_join)`. The parameters are merged together during submission.
-
   """
 
   @dialyzer {:nowarn_function, rel_to_resource: 2}

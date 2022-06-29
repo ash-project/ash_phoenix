@@ -117,6 +117,45 @@ defmodule AshPhoenix.FormTest do
     assert Form.params(form) == %{"comments" => [%{"id" => comment.id}]}
   end
 
+  test "ignoring a form filters it from the parameters" do
+    post =
+      Post
+      |> Ash.Changeset.new(%{text: "post"})
+      |> Api.create!()
+
+    comment =
+      Comment
+      |> Ash.Changeset.new(%{text: "comment"})
+      |> Ash.Changeset.replace_relationship(:post, post)
+      |> Api.create!()
+
+    form =
+      post
+      |> Form.for_update(:update_with_replace,
+        api: Api,
+        forms: [
+          comments: [
+            read_resource: Comment,
+            type: :list,
+            read_action: :read,
+            data: [comment]
+          ]
+        ]
+      )
+
+    assert [comment_form] = inputs_for(form_for(form, "blah"), :comments)
+
+    assert Phoenix.HTML.Form.input_value(comment_form, :text) == "comment"
+
+    form = Form.validate(form, %{"comments" => [%{"id" => comment.id, "_ignore" => "true"}]})
+
+    assert Form.params(form) == %{"comments" => []}
+
+    form = Form.validate(form, %{"comments" => [%{"id" => comment.id, "_ignore" => "false"}]})
+
+    assert Form.params(form) == %{"comments" => [%{"id" => comment.id}]}
+  end
+
   describe "the .changed? field is updated as data changes" do
     test "it is false for a create form with no changes" do
       form =
