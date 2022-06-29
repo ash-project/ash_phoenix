@@ -832,9 +832,14 @@ defmodule AshPhoenix.Form do
        ) do
     form.form_keys
     |> Enum.uniq_by(&elem(&1, 0))
+    |> Enum.map(&elem(&1, 0))
+    |> IO.inspect()
+
+    form.form_keys
+    |> Enum.uniq_by(&elem(&1, 0))
     |> Enum.reduce({%{}, params}, fn {key, opts}, {forms, params} ->
       forms =
-        case fetch_key(params, opts[:as] || key) do
+        case fetch_key(params, opts[:as] || key) |> IO.inspect(label: "fetch_key") do
           {:ok, form_params} when form_params != nil ->
             if opts[:type] == :list do
               form_params =
@@ -848,10 +853,14 @@ defmodule AshPhoenix.Form do
                   form_params || %{}
                 end
 
+              IO.inspect(form_params, label: "form_params")
+
               new_forms =
                 Enum.reduce(form_params, forms, fn {index, params}, forms ->
                   case Enum.find(form.forms[key] || [], &matcher.(&1, params, form, key, index)) do
                     nil ->
+                      IO.inspect(index, label: "didnt_find_a_match_for")
+
                       create_action =
                         opts[:create_action] ||
                           raise AshPhoenix.Form.NoActionConfigured,
@@ -874,9 +883,13 @@ defmodule AshPhoenix.Form do
                           id: form.id <> "_#{key}_#{index}"
                         )
 
+                      IO.inspect("adding a form with #{new_form.id}")
+
                       Map.update(forms, key, [new_form], &(&1 ++ [new_form]))
 
                     matching_form ->
+                      IO.inspect(index, label: "found_a_matching_form")
+
                       validated =
                         validate(matching_form, params,
                           errors: errors?,
