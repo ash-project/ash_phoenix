@@ -1517,6 +1517,29 @@ defmodule AshPhoenix.Form do
   end
 
   @doc """
+  Toggles the form to be ignored or not ignored.
+
+  To set this manually in an html form, use the field `:_ignored` and set it
+  to the string "true". Any other value will not result in the form being ignored.
+  """
+  @spec ignore(t()) :: t()
+  def ignore(form) do
+    if ignored?(form) do
+      %{form | params: Map.delete(form.params, "_ignore")}
+    else
+      %{form | params: Map.put(form.params, "_ignore", "true")}
+    end
+  end
+
+  @doc """
+  Returns true if the form is ignored
+  """
+  @spec ignored?(t()) :: boolean
+  def ignored?(form) do
+    form.params["_ignore"] == "true"
+  end
+
+  @doc """
   Returns the parameters from the form that would be submitted to the action.
 
   This can be useful if you want to get the parameters and manipulate them/build a custom changeset
