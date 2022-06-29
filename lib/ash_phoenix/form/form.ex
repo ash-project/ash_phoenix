@@ -415,7 +415,7 @@ defmodule AshPhoenix.Form do
       transform_errors: opts[:transform_errors],
       name: name,
       forms: forms,
-      form_keys: List.wrap(opts[:forms]),
+      form_keys: Keyword.new(List.wrap(opts[:forms])),
       id: id,
       touched_forms: touched_forms(forms, params, opts),
       method: opts[:method] || form_for_method(:create),
@@ -481,7 +481,7 @@ defmodule AshPhoenix.Form do
       errors: opts[:errors],
       transform_errors: opts[:transform_errors],
       forms: forms,
-      form_keys: List.wrap(opts[:forms]),
+      form_keys: Keyword.new(List.wrap(opts[:forms])),
       original_data: data,
       method: opts[:method] || form_for_method(:update),
       touched_forms: touched_forms(forms, params, opts),
@@ -554,7 +554,7 @@ defmodule AshPhoenix.Form do
       api: opts[:api],
       method: opts[:method] || form_for_method(:destroy),
       touched_forms: touched_forms(forms, params, opts),
-      form_keys: List.wrap(opts[:forms]),
+      form_keys: Keyword.new(List.wrap(opts[:forms])),
       opts: opts,
       source:
         data
@@ -631,7 +631,7 @@ defmodule AshPhoenix.Form do
       transform_errors: opts[:transform_errors],
       name: name,
       forms: forms,
-      form_keys: List.wrap(opts[:forms]),
+      form_keys: Keyword.new(List.wrap(opts[:forms])),
       id: id,
       api: opts[:api],
       method: opts[:method] || form_for_method(:create),
@@ -832,14 +832,9 @@ defmodule AshPhoenix.Form do
        ) do
     form.form_keys
     |> Enum.uniq_by(&elem(&1, 0))
-    |> Enum.map(&elem(&1, 0))
-    |> IO.inspect(label: "keys being managed")
-
-    form.form_keys
-    |> Enum.uniq_by(&elem(&1, 0))
     |> Enum.reduce({%{}, params}, fn {key, opts}, {forms, params} ->
       forms =
-        case fetch_key(params, opts[:as] || key) |> IO.inspect(label: "fetch_key") do
+        case fetch_key(params, opts[:as] || key) do
           {:ok, form_params} when form_params != nil ->
             if opts[:type] == :list do
               form_params =
@@ -853,14 +848,10 @@ defmodule AshPhoenix.Form do
                   form_params || %{}
                 end
 
-              IO.inspect(form_params, label: "form_params")
-
               new_forms =
                 Enum.reduce(form_params, forms, fn {index, params}, forms ->
                   case Enum.find(form.forms[key] || [], &matcher.(&1, params, form, key, index)) do
                     nil ->
-                      IO.inspect(index, label: "didnt_find_a_match_for")
-
                       create_action =
                         opts[:create_action] ||
                           raise AshPhoenix.Form.NoActionConfigured,
@@ -883,13 +874,9 @@ defmodule AshPhoenix.Form do
                           id: form.id <> "_#{key}_#{index}"
                         )
 
-                      IO.inspect("adding a form with #{new_form.id}")
-
                       Map.update(forms, key, [new_form], &(&1 ++ [new_form]))
 
                     matching_form ->
-                      IO.inspect(index, label: "found_a_matching_form")
-
                       validated =
                         validate(matching_form, params,
                           errors: errors?,
@@ -899,13 +886,6 @@ defmodule AshPhoenix.Form do
                         |> Map.put(:id, form.id <> "_#{key}_#{index}")
 
                       Map.update(forms, key, [validated], fn nested_forms ->
-                        new_nested_forms = nested_forms ++ [validated]
-                        IO.inspect(Enum.count(new_nested_forms), label: "count after adding")
-
-                        IO.inspect(Enum.map(new_nested_forms, &params/1),
-                          label: "params after adding"
-                        )
-
                         nested_forms ++
                           [validated]
                       end)
