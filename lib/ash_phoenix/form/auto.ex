@@ -332,7 +332,7 @@ defmodule AshPhoenix.Form.Auto do
 
   defp add_join_form(opts, _relationship, []), do: opts
 
-  defp add_join_form(opts, relationship, [{:join, action, _}]) do
+  defp add_join_form(opts, relationship, [{:join, action, fields}]) do
     action = Ash.Resource.Info.action(relationship.through, action)
 
     case action.type do
@@ -343,6 +343,7 @@ defmodule AshPhoenix.Form.Auto do
             managed_relationship: {relationship.source, relationship.name},
             type: :single,
             data: &get_join(&1, &2, relationship),
+            fields: fields,
             update_action: action.name
           )
         end)
