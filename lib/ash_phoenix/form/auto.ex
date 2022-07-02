@@ -338,12 +338,12 @@ defmodule AshPhoenix.Form.Auto do
     case action.type do
       :update ->
         Keyword.update!(opts, :forms, fn forms ->
-          Keyword.put(forms, :_join,
+          update_join_forms(forms,
             resource: relationship.through,
             managed_relationship: {relationship.source, relationship.name},
             type: :single,
             data: &get_join(&1, &2, relationship),
-            fields: fields,
+            update_fields: fields,
             merge?: true,
             update_action: action.name
           )
@@ -351,11 +351,11 @@ defmodule AshPhoenix.Form.Auto do
 
       :create ->
         Keyword.update!(opts, :forms, fn forms ->
-          Keyword.put(forms, :_join,
+          update_join_forms(forms,
             resource: relationship.through,
             type: :single,
             managed_relationship: {relationship.source, relationship.name},
-            fields: fields,
+            create_fields: fields,
             merge?: true,
             create_action: action.name
           )
@@ -363,17 +363,23 @@ defmodule AshPhoenix.Form.Auto do
 
       :destroy ->
         Keyword.update!(opts, :forms, fn forms ->
-          Keyword.put(forms, :_join,
+          update_join_forms(forms,
             resource: relationship.through,
             managed_relationship: {relationship.source, relationship.name},
             type: :single,
             data: &get_join(&1, &2, relationship),
-            fields: fields,
+            destroy_fields: fields,
             destroy_action: action.name,
             merge?: true
           )
         end)
     end
+  end
+
+  defp update_join_forms(forms, config) do
+    Keyword.update(forms, :_join, config, fn existing_config ->
+      Keyword.merge(existing_config, config)
+    end)
   end
 
   defp get_join(parent, prev_path, relationship) do
