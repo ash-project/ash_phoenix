@@ -344,6 +344,7 @@ defmodule AshPhoenix.Form.Auto do
             type: :single,
             data: &get_join(&1, &2, relationship),
             fields: fields,
+            merge?: true,
             update_action: action.name
           )
         end)
@@ -354,6 +355,8 @@ defmodule AshPhoenix.Form.Auto do
             resource: relationship.through,
             type: :single,
             managed_relationship: {relationship.source, relationship.name},
+            fields: fields,
+            merge?: true,
             create_action: action.name
           )
         end)
@@ -365,6 +368,7 @@ defmodule AshPhoenix.Form.Auto do
             managed_relationship: {relationship.source, relationship.name},
             type: :single,
             data: &get_join(&1, &2, relationship),
+            fields: fields,
             destroy_action: action.name,
             merge?: true
           )
