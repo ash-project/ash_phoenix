@@ -76,7 +76,7 @@ defmodule AshPhoenix.Form.Auto do
 
   def auto(resource, action, opts \\ []) do
     opts = Ash.OptionsHelpers.validate!(opts, @auto_opts)
-    related(resource, action, opts) ++ embedded(resource, action, opts)
+    Keyword.new(related(resource, action, opts) ++ embedded(resource, action, opts))
   end
 
   def related(resource, action, auto_opts) do
@@ -158,6 +158,7 @@ defmodule AshPhoenix.Form.Auto do
 
       {arg.name, opts}
     end)
+    |> Keyword.new()
   end
 
   defp add_nested_forms(opts, auto_opts) do
@@ -508,6 +509,7 @@ defmodule AshPhoenix.Form.Auto do
          end
        ]}
     end)
+    |> Keyword.new()
   end
 
   defp unwrap_type({:array, type}), do: unwrap_type(type)
