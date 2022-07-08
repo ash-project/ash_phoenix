@@ -1,4 +1,6 @@
 defmodule AshPhoenix.FormData.Helpers do
+  require Logger
+
   @moduledoc false
   def get_argument(nil, _), do: nil
 
@@ -20,10 +22,6 @@ defmodule AshPhoenix.FormData.Helpers do
       :naive_datetime -> :datetime_select
       _ -> :text_input
     end
-  end
-
-  def form_for_errors(query, _opts) do
-    AshPhoenix.errors_for(query)
   end
 
   def form_for_name(resource) do
@@ -69,6 +67,18 @@ defmodule AshPhoenix.FormData.Helpers do
 
         match?
       else
+        if form.warn_on_unhandled_errors? do
+          Logger.warn("""
+          Unhandled error in form submission for #{inspect(form.resource)}.#{form.action}
+
+          This error was unhandled because it did not have a `path` key.
+
+          #{Exception.format(:error, error)}
+          """)
+
+          nil
+        end
+
         false
       end
     end)
@@ -93,32 +103,70 @@ defmodule AshPhoenix.FormData.Helpers do
     |> Enum.flat_map(&transform_error(form, &1))
     |> Enum.filter(fn
       error when is_exception(error) ->
-        AshPhoenix.FormData.Error.impl_for(error)
+        if AshPhoenix.FormData.Error.impl_for(error) do
+          true
+        else
+          if form.warn_on_unhandled_errors? do
+            Logger.warn("""
+            Unhandled error in form submission for #{inspect(form.resource)}.#{form.action}
+
+            This error was unhandled because it did not implement the `AshPhoenix.FormData.Error` protocol.
+
+            #{Exception.format(:error, error)}
+            """)
+
+            nil
+          end
+        end
 
       {_key, _value, _vars} ->
         true
 
-      _ ->
+      nil ->
+        false
+
+      error ->
+        if form.warn_on_unhandled_errors? do
+          Logger.warn("""
+          Unhandled error in form submission for #{form.resource}.#{form.action}
+
+          This error was unhandled because it was not an exception that implemented the `AshPhoenix.FormData.Error`
+          protocol, or a tuple in the form of {:field, "message", [replacement: :var]}.
+
+          #{inspect(error)}
+          """)
+        end
+
         false
     end)
-    |> Enum.map(fn {field, message, vars} ->
-      vars =
-        vars
+    |> Enum.flat_map(fn
+      exception when is_exception(exception) ->
+        exception
+        |> AshPhoenix.FormData.Error.to_form_error()
         |> List.wrap()
-        |> Enum.flat_map(fn {key, value} ->
-          try do
-            if is_integer(value) do
-              [{key, value}]
-            else
-              [{key, to_string(value)}]
-            end
-          rescue
-            _ ->
-              []
-          end
+        |> Enum.map(fn {field, message, vars} ->
+          {field, {message, transform_vars(vars)}}
         end)
 
-      {field, {message || "", vars}}
+      {field, message, vars} ->
+        [{field, {message || "", transform_vars(vars)}}]
+    end)
+  end
+
+  defp transform_vars(vars) do
+    vars
+    |> List.wrap()
+    |> Enum.flat_map(fn {key, value} ->
+      try do
+        if is_integer(value) do
+          [{key, value}]
+        else
+          [{key, to_string(value)}]
+        end
+      rescue
+        _ ->
+          []
+      end
     end)
   end
 
@@ -151,17 +199,7 @@ defmodule AshPhoenix.FormData.Helpers do
         end
 
       nil ->
-        case error do
-          {_key, _value, _vars} = error ->
-            [error]
-
-          error ->
-            if AshPhoenix.FormData.Error.impl_for(error) do
-              List.wrap(to_form_error(error))
-            else
-              []
-            end
-        end
+        List.wrap(error)
     end
   end
 

@@ -162,6 +162,7 @@ defmodule AshPhoenix.Form do
     :id,
     :transform_errors,
     :original_data,
+    warn_on_unhandled_errors?: true,
     any_removed?: false,
     added?: false,
     changed?: false,
@@ -200,6 +201,13 @@ defmodule AshPhoenix.Form do
     forms: [
       type: :keyword_list,
       doc: "Nested form configurations. See `for_create/3` \"Nested Form Options\" docs for more."
+    ],
+    warn_on_unhandled_errors?: [
+      type: :boolean,
+      default: true,
+      doc: """
+      Warns on any errors that don't match the form pattern of `{:field, "message", [replacement: :vars]}` or implement the `AshPhoenix.FormData.Error` protocol.
+      """
     ],
     api: [
       type: :atom,
@@ -402,7 +410,8 @@ defmodule AshPhoenix.Form do
         [],
         name,
         id,
-        opts[:transform_errors]
+        opts[:transform_errors],
+        opts[:warn_on_unhandled_errors?]
       )
 
     %__MODULE__{
@@ -413,6 +422,7 @@ defmodule AshPhoenix.Form do
       params: params,
       errors: opts[:errors],
       transform_errors: opts[:transform_errors],
+      warn_on_unhandled_errors?: opts[:warn_on_unhandled_errors?],
       name: name,
       forms: forms,
       form_keys: Keyword.new(List.wrap(opts[:forms])),
@@ -468,6 +478,7 @@ defmodule AshPhoenix.Form do
         name,
         id,
         opts[:transform_errors],
+        opts[:warn_on_unhandled_errors?],
         [data]
       )
 
@@ -480,6 +491,7 @@ defmodule AshPhoenix.Form do
       params: params,
       errors: opts[:errors],
       transform_errors: opts[:transform_errors],
+      warn_on_unhandled_errors?: opts[:warn_on_unhandled_errors?],
       forms: forms,
       form_keys: Keyword.new(List.wrap(opts[:forms])),
       original_data: data,
@@ -536,6 +548,7 @@ defmodule AshPhoenix.Form do
         name,
         id,
         opts[:transform_errors],
+        opts[:warn_on_unhandled_errors?],
         [data]
       )
 
@@ -547,6 +560,7 @@ defmodule AshPhoenix.Form do
       params: params,
       errors: opts[:errors],
       transform_errors: opts[:transform_errors],
+      warn_on_unhandled_errors?: opts[:warn_on_unhandled_errors?],
       original_data: data,
       forms: forms,
       name: name,
@@ -607,7 +621,8 @@ defmodule AshPhoenix.Form do
         nil,
         name,
         id,
-        opts[:transform_errors]
+        opts[:transform_errors],
+        opts[:warn_on_unhandled_errors?]
       )
 
     query_opts =
@@ -629,6 +644,7 @@ defmodule AshPhoenix.Form do
       params: params,
       errors: opts[:errors],
       transform_errors: opts[:transform_errors],
+      warn_on_unhandled_errors?: opts[:warn_on_unhandled_errors?],
       name: name,
       forms: forms,
       form_keys: Keyword.new(List.wrap(opts[:forms])),
@@ -868,6 +884,7 @@ defmodule AshPhoenix.Form do
                           params: params,
                           forms: opts[:forms] || [],
                           errors: errors?,
+                          warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
                           prev_data_trail: prev_data_trail,
                           transform_errors: form.transform_errors,
                           as: form.name <> "[#{key}][#{index}]",
@@ -921,6 +938,7 @@ defmodule AshPhoenix.Form do
                 new_form =
                   for_action(resource, create_action,
                     params: form_params,
+                    warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
                     forms: opts[:forms] || [],
                     errors: errors?,
                     prev_data_trail: prev_data_trail,
@@ -2248,6 +2266,7 @@ defmodule AshPhoenix.Form do
             action,
             Keyword.merge(opts[:validate_opts] || [],
               params: opts[:params] || %{},
+              warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
               forms: config[:forms] || [],
               data: opts[:data],
               transform_errors: transform_errors
@@ -2652,6 +2671,7 @@ defmodule AshPhoenix.Form do
          name,
          id,
          transform_errors,
+         warn_on_unhandled_errors?,
          trail \\ []
        ) do
     Enum.reduce(form_keys, {%{}, params}, fn {key, opts}, {forms, params} ->
@@ -2668,7 +2688,8 @@ defmodule AshPhoenix.Form do
             error?,
             name,
             id,
-            transform_errors
+            transform_errors,
+            warn_on_unhandled_errors?
           )
 
         :error ->
@@ -2682,7 +2703,8 @@ defmodule AshPhoenix.Form do
             error?,
             name,
             id,
-            transform_errors
+            transform_errors,
+            warn_on_unhandled_errors?
           )
       end
     end)
@@ -2698,7 +2720,8 @@ defmodule AshPhoenix.Form do
          error?,
          name,
          id,
-         transform_errors
+         transform_errors,
+         warn_on_unhandled_errors?
        ) do
     if Keyword.has_key?(opts, :data) do
       cond do
@@ -2730,6 +2753,7 @@ defmodule AshPhoenix.Form do
               if (opts[:type] || :single) == :single do
                 for_action(data, update_action,
                   errors: error?,
+                  warn_on_unhandled_errors?: warn_on_unhandled_errors?,
                   prev_data_trail: prev_data_trail,
                   forms: opts[:forms] || [],
                   transform_errors: transform_errors,
@@ -2742,6 +2766,7 @@ defmodule AshPhoenix.Form do
                 |> Enum.map(fn {data, index} ->
                   for_action(data, update_action,
                     errors: error?,
+                    warn_on_unhandled_errors?: warn_on_unhandled_errors?,
                     prev_data_trail: prev_data_trail,
                     forms: opts[:forms] || [],
                     transform_errors: transform_errors,
@@ -2786,6 +2811,7 @@ defmodule AshPhoenix.Form do
 
                 for_action(data, read_action,
                   errors: error?,
+                  warn_on_unhandled_errors?: warn_on_unhandled_errors?,
                   params: Map.new(pkey, &{to_string(&1), Map.get(data, &1)}),
                   prev_data_trail: prev_data_trail,
                   forms: opts[:forms] || [],
@@ -2840,7 +2866,8 @@ defmodule AshPhoenix.Form do
          error?,
          name,
          id,
-         transform_errors
+         transform_errors,
+         warn_on_unhandled_errors?
        ) do
     form_values =
       if Keyword.has_key?(opts, :data) do
@@ -2853,7 +2880,8 @@ defmodule AshPhoenix.Form do
           error?,
           name,
           id,
-          transform_errors
+          transform_errors,
+          warn_on_unhandled_errors?
         )
       else
         handle_form_with_params_and_no_data(
@@ -2865,7 +2893,8 @@ defmodule AshPhoenix.Form do
           error?,
           name,
           id,
-          transform_errors
+          transform_errors,
+          warn_on_unhandled_errors?
         )
       end
 
@@ -2881,7 +2910,8 @@ defmodule AshPhoenix.Form do
          error?,
          name,
          id,
-         transform_errors
+         transform_errors,
+         warn_on_unhandled_errors?
        ) do
     if (opts[:type] || :single) == :single do
       if map(form_params)["_form_type"] == "read" do
@@ -2898,6 +2928,7 @@ defmodule AshPhoenix.Form do
 
         for_action(resource, read_action,
           params: form_params,
+          warn_on_unhandled_errors?: warn_on_unhandled_errors?,
           forms: opts[:forms] || [],
           errors: error?,
           prev_data_trail: prev_data_trail,
@@ -2920,6 +2951,7 @@ defmodule AshPhoenix.Form do
         for_action(resource, create_action,
           params: form_params,
           forms: opts[:forms] || [],
+          warn_on_unhandled_errors?: warn_on_unhandled_errors?,
           errors: error?,
           prev_data_trail: prev_data_trail,
           transform_errors: transform_errors,
@@ -2947,6 +2979,7 @@ defmodule AshPhoenix.Form do
           for_action(resource, read_action,
             params: add_index(form_params, original_index, opts),
             forms: opts[:forms] || [],
+            warn_on_unhandled_errors?: warn_on_unhandled_errors?,
             errors: error?,
             prev_data_trail: prev_data_trail,
             transform_errors: transform_errors,
@@ -2968,6 +3001,7 @@ defmodule AshPhoenix.Form do
           for_action(resource, create_action,
             params: add_index(form_params, original_index, opts),
             forms: opts[:forms] || [],
+            warn_on_unhandled_errors?: warn_on_unhandled_errors?,
             errors: error?,
             prev_data_trail: prev_data_trail,
             transform_errors: transform_errors,
@@ -2988,7 +3022,8 @@ defmodule AshPhoenix.Form do
          error?,
          name,
          id,
-         transform_errors
+         transform_errors,
+         warn_on_unhandled_errors?
        ) do
     data =
       if is_function(opts[:data]) do
@@ -3015,6 +3050,7 @@ defmodule AshPhoenix.Form do
               params: form_params,
               forms: opts[:forms] || [],
               errors: error?,
+              warn_on_unhandled_errors?: warn_on_unhandled_errors?,
               prev_data_trail: prev_data_trail,
               transform_errors: transform_errors,
               as: name <> "[#{key}]",
@@ -3032,6 +3068,7 @@ defmodule AshPhoenix.Form do
               params: form_params,
               forms: opts[:forms] || [],
               errors: error?,
+              warn_on_unhandled_errors?: warn_on_unhandled_errors?,
               prev_data_trail: prev_data_trail,
               transform_errors: transform_errors,
               as: name <> "[#{key}]",
@@ -3056,6 +3093,7 @@ defmodule AshPhoenix.Form do
               params: form_params,
               forms: opts[:forms] || [],
               errors: error?,
+              warn_on_unhandled_errors?: warn_on_unhandled_errors?,
               prev_data_trail: prev_data_trail,
               transform_errors: transform_errors,
               as: name <> "[#{key}]",
@@ -3078,6 +3116,7 @@ defmodule AshPhoenix.Form do
               params: form_params,
               forms: opts[:forms] || [],
               errors: error?,
+              warn_on_unhandled_errors?: warn_on_unhandled_errors?,
               prev_data_trail: prev_data_trail,
               transform_errors: transform_errors,
               as: name <> "[#{key}]",
@@ -3113,6 +3152,7 @@ defmodule AshPhoenix.Form do
               params: add_index(form_params, original_index, opts),
               forms: opts[:forms] || [],
               errors: error?,
+              warn_on_unhandled_errors?: warn_on_unhandled_errors?,
               prev_data_trail: prev_data_trail,
               transform_errors: transform_errors,
               as: name <> "[#{key}][#{index}]",
@@ -3138,6 +3178,7 @@ defmodule AshPhoenix.Form do
                 for_action(resource, create_action,
                   params: add_index(form_params, original_index, opts),
                   forms: opts[:forms] || [],
+                  warn_on_unhandled_errors?: warn_on_unhandled_errors?,
                   errors: error?,
                   prev_data_trail: prev_data_trail,
                   transform_errors: transform_errors,
@@ -3159,6 +3200,7 @@ defmodule AshPhoenix.Form do
                   for_action(data, destroy_action,
                     params: form_params,
                     forms: opts[:forms] || [],
+                    warn_on_unhandled_errors?: warn_on_unhandled_errors?,
                     errors: error?,
                     prev_data_trail: prev_data_trail,
                     transform_errors: transform_errors,
@@ -3176,6 +3218,7 @@ defmodule AshPhoenix.Form do
                     params: form_params,
                     forms: opts[:forms] || [],
                     errors: error?,
+                    warn_on_unhandled_errors?: warn_on_unhandled_errors?,
                     prev_data_trail: prev_data_trail,
                     transform_errors: transform_errors,
                     as: name <> "[#{key}][#{index}]",
@@ -3201,6 +3244,7 @@ defmodule AshPhoenix.Form do
                 for_action(resource, create_action,
                   params: form_params,
                   forms: opts[:forms] || [],
+                  warn_on_unhandled_errors?: warn_on_unhandled_errors?,
                   errors: error?,
                   transform_errors: transform_errors,
                   prev_data_trail: prev_data_trail,

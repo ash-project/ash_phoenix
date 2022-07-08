@@ -9,8 +9,6 @@ defmodule AshPhoenix.LiveView do
   @type topic :: String.t()
   @type liveness_options :: Keyword.t()
 
-  require Logger
-
   @opts [
     subscribe: [
       type: {:custom, __MODULE__, :subscriptions, []},

@@ -1,6 +1,7 @@
 defmodule AshPhoenix.FormTest do
   use ExUnit.Case
   import Phoenix.HTML.Form, only: [form_for: 2, inputs_for: 2]
+  import ExUnit.CaptureLog
 
   alias AshPhoenix.Form
   alias AshPhoenix.Test.{Api, Comment, OtherApi, Post, PostWithDefault}
@@ -25,6 +26,29 @@ defmodule AshPhoenix.FormTest do
 
       assert form.errors == []
       assert Form.errors(form.source, for_path: [:comments, 0]) == []
+    end
+
+    test "unknown errors produce warnings" do
+      form =
+        Post
+        |> Form.for_create(:create,
+          api: Api,
+          params: %{"text" => "bar"},
+          forms: [
+            comments: [
+              type: :list,
+              resource: Comment,
+              create_action: :create_with_unknown_error
+            ]
+          ]
+        )
+        |> Form.add_form([:comments], params: %{"text" => "foo"}, validate_opts: [errors: true])
+        |> form_for("action")
+
+      assert capture_log(fn ->
+               Form.errors(form.source, for_path: [:comments, 0]) == []
+             end) =~
+               "Unhandled error in form submission for AshPhoenix.Test.Comment.create_with_unknown_error"
     end
 
     test "errors are not set on the parent and single child form" do
