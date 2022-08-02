@@ -1677,30 +1677,7 @@ defmodule AshPhoenix.Form do
 
   ## Example
 
-  Lets say you wanted to take a duration in minutes, and store it in seconds, and you felt this was a "ui only" concern.
-
-  You could map that field like so:
-
-  ```elixir
-      AshPhoenix.Form.add_form_only_field(
-        :duration_in_seconds,
-        :duration_in_minutes,
-        fn value, _params ->
-          if value do
-            value * 60
-          end
-        end,
-        fn value, _form ->
-          if value do
-            value / 60
-          end
-        end,
-        hide_source?: false,
-        path: [:post]
-      )
-  ```
-
-  This would be done on the root form when you create it.
+  Lets say you wanted to take a duration in minutes, and store it
 
   ## Options
 
