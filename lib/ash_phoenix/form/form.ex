@@ -332,7 +332,7 @@ defmodule AshPhoenix.Form do
   import AshPhoenix.FormData.Helpers
 
   @doc "Calls the corresponding `for_*` function depending on the action type"
-  def for_action(resource_or_data, action, opts) do
+  def for_action(resource_or_data, action, opts \\ []) do
     {resource, data} =
       case resource_or_data do
         module when is_atom(resource_or_data) -> {module, module.__struct__()}
@@ -397,7 +397,8 @@ defmodule AshPhoenix.Form do
         :id,
         :method,
         :for,
-        :as
+        :as,
+        :form_only_fields
       ])
 
     name = opts[:as] || "form"
@@ -412,8 +413,11 @@ defmodule AshPhoenix.Form do
         name,
         id,
         opts[:transform_errors],
-        opts[:warn_on_unhandled_errors?]
+        opts[:warn_on_unhandled_errors?],
+        opts[:form_only_fields]
       )
+
+    params = validate_form_only_fields(opts[:form_only_fields], params)
 
     %__MODULE__{
       resource: resource,
@@ -422,6 +426,7 @@ defmodule AshPhoenix.Form do
       api: opts[:api],
       params: params,
       errors: opts[:errors],
+      form_only_fields: opts[:form_only_fields],
       transform_errors: opts[:transform_errors],
       warn_on_unhandled_errors?: opts[:warn_on_unhandled_errors?],
       name: name,
@@ -463,7 +468,16 @@ defmodule AshPhoenix.Form do
       |> forms_for_type(:update)
 
     changeset_opts =
-      Keyword.drop(opts, [:forms, :transform_errors, :errors, :id, :method, :for, :as])
+      Keyword.drop(opts, [
+        :forms,
+        :transform_errors,
+        :errors,
+        :id,
+        :method,
+        :for,
+        :as,
+        :form_only_fields
+      ])
 
     name = opts[:as] || "form"
     id = opts[:id] || opts[:as] || "form"
@@ -480,8 +494,11 @@ defmodule AshPhoenix.Form do
         id,
         opts[:transform_errors],
         opts[:warn_on_unhandled_errors?],
+        opts[:form_only_fields],
         [data]
       )
+
+    params = validate_form_only_fields(opts[:form_only_fields], params)
 
     %__MODULE__{
       resource: resource,
@@ -490,6 +507,7 @@ defmodule AshPhoenix.Form do
       type: :update,
       api: opts[:api],
       params: params,
+      form_only_fields: opts[:form_only_fields],
       errors: opts[:errors],
       transform_errors: opts[:transform_errors],
       warn_on_unhandled_errors?: opts[:warn_on_unhandled_errors?],
@@ -533,7 +551,16 @@ defmodule AshPhoenix.Form do
       |> forms_for_type(:destroy)
 
     changeset_opts =
-      Keyword.drop(opts, [:forms, :transform_errors, :errors, :id, :method, :for, :as])
+      Keyword.drop(opts, [
+        :forms,
+        :transform_errors,
+        :errors,
+        :id,
+        :method,
+        :for,
+        :as,
+        :form_only_fields
+      ])
 
     name = opts[:as] || "form"
     id = opts[:id] || opts[:as] || "form"
@@ -550,8 +577,11 @@ defmodule AshPhoenix.Form do
         id,
         opts[:transform_errors],
         opts[:warn_on_unhandled_errors?],
+        opts[:form_only_fields],
         [data]
       )
+
+    params = validate_form_only_fields(opts[:form_only_fields], params)
 
     %__MODULE__{
       resource: resource,
@@ -559,6 +589,7 @@ defmodule AshPhoenix.Form do
       action: action,
       type: :destroy,
       params: params,
+      form_only_fields: opts[:form_only_fields],
       errors: opts[:errors],
       transform_errors: opts[:transform_errors],
       warn_on_unhandled_errors?: opts[:warn_on_unhandled_errors?],
@@ -623,8 +654,11 @@ defmodule AshPhoenix.Form do
         name,
         id,
         opts[:transform_errors],
-        opts[:warn_on_unhandled_errors?]
+        opts[:warn_on_unhandled_errors?],
+        opts[:form_only_fields]
       )
+
+    params = validate_form_only_fields(opts[:form_only_fields], params)
 
     query_opts =
       Keyword.drop(opts, [
@@ -634,7 +668,8 @@ defmodule AshPhoenix.Form do
         :id,
         :method,
         :for,
-        :as
+        :as,
+        :form_only_fields
       ])
 
     %__MODULE__{
@@ -644,6 +679,7 @@ defmodule AshPhoenix.Form do
       data: opts[:data],
       params: params,
       errors: opts[:errors],
+      form_only_fields: opts[:form_only_fields],
       transform_errors: opts[:transform_errors],
       warn_on_unhandled_errors?: opts[:warn_on_unhandled_errors?],
       name: name,
@@ -758,7 +794,7 @@ defmodule AshPhoenix.Form do
         matcher
       )
 
-    params = validate_form_only_fields(form, params)
+    params = validate_form_only_fields(form.form_only_fields, params)
 
     if params == form.params && !!opts[:errors] == form.errors do
       %{
@@ -841,26 +877,34 @@ defmodule AshPhoenix.Form do
     end
   end
 
-  defp validate_form_only_fields(form, params) do
-    form
+  defp validate_form_only_fields(form_only_fields, params) do
+    form_only_fields
     |> get_form_only_fields()
     |> Enum.reduce(params, fn
-      {{_, destination}, %{source: source, handler: handler, opts: opts}}, params ->
-        value = params[source]
-        new_value = handler.(value, params)
+      {{_, destination}, %{source: source, input_handler: input_handler, opts: opts}}, params ->
+        string_source = to_string(source)
 
-        params = Map.put(params, to_string(destination), new_value)
+        case Map.fetch(params, string_source) do
+          {:ok, value} ->
+            new_value = input_handler.(value, params)
 
-        if opts[:hide_source?] do
-          Map.delete(params, source)
-        else
-          params
+            params = Map.put(params, to_string(destination), new_value)
+
+            if opts[:hide_source?] do
+              Map.delete(params, string_source)
+            else
+              params
+            end
+
+          :error ->
+            params
         end
     end)
   end
 
-  defp get_form_only_fields(form) do
-    form.form_only_fields
+  defp get_form_only_fields(form_only_fields) do
+    form_only_fields
+    |> Kernel.||(%{})
     |> Enum.filter(fn
       {{path, _}, _} -> Enum.empty?(path)
     end)
@@ -913,6 +957,7 @@ defmodule AshPhoenix.Form do
                           params: params,
                           forms: opts[:forms] || [],
                           errors: errors?,
+                          form_only_fields: take_form_only_fields(form.form_only_fields, key),
                           warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
                           prev_data_trail: prev_data_trail,
                           transform_errors: form.transform_errors,
@@ -972,6 +1017,7 @@ defmodule AshPhoenix.Form do
                   for_action(resource, create_action,
                     params: form_params,
                     warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
+                    form_only_fields: take_form_only_fields(form.form_only_fields, key),
                     forms: opts[:forms] || [],
                     errors: errors?,
                     prev_data_trail: prev_data_trail,
@@ -999,17 +1045,19 @@ defmodule AshPhoenix.Form do
   end
 
   defp carry_over_form_only_fields(nested_form, key, parent_form) do
-    nested =
-      parent_form.form_only_fields
-      |> Enum.filter(fn {{path, _}, _} ->
-        Enum.at(path, 0) == key
-      end)
-      |> Enum.map(fn {{path, name}, config} ->
-        {{Enum.drop(path, 0), name}, config}
-      end)
-      |> Map.new()
+    %{nested_form | form_only_fields: take_form_only_fields(parent_form.form_only_fields, key)}
+  end
 
-    %{nested_form | form_only_fields: nested}
+  defp take_form_only_fields(form_only_fields, key) do
+    form_only_fields
+    |> Kernel.||(%{})
+    |> Enum.filter(fn {{path, _}, _} ->
+      Enum.at(path, 0) == key
+    end)
+    |> Enum.map(fn {{path, name}, config} ->
+      {{Enum.drop(path, 1), name}, config}
+    end)
+    |> Map.new()
   end
 
   @submit_opts [
@@ -1613,22 +1661,43 @@ defmodule AshPhoenix.Form do
       default: true,
       doc:
         "Set to false to include both source and destination parameters, instead of hiding the source"
+    ],
+    path: [
+      type: {:list, :atom},
+      default: [],
+      doc: "Set to a path of related forms to add a form_only_field for all forms at that path."
     ]
   ]
 
   @doc """
-  Describe this thing
+  Adds a special parameter handler to support ui only representations of a field.
+
+  Currently, this does not automatically map errors from the destination to this field, but that may be added, later.
+  Until then, when rendering errors, use an error tag for the destination field.
+
+  ## Example
+
+  Lets say you wanted to take a duration in minutes, and store it
 
   ## Options
 
   #{Ash.OptionsHelpers.docs(@form_only_field_opts)}
   """
-  @spec add_form_only_field(t(), atom, atom, (term, t() -> term()), Keyword.t()) :: t()
+  @spec add_form_only_field(
+          t(),
+          atom,
+          atom,
+          (term, map -> term()),
+          (term, t() -> term()),
+          Keyword.t()
+        ) ::
+          t()
   def add_form_only_field(
         %{form_only_fields: form_only_fields} = form,
         destination,
         source,
-        handler,
+        input_handler,
+        current_value_handler,
         opts \\ []
       ) do
     opts = Ash.OptionsHelpers.validate!(opts, @form_only_field_opts)
@@ -1637,9 +1706,10 @@ defmodule AshPhoenix.Form do
     %{
       form
       | form_only_fields:
-          Map.put(form_only_fields, {path, to_string(destination)}, %{
-            source: to_string(source),
-            handler: handler,
+          Map.put(form_only_fields || %{}, {path, destination}, %{
+            source: source,
+            input_handler: input_handler,
+            current_value_handler: current_value_handler,
             opts: opts
           })
     }
@@ -1864,10 +1934,10 @@ defmodule AshPhoenix.Form do
     form =
       if is_binary(path) do
         path = parse_path!(form, path)
-        do_add_form(form, path, opts, [], form.transform_errors)
+        do_add_form(form, path, opts, [], form.transform_errors, form.form_only_fields)
       else
         path = List.wrap(path)
-        do_add_form(form, path, opts, [], form.transform_errors)
+        do_add_form(form, path, opts, [], form.transform_errors, form.form_only_fields)
       end
 
     if opts[:validate?] do
@@ -2277,7 +2347,8 @@ defmodule AshPhoenix.Form do
     raise InvalidPath, path: Enum.reverse(trail, path)
   end
 
-  defp do_add_form(form, [key, i | rest], opts, trail, transform_errors) when is_integer(i) do
+  defp do_add_form(form, [key, i | rest], opts, trail, transform_errors, form_only_fields)
+       when is_integer(i) do
     unless form.form_keys[key] do
       raise AshPhoenix.Form.NoFormConfigured,
         field: key,
@@ -2301,14 +2372,21 @@ defmodule AshPhoenix.Form do
         List.update_at(
           forms,
           index,
-          &do_add_form(&1, rest, opts, [i, key | trail], transform_errors)
+          &do_add_form(
+            &1,
+            rest,
+            opts,
+            [i, key | trail],
+            transform_errors,
+            take_form_only_fields(form_only_fields, key)
+          )
         )
       end)
 
     %{form | forms: new_forms, touched_forms: MapSet.put(form.touched_forms, key)}
   end
 
-  defp do_add_form(form, [key], opts, trail, transform_errors) do
+  defp do_add_form(form, [key], opts, trail, transform_errors, form_only_fields) do
     config =
       form.form_keys[key] ||
         raise AshPhoenix.Form.NoFormConfigured,
@@ -2352,6 +2430,7 @@ defmodule AshPhoenix.Form do
             Keyword.merge(opts[:validate_opts] || [],
               params: opts[:params] || %{},
               warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
+              form_only_fields: take_form_only_fields(form_only_fields, key),
               forms: config[:forms] || [],
               data: opts[:data],
               transform_errors: transform_errors
@@ -2390,7 +2469,7 @@ defmodule AshPhoenix.Form do
     }
   end
 
-  defp do_add_form(form, [key | rest], opts, trail, transform_errors) do
+  defp do_add_form(form, [key | rest], opts, trail, transform_errors, form_only_fields) do
     unless form.form_keys[key] do
       raise AshPhoenix.Form.NoFormConfigured,
         field: key,
@@ -2401,12 +2480,22 @@ defmodule AshPhoenix.Form do
     new_forms =
       form.forms
       |> Map.put_new(key, [])
-      |> Map.update!(key, &do_add_form(&1, rest, opts, [key | trail], transform_errors))
+      |> Map.update!(
+        key,
+        &do_add_form(
+          &1,
+          rest,
+          opts,
+          [key | trail],
+          transform_errors,
+          take_form_only_fields(form_only_fields, key)
+        )
+      )
 
     %{form | forms: new_forms, touched_forms: MapSet.put(form.touched_forms, key)}
   end
 
-  defp do_add_form(_form, path, _opts, trail, _) do
+  defp do_add_form(_form, path, _opts, trail, _, _) do
     raise InvalidPath, path: Enum.reverse(trail, List.wrap(path))
   end
 
@@ -2757,6 +2846,7 @@ defmodule AshPhoenix.Form do
          id,
          transform_errors,
          warn_on_unhandled_errors?,
+         form_only_fields,
          trail \\ []
        ) do
     Enum.reduce(form_keys, {%{}, params}, fn {key, opts}, {forms, params} ->
@@ -2774,7 +2864,8 @@ defmodule AshPhoenix.Form do
             name,
             id,
             transform_errors,
-            warn_on_unhandled_errors?
+            warn_on_unhandled_errors?,
+            form_only_fields
           )
 
         :error ->
@@ -2789,7 +2880,8 @@ defmodule AshPhoenix.Form do
             name,
             id,
             transform_errors,
-            warn_on_unhandled_errors?
+            warn_on_unhandled_errors?,
+            form_only_fields
           )
       end
     end)
@@ -2806,7 +2898,8 @@ defmodule AshPhoenix.Form do
          name,
          id,
          transform_errors,
-         warn_on_unhandled_errors?
+         warn_on_unhandled_errors?,
+         form_only_fields
        ) do
     if Keyword.has_key?(opts, :data) do
       cond do
@@ -2839,6 +2932,7 @@ defmodule AshPhoenix.Form do
                 for_action(data, update_action,
                   errors: error?,
                   warn_on_unhandled_errors?: warn_on_unhandled_errors?,
+                  form_only_fields: take_form_only_fields(form_only_fields, key),
                   prev_data_trail: prev_data_trail,
                   forms: opts[:forms] || [],
                   transform_errors: transform_errors,
@@ -2852,6 +2946,7 @@ defmodule AshPhoenix.Form do
                   for_action(data, update_action,
                     errors: error?,
                     warn_on_unhandled_errors?: warn_on_unhandled_errors?,
+                    form_only_fields: take_form_only_fields(form_only_fields, key),
                     prev_data_trail: prev_data_trail,
                     forms: opts[:forms] || [],
                     transform_errors: transform_errors,
@@ -2899,6 +2994,7 @@ defmodule AshPhoenix.Form do
                   warn_on_unhandled_errors?: warn_on_unhandled_errors?,
                   params: Map.new(pkey, &{to_string(&1), Map.get(data, &1)}),
                   prev_data_trail: prev_data_trail,
+                  form_only_fields: take_form_only_fields(form_only_fields, key),
                   forms: opts[:forms] || [],
                   data: data,
                   transform_errors: transform_errors,
@@ -2918,6 +3014,7 @@ defmodule AshPhoenix.Form do
                     errors: error?,
                     prev_data_trail: prev_data_trail,
                     params: Map.new(pkey, &{to_string(&1), Map.get(data, &1)}),
+                    form_only_fields: take_form_only_fields(form_only_fields, key),
                     forms: opts[:forms] || [],
                     data: data,
                     transform_errors: transform_errors,
@@ -2952,7 +3049,8 @@ defmodule AshPhoenix.Form do
          name,
          id,
          transform_errors,
-         warn_on_unhandled_errors?
+         warn_on_unhandled_errors?,
+         form_only_fields
        ) do
     form_values =
       if Keyword.has_key?(opts, :data) do
@@ -2966,7 +3064,8 @@ defmodule AshPhoenix.Form do
           name,
           id,
           transform_errors,
-          warn_on_unhandled_errors?
+          warn_on_unhandled_errors?,
+          form_only_fields
         )
       else
         handle_form_with_params_and_no_data(
@@ -2979,7 +3078,8 @@ defmodule AshPhoenix.Form do
           name,
           id,
           transform_errors,
-          warn_on_unhandled_errors?
+          warn_on_unhandled_errors?,
+          form_only_fields
         )
       end
 
@@ -2996,7 +3096,8 @@ defmodule AshPhoenix.Form do
          name,
          id,
          transform_errors,
-         warn_on_unhandled_errors?
+         warn_on_unhandled_errors?,
+         form_only_fields
        ) do
     if (opts[:type] || :single) == :single do
       if map(form_params)["_form_type"] == "read" do
@@ -3013,6 +3114,7 @@ defmodule AshPhoenix.Form do
 
         for_action(resource, read_action,
           params: form_params,
+          form_only_fields: take_form_only_fields(form_only_fields, key),
           warn_on_unhandled_errors?: warn_on_unhandled_errors?,
           forms: opts[:forms] || [],
           errors: error?,
@@ -3036,6 +3138,7 @@ defmodule AshPhoenix.Form do
         for_action(resource, create_action,
           params: form_params,
           forms: opts[:forms] || [],
+          form_only_fields: take_form_only_fields(form_only_fields, key),
           warn_on_unhandled_errors?: warn_on_unhandled_errors?,
           errors: error?,
           prev_data_trail: prev_data_trail,
@@ -3064,6 +3167,7 @@ defmodule AshPhoenix.Form do
           for_action(resource, read_action,
             params: add_index(form_params, original_index, opts),
             forms: opts[:forms] || [],
+            form_only_fields: take_form_only_fields(form_only_fields, key),
             warn_on_unhandled_errors?: warn_on_unhandled_errors?,
             errors: error?,
             prev_data_trail: prev_data_trail,
@@ -3085,6 +3189,7 @@ defmodule AshPhoenix.Form do
 
           for_action(resource, create_action,
             params: add_index(form_params, original_index, opts),
+            form_only_fields: take_form_only_fields(form_only_fields, key),
             forms: opts[:forms] || [],
             warn_on_unhandled_errors?: warn_on_unhandled_errors?,
             errors: error?,
@@ -3108,7 +3213,8 @@ defmodule AshPhoenix.Form do
          name,
          id,
          transform_errors,
-         warn_on_unhandled_errors?
+         warn_on_unhandled_errors?,
+         form_only_fields
        ) do
     data =
       if is_function(opts[:data]) do
@@ -3134,6 +3240,7 @@ defmodule AshPhoenix.Form do
             for_action(data, update_action,
               params: form_params,
               forms: opts[:forms] || [],
+              form_only_fields: take_form_only_fields(form_only_fields, key),
               errors: error?,
               warn_on_unhandled_errors?: warn_on_unhandled_errors?,
               prev_data_trail: prev_data_trail,
@@ -3152,6 +3259,7 @@ defmodule AshPhoenix.Form do
             for_action(data, destroy_action,
               params: form_params,
               forms: opts[:forms] || [],
+              form_only_fields: take_form_only_fields(form_only_fields, key),
               errors: error?,
               warn_on_unhandled_errors?: warn_on_unhandled_errors?,
               prev_data_trail: prev_data_trail,
@@ -3199,6 +3307,7 @@ defmodule AshPhoenix.Form do
 
             for_action(resource, read_action,
               params: form_params,
+              form_only_fields: take_form_only_fields(form_only_fields, key),
               forms: opts[:forms] || [],
               errors: error?,
               warn_on_unhandled_errors?: warn_on_unhandled_errors?,
@@ -3235,6 +3344,7 @@ defmodule AshPhoenix.Form do
           form =
             for_action(resource, read_action,
               params: add_index(form_params, original_index, opts),
+              form_only_fields: take_form_only_fields(form_only_fields, key),
               forms: opts[:forms] || [],
               errors: error?,
               warn_on_unhandled_errors?: warn_on_unhandled_errors?,
@@ -3263,6 +3373,7 @@ defmodule AshPhoenix.Form do
                 for_action(resource, create_action,
                   params: add_index(form_params, original_index, opts),
                   forms: opts[:forms] || [],
+                  form_only_fields: take_form_only_fields(form_only_fields, key),
                   warn_on_unhandled_errors?: warn_on_unhandled_errors?,
                   errors: error?,
                   prev_data_trail: prev_data_trail,
@@ -3287,6 +3398,7 @@ defmodule AshPhoenix.Form do
                     forms: opts[:forms] || [],
                     warn_on_unhandled_errors?: warn_on_unhandled_errors?,
                     errors: error?,
+                    form_only_fields: take_form_only_fields(form_only_fields, key),
                     prev_data_trail: prev_data_trail,
                     transform_errors: transform_errors,
                     as: name <> "[#{key}][#{index}]",
@@ -3303,6 +3415,7 @@ defmodule AshPhoenix.Form do
                     params: form_params,
                     forms: opts[:forms] || [],
                     errors: error?,
+                    form_only_fields: take_form_only_fields(form_only_fields, key),
                     warn_on_unhandled_errors?: warn_on_unhandled_errors?,
                     prev_data_trail: prev_data_trail,
                     transform_errors: transform_errors,
@@ -3330,6 +3443,7 @@ defmodule AshPhoenix.Form do
                   params: form_params,
                   forms: opts[:forms] || [],
                   warn_on_unhandled_errors?: warn_on_unhandled_errors?,
+                  form_only_fields: take_form_only_fields(form_only_fields, key),
                   errors: error?,
                   transform_errors: transform_errors,
                   prev_data_trail: prev_data_trail,
@@ -3529,35 +3643,78 @@ defmodule AshPhoenix.Form do
     end
 
     @impl true
-    def input_value(%{source: %Ash.Changeset{} = changeset}, _form, field) do
-      with :error <- get_changing_value(changeset, field),
-           :error <- Ash.Changeset.fetch_argument(changeset, field),
-           :error <- get_non_attribute_non_argument_param(changeset, field),
-           :error <- Map.fetch(changeset.data, field) do
-        nil
-      else
-        {:ok, %Ash.NotLoaded{}} ->
-          nil
-
-        {:ok, value} ->
-          value
-      end
-    end
-
-    def input_value(%{source: %Ash.Query{} = query, data: data}, _form, field) do
-      case Ash.Query.fetch_argument(query, field) do
+    def input_value(
+          %{
+            source: %Ash.Changeset{} = changeset
+          } = ash_form,
+          phoenix_form,
+          field
+        ) do
+      case get_form_only_field_value(ash_form, phoenix_form, field) do
         {:ok, value} ->
           value
 
         :error ->
-          case Map.fetch(query.params, to_string(field)) do
+          with :error <- get_changing_value(changeset, field),
+               :error <- Ash.Changeset.fetch_argument(changeset, field),
+               :error <- get_non_attribute_non_argument_param(changeset, field),
+               :error <- Map.fetch(changeset.data, field) do
+            nil
+          else
+            {:ok, %Ash.NotLoaded{}} ->
+              nil
+
+            {:ok, value} ->
+              value
+          end
+      end
+    end
+
+    def input_value(%{source: %Ash.Query{} = query, data: data} = ash_form, phoenix_form, field) do
+      case get_form_only_field_value(ash_form, phoenix_form, field) do
+        {:ok, value} ->
+          value
+
+        :error ->
+          case Ash.Query.fetch_argument(query, field) do
             {:ok, value} ->
               value
 
             :error ->
-              if data do
-                Map.get(data, field)
+              case Map.fetch(query.params, to_string(field)) do
+                {:ok, value} ->
+                  value
+
+                :error ->
+                  if data do
+                    Map.get(data, field)
+                  end
               end
+          end
+      end
+    end
+
+    defp get_form_only_field_value(
+           %{form_only_fields: form_only_fields, params: params} = ash_form,
+           phoenix_form,
+           field
+         ) do
+      case Enum.find(form_only_fields || %{}, fn {{path, _field}, config} ->
+             Enum.empty?(path) && config.source == field
+           end) do
+        nil ->
+          :error
+
+        {{_, destination}, config} ->
+          string_field = to_string(field)
+
+          case Map.fetch(params, string_field) do
+            {:ok, param_value} ->
+              {:ok, param_value}
+
+            :error ->
+              current_value = input_value(ash_form, phoenix_form, destination)
+              {:ok, config.current_value_handler.(current_value, ash_form)}
           end
       end
     end
