@@ -162,7 +162,6 @@ defmodule AshPhoenix.Form do
     :id,
     :transform_errors,
     :original_data,
-    form_only_fields: %{},
     warn_on_unhandled_errors?: true,
     any_removed?: false,
     added?: false,
@@ -758,8 +757,6 @@ defmodule AshPhoenix.Form do
         matcher
       )
 
-    params = validate_form_only_fields(form, params)
-
     if params == form.params && !!opts[:errors] == form.errors do
       %{
         form
@@ -841,32 +838,6 @@ defmodule AshPhoenix.Form do
     end
   end
 
-  defp validate_form_only_fields(form, params) do
-    form
-    |> get_form_only_fields()
-    |> Enum.reduce(params, fn
-      {{_, destination}, %{source: source, handler: handler, opts: opts}}, params ->
-        value = params[source]
-        new_value = handler.(value, params)
-
-        params = Map.put(params, to_string(destination), new_value)
-
-        if opts[:hide_source?] do
-          Map.delete(params, source)
-        else
-          params
-        end
-    end)
-  end
-
-  defp get_form_only_fields(form) do
-    form.form_only_fields
-    |> Enum.filter(fn
-      {{path, _}, _} -> Enum.empty?(path)
-    end)
-    |> Map.new()
-  end
-
   defp validate_nested_forms(
          form,
          params,
@@ -924,9 +895,7 @@ defmodule AshPhoenix.Form do
 
                     matching_form ->
                       validated =
-                        matching_form
-                        |> carry_over_form_only_fields(key, form)
-                        |> validate(params,
+                        validate(matching_form, params,
                           errors: errors?,
                           matcher: matcher,
                           prev_data_trail?: prev_data_trail
@@ -951,9 +920,7 @@ defmodule AshPhoenix.Form do
             else
               if form.forms[key] do
                 new_form =
-                  form.forms[key]
-                  |> carry_over_form_only_fields(key, form)
-                  |> validate(form_params, errors: errors?, matcher: matcher)
+                  validate(form.forms[key], form_params, errors: errors?, matcher: matcher)
 
                 Map.put(forms, key, new_form)
               else
@@ -996,20 +963,6 @@ defmodule AshPhoenix.Form do
 
       {forms, params}
     end)
-  end
-
-  defp carry_over_form_only_fields(nested_form, key, parent_form) do
-    nested =
-      parent_form.form_only_fields
-      |> Enum.filter(fn {{path, _}, _} ->
-        Enum.at(path, 0) == key
-      end)
-      |> Enum.map(fn {{path, name}, config} ->
-        {{Enum.drop(path, 0), name}, config}
-      end)
-      |> Map.new()
-
-    %{nested_form | form_only_fields: nested}
   end
 
   @submit_opts [
@@ -1607,44 +1560,6 @@ defmodule AshPhoenix.Form do
     form.params["_ignore"] == "true"
   end
 
-  @form_only_field_opts [
-    hide_source?: [
-      type: :boolean,
-      default: true,
-      doc:
-        "Set to false to include both source and destination parameters, instead of hiding the source"
-    ]
-  ]
-
-  @doc """
-  Describe this thing
-
-  ## Options
-
-  #{Ash.OptionsHelpers.docs(@form_only_field_opts)}
-  """
-  @spec add_form_only_field(t(), atom, atom, (term, t() -> term()), Keyword.t()) :: t()
-  def add_form_only_field(
-        %{form_only_fields: form_only_fields} = form,
-        destination,
-        source,
-        handler,
-        opts \\ []
-      ) do
-    opts = Ash.OptionsHelpers.validate!(opts, @form_only_field_opts)
-    path = opts[:path] || []
-
-    %{
-      form
-      | form_only_fields:
-          Map.put(form_only_fields, {path, to_string(destination)}, %{
-            source: to_string(source),
-            handler: handler,
-            opts: opts
-          })
-    }
-  end
-
   @doc """
   Returns the parameters from the form that would be submitted to the action.
 
@@ -1871,7 +1786,7 @@ defmodule AshPhoenix.Form do
       end
 
     if opts[:validate?] do
-      validate(form, params(form, ui_fields?: true), opts[:validate_opts] || [])
+      validate(form, params(form), opts[:validate_opts] || [])
     else
       set_changed?(form)
     end
@@ -1920,7 +1835,7 @@ defmodule AshPhoenix.Form do
       form = set_changed?(form)
 
       if opts[:validate?] do
-        validate(form, params(form, ui_fields?: true), opts[:validate_opts] || [])
+        validate(form, params(form), opts[:validate_opts] || [])
       else
         form
       end

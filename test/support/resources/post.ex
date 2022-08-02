@@ -10,7 +10,6 @@ defmodule AshPhoenix.Test.Post do
     uuid_primary_key(:id)
     attribute(:text, :string, allow_nil?: false)
     attribute(:title, :string)
-    attribute(:duration_in_seconds, :integer)
   end
 
   actions do
