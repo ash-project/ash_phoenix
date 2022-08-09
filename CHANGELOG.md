@@ -12,8 +12,6 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 ### Bug Fixes:
 
-* fix nested form_only_fields and add more tests
-
 * ensure auto forms have unique keys
 
 * always merge join form, add `fields`
@@ -47,8 +45,6 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 * update to latest ash
 
 * fix typespecs on form submit
-
-* add `form_only_field/5`
 
 * warn on unhandled errors by default
 
