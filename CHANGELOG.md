@@ -5,6 +5,77 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.7.3](https://github.com/ash-project/ash_phoenix/compare/v0.7.2-rc.2...v0.7.3) (2022-08-09)
+
+
+
+
+### Bug Fixes:
+
+* fix nested form_only_fields and add more tests
+
+* ensure auto forms have unique keys
+
+* always merge join form, add `fields`
+
+* pass `matcher` down in nested validation
+
+* deduplicate form keys
+
+* when validating, use empty starting point for forms
+
+* include forms when !touched_forms
+
+* keep `added?` on validate
+
+* set changed after add and remove form
+
+* handle case where certain actions are not present
+
+* properly call destroy action with changeset
+
+* Fix validate_opts when single form (#44)
+
+* pass error state down to nested forms properly
+
+* ensure list forms are always `[]` after remove_form
+
+* add opts to `for_action` in `add_form`
+
+### Improvements:
+
+* update to latest ash
+
+* fix typespecs on form submit
+
+* add `form_only_field/5`
+
+* warn on unhandled errors by default
+
+* merge _join forms
+
+* add fields list to join form
+
+* helper functions around ignoring forms
+
+* allow forms to be ignored
+
+* trialing treating all form parameters as strings for keys/values
+
+* pass generated form params in when validating
+
+* add `read_one?` option to submit
+
+* track and submit only touched fields by default
+
+* add `set_params` option
+
+* add `filter` option to `params/2`
+
+* add api_opts to submit
+
+* add `validate_opts` to `add/remove_form`
+
 ## [v0.7.2-rc.2](https://github.com/ash-project/ash_phoenix/compare/v0.7.2-rc.1...v0.7.2-rc.2) (2022-06-29)
 
 
