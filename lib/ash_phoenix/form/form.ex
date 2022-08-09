@@ -1039,8 +1039,7 @@ defmodule AshPhoenix.Form do
   #{Ash.OptionsHelpers.docs(@submit_opts)}
   """
   @spec submit(t(), Keyword.t()) ::
-          {:ok, Ash.Resource.record()}
-          | {:ok, list(Ash.Notifier.Notification.t())}
+          {:ok, Ash.Resource.record() | nil | list(Ash.Notifier.Notification.t())}
           | {:ok, Ash.Resource.record(), list(Ash.Notifier.Notification.t())}
           | :ok
           | {:error, t()}
