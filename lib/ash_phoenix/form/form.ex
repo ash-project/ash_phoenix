@@ -838,6 +838,25 @@ defmodule AshPhoenix.Form do
     end
   end
 
+  @doc """
+  Merge the new options with the saved options on a form. See `update_options/2` for more.
+  """
+  def merge_options(form, opts) do
+    update_options(form, &Keyword.merge(&1, opts))
+  end
+
+  @doc """
+  Update the saved options on a form.
+
+  When a form is created, options like `actor` and `authorize?` are stored in the `opts` key.
+  If you have a case where these options change over time, for example a select box that determines the actor, use this function to override those opts.
+
+  You may want to validate again after this has been changed if it can change the results of your form validation.
+  """
+  def update_options(form, fun) do
+    %{form | opts: fun.(form.opts)}
+  end
+
   defp validate_nested_forms(
          form,
          params,
@@ -1051,7 +1070,7 @@ defmodule AshPhoenix.Form do
         validate(
           form,
           opts[:params],
-          Keyword.merge(changeset_opts, Keyword.take(opts, Keyword.keys(@validate_opts)))
+          Keyword.take(opts, Keyword.keys(@validate_opts))
         )
       else
         form
