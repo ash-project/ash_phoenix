@@ -1044,19 +1044,20 @@ defmodule AshPhoenix.Form do
           | :ok
           | {:error, t()}
   def submit(form, opts \\ []) do
+    changeset_opts = Keyword.drop(form.opts, [:forms, :errors, :id, :method, :for, :as])
+
     form =
       if opts[:params] do
         validate(
           form,
           opts[:params],
-          Keyword.take(opts, Keyword.keys(@validate_opts))
+          Keyword.merge(changeset_opts, Keyword.take(opts, Keyword.keys(@validate_opts)))
         )
       else
         form
       end
 
     opts = validate_opts_with_extra_keys(opts, @submit_opts)
-    changeset_opts = Keyword.drop(form.opts, [:forms, :errors, :id, :method, :for, :as])
     before_submit = opts[:before_submit] || (& &1)
 
     if form.valid? || opts[:force?] do
