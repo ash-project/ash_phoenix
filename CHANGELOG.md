@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.7.4](https://github.com/ash-project/ash_phoenix/compare/v0.7.3...v0.7.4) (2022-08-10)
+
+
+
+
+### Bug Fixes:
+
+* reuse opts when validating before submit
+
+### Improvements:
+
+* add `merge_options` and `update_options`
+
 ## [v0.7.3](https://github.com/ash-project/ash_phoenix/compare/v0.7.2-rc.2...v0.7.3) (2022-08-09)
 
 
