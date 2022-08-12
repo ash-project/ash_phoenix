@@ -296,7 +296,7 @@ defmodule AshPhoenix.FilterForm do
         "operator" => to_string(params[:operator] || params["operator"] || "eq"),
         "negated" => params[:negated] || params["negated"] || false,
         "field" => field,
-        "value" => to_string(params[:value] || params["value"]),
+        "value" => params[:value] || params["value"],
         "path" => path
       }
     else
