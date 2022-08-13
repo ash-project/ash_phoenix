@@ -5,6 +5,23 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.7.5](https://github.com/ash-project/ash_phoenix/compare/v0.7.4...v0.7.5) (2022-08-13)
+
+
+
+
+### Bug Fixes:
+
+* properly parse string paths in `FilterForm`
+
+* don't stringify form value
+
+### Improvements:
+
+* add `update_predicate/3`
+
+* pass must load opts when building auto forms
+
 ## [v0.7.4](https://github.com/ash-project/ash_phoenix/compare/v0.7.3...v0.7.4) (2022-08-10)
 
 
