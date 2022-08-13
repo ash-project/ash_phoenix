@@ -162,6 +162,48 @@ defmodule AshPhoenix.FilterFormTest do
                contains(comments.text, "new")
              )
     end
+
+    test "predicates can be added with paths" do
+      form = FilterForm.new(Post)
+
+      form =
+        FilterForm.add_predicate(
+          form,
+          :text,
+          :contains,
+          "new",
+          path: "comments"
+        )
+
+      assert Ash.Query.equivalent_to?(
+               FilterForm.filter!(Post, form),
+               contains(comments.text, "new")
+             )
+    end
+
+    test "predicates can be updated" do
+      form = FilterForm.new(Post)
+
+      {form, predicate_id} =
+        FilterForm.add_predicate(
+          form,
+          :text,
+          :contains,
+          "new",
+          path: "comments",
+          return_id?: true
+        )
+
+      form =
+        FilterForm.update_predicate(form, predicate_id, fn predicate ->
+          %{predicate | path: []}
+        end)
+
+      assert Ash.Query.equivalent_to?(
+               FilterForm.filter!(Post, form),
+               contains(text, "new")
+             )
+    end
   end
 
   describe "form_data implementation" do

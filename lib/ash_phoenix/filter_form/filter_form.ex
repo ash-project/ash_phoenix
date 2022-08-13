@@ -379,7 +379,7 @@ defmodule AshPhoenix.FilterForm do
 
       path ->
         path
-        |> String.split()
+        |> String.split(".")
         |> Enum.map(&to_existing_atom/1)
     end
   end
@@ -507,6 +507,10 @@ defmodule AshPhoenix.FilterForm do
       type: :boolean,
       default: false,
       doc: "If set to `true`, the function returns `{form, predicate_id}`"
+    ],
+    path: [
+      type: {:or, [:string, {:list, {:or, [:string, :atom]}}]},
+      doc: "The relationship path to apply the predicate to"
     ]
   ]
 
@@ -522,14 +526,23 @@ defmodule AshPhoenix.FilterForm do
 
     predicate_id = Ash.UUID.generate()
 
+    predicate_params = %{
+      "id" => predicate_id,
+      "field" => field,
+      "value" => value,
+      "operator" => operator_or_function
+    }
+
+    predicate_params =
+      if opts[:path] do
+        Map.put(predicate_params, "path", opts[:path])
+      else
+        predicate_params
+      end
+
     predicate =
       new_predicate(
-        %{
-          "id" => predicate_id,
-          "field" => field,
-          "value" => value,
-          "operator" => operator_or_function
-        },
+        predicate_params,
         form
       )
 
@@ -576,6 +589,25 @@ defmodule AshPhoenix.FilterForm do
 
             %Predicate{id: ^id} ->
               []
+
+            predicate ->
+              [predicate]
+          end)
+    }
+    |> set_validity()
+  end
+
+  @doc "Update the predicate with the given id"
+  def update_predicate(form, id, func) do
+    %{
+      form
+      | components:
+          Enum.map(form.components, fn
+            %__MODULE__{} = nested_form ->
+              update_predicate(nested_form, id, func)
+
+            %Predicate{id: ^id} = pred ->
+              func.(pred)
 
             predicate ->
               [predicate]
