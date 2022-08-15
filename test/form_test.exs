@@ -591,21 +591,9 @@ defmodule AshPhoenix.FormTest do
             ]
           ]
         )
-        |> Form.validate(%{
-          "text" => "text",
-          "post" => %{
-            "0" => %{"id" => post1_id},
-            "1" => %{"id" => post2_id}
-          }
-        })
+        |> form_for("foo")
 
-      assert Form.params(form) == %{
-               "post" => [
-                 %{"id" => post1_id, "comments" => []},
-                 %{"id" => post2_id, "comments" => []}
-               ],
-               "text" => "text"
-             }
+      assert Enum.count(inputs_for(form, :post)) == 2
     end
 
     test "a function can be used to derive the data from the data of the parent form" do
@@ -648,7 +636,7 @@ defmodule AshPhoenix.FormTest do
       assert Form.params(form) == %{
                "post" => [
                  %{"comments" => [%{"id" => comment_id}], "id" => post1_id},
-                 %{"id" => post2_id, "comments" => []}
+                 %{"id" => post2_id}
                ],
                "text" => "text"
              }

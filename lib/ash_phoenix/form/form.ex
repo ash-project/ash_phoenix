@@ -753,7 +753,7 @@ defmodule AshPhoenix.Form do
         form,
         new_params || %{},
         !!opts[:errors],
-        opts[:prev_data_trail] || [],
+        (opts[:prev_data_trail] || []) ++ [form.data],
         matcher
       )
 
@@ -865,9 +865,7 @@ defmodule AshPhoenix.Form do
          matcher,
          trail \\ []
        ) do
-    form.form_keys
-    |> Enum.uniq_by(&elem(&1, 0))
-    |> Enum.reduce({%{}, params}, fn {key, opts}, {forms, params} ->
+    Enum.reduce(form.form_keys, {%{}, params}, fn {key, opts}, {forms, params} ->
       forms =
         case fetch_key(params, opts[:as] || key) do
           {:ok, form_params} when form_params != nil ->
@@ -971,12 +969,135 @@ defmodule AshPhoenix.Form do
             end
 
           _ ->
-            case opts[:type] do
-              :list ->
-                Map.put(forms, key, [])
+            if Keyword.has_key?(opts, :data) do
+              cond do
+                opts[:update_action] ->
+                  update_action = opts[:update_action]
 
-              _ ->
-                Map.put(forms, key, nil)
+                  data =
+                    if opts[:data] do
+                      if is_function(opts[:data]) do
+                        if Enum.at(prev_data_trail, 0) do
+                          case call_data(opts[:data], prev_data_trail) do
+                            %Ash.NotLoaded{} ->
+                              raise AshPhoenix.Form.NoDataLoaded,
+                                path: Enum.reverse(trail, [key])
+
+                            other ->
+                              other
+                          end
+                        else
+                          nil
+                        end
+                      else
+                        opts[:data]
+                      end
+                    end
+
+                  if data do
+                    form_values =
+                      if (opts[:type] || :single) == :single do
+                        for_action(data, update_action,
+                          errors: errors?,
+                          warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
+                          prev_data_trail: prev_data_trail,
+                          forms: opts[:forms] || [],
+                          transform_errors: form.transform_errors,
+                          as: form.name <> "[#{key}]",
+                          id: form.id <> "_#{key}"
+                        )
+                      else
+                        data
+                        |> Enum.with_index()
+                        |> Enum.map(fn {data, index} ->
+                          for_action(data, update_action,
+                            errors: errors?,
+                            warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
+                            prev_data_trail: prev_data_trail,
+                            forms: opts[:forms] || [],
+                            transform_errors: form.transform_errors,
+                            as: form.name <> "[#{key}][#{index}]",
+                            id: form.id <> "_#{key}_#{index}"
+                          )
+                        end)
+                      end
+
+                    Map.put(forms, key, form_values)
+                  else
+                    forms
+                  end
+
+                opts[:read_action] ->
+                  read_action = opts[:read_action]
+
+                  data =
+                    if opts[:data] do
+                      if is_function(opts[:data]) do
+                        if Enum.at(prev_data_trail, 0) do
+                          case call_data(opts[:data], prev_data_trail) do
+                            %Ash.NotLoaded{} ->
+                              raise AshPhoenix.Form.NoDataLoaded,
+                                path: Enum.reverse(trail, [key])
+
+                            other ->
+                              other
+                          end
+                        else
+                          nil
+                        end
+                      else
+                        opts[:data]
+                      end
+                    end
+
+                  if data do
+                    form_values =
+                      if (opts[:type] || :single) == :single do
+                        pkey = Ash.Resource.Info.primary_key(data.__struct__)
+
+                        for_action(data, read_action,
+                          errors: errors?,
+                          warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
+                          params: Map.new(pkey, &{to_string(&1), Map.get(data, &1)}),
+                          prev_data_trail: prev_data_trail,
+                          forms: opts[:forms] || [],
+                          data: data,
+                          transform_errors: form.transform_errors,
+                          as: form.name <> "[#{key}]",
+                          id: form.id <> "_#{key}"
+                        )
+                      else
+                        pkey =
+                          unless Enum.empty?(data) do
+                            Ash.Resource.Info.primary_key(Enum.at(data, 0).__struct__)
+                          end
+
+                        data
+                        |> Enum.with_index()
+                        |> Enum.map(fn {data, index} ->
+                          for_action(data, read_action,
+                            errors: errors?,
+                            prev_data_trail: prev_data_trail,
+                            params: Map.new(pkey, &{to_string(&1), Map.get(data, &1)}),
+                            forms: opts[:forms] || [],
+                            data: data,
+                            transform_errors: form.transform_errors,
+                            as: form.name <> "[#{key}][#{index}]",
+                            id: form.id <> "_#{key}_#{index}"
+                          )
+                        end)
+                      end
+
+                    Map.put(forms, key, form_values)
+                  else
+                    forms
+                  end
+
+                true ->
+                  forms
+              end
+            else
+              forms
             end
         end
 
@@ -1724,7 +1845,7 @@ defmodule AshPhoenix.Form do
     end
   end
 
-  defp only_touched(form_keys, true, form) do
+  defp only_touched(form_keys, form, true) do
     Enum.filter(form_keys, fn {key, _} ->
       is_touched?(form, key)
     end)
@@ -2239,7 +2360,7 @@ defmodule AshPhoenix.Form do
         )
       end)
 
-    %{form | forms: new_forms, touched_forms: MapSet.put(form.touched_forms, key)}
+    %{form | forms: new_forms, touched_forms: MapSet.put(form.touched_forms, to_string(key))}
   end
 
   defp do_add_form(form, [key], opts, trail, transform_errors) do
@@ -2320,7 +2441,7 @@ defmodule AshPhoenix.Form do
       | forms: new_forms,
         form_keys: new_config,
         opts: Keyword.put(form.opts, :forms, new_config),
-        touched_forms: MapSet.put(form.touched_forms, key)
+        touched_forms: MapSet.put(form.touched_forms, to_string(key))
     }
   end
 
@@ -2337,7 +2458,7 @@ defmodule AshPhoenix.Form do
       |> Map.put_new(key, [])
       |> Map.update!(key, &do_add_form(&1, rest, opts, [key | trail], transform_errors))
 
-    %{form | forms: new_forms, touched_forms: MapSet.put(form.touched_forms, key)}
+    %{form | forms: new_forms, touched_forms: MapSet.put(form.touched_forms, to_string(key))}
   end
 
   defp do_add_form(_form, path, _opts, trail, _) do
