@@ -51,6 +51,26 @@ defmodule AshPhoenix.FormTest do
                "Unhandled error in form submission for AshPhoenix.Test.Comment.create_with_unknown_error"
     end
 
+    test "update_form marks touched by default" do
+      form =
+        Post
+        |> Form.for_create(:create,
+          api: Api,
+          params: %{"text" => "bar"},
+          forms: [
+            comments: [
+              type: :list,
+              resource: Comment,
+              create_action: :create_with_unknown_error
+            ]
+          ]
+        )
+        |> Form.add_form([:comments], params: %{"text" => "foo"})
+        |> Form.update_form([:comments, 0], & &1)
+
+      assert MapSet.member?(form.touched_forms, "comments")
+    end
+
     test "errors are not set on the parent and single child form" do
       form =
         Comment

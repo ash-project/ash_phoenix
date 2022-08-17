@@ -1370,8 +1370,18 @@ defmodule AshPhoenix.Form do
     end
   end
 
+  @update_form_opts [
+    mark_as_touched?: [
+      type: :boolean,
+      default: true,
+      doc: "Whether or not to mark the path to the updating form as touched"
+    ]
+  ]
+
   @spec update_form(t(), list(atom | integer) | String.t(), (t() -> t())) :: t()
-  def update_form(form, path, func) do
+  def update_form(form, path, func, opts \\ []) do
+    opts = Ash.OptionsHelpers.validate!(opts, @update_form_opts)
+
     path =
       case path do
         [] ->
@@ -1395,14 +1405,36 @@ defmodule AshPhoenix.Form do
             List.update_at(nested_forms, integer, &update_form(&1, rest, func))
           end)
 
-        %{form | forms: new_forms}
+        if opts[:mark_as_touched?] do
+          %{
+            form
+            | forms: new_forms,
+              touched_forms: MapSet.put(form.touched_forms, to_string(atom))
+          }
+        else
+          %{
+            form
+            | forms: new_forms
+          }
+        end
 
       [atom | rest] ->
         new_forms =
           form.forms
-          |> Map.update!(atom, &update_form(&1, rest, func))
+          |> Map.update!(atom, &update_form(&1, rest, func, opts))
 
-        %{form | forms: new_forms}
+        if opts[:mark_as_touched?] do
+          %{
+            form
+            | forms: new_forms,
+              touched_forms: MapSet.put(form.touched_forms, to_string(atom))
+          }
+        else
+          %{
+            form
+            | forms: new_forms
+          }
+        end
     end
   end
 
