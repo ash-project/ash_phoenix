@@ -75,7 +75,7 @@ defmodule AshPhoenix.Form.Auto do
   ]
 
   def auto(resource, action, opts \\ []) do
-    opts = Ash.OptionsHelpers.validate!(opts, @auto_opts)
+    opts = Spark.OptionsHelpers.validate!(opts, @auto_opts)
     Keyword.new(related(resource, action, opts) ++ embedded(resource, action, opts))
   end
 

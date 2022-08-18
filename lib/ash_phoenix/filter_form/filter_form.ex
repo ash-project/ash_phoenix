@@ -51,10 +51,10 @@ defmodule AshPhoenix.FilterForm do
   Create a new filter form.
 
   Options:
-  #{Ash.OptionsHelpers.docs(@new_opts)}
+  #{Spark.OptionsHelpers.docs(@new_opts)}
   """
   def new(resource, opts \\ []) do
-    opts = Ash.OptionsHelpers.validate!(opts, @new_opts)
+    opts = Spark.OptionsHelpers.validate!(opts, @new_opts)
     params = opts[:params]
 
     params = sanitize_params(params)
@@ -519,10 +519,10 @@ defmodule AshPhoenix.FilterForm do
 
   Options:
 
-  #{Ash.OptionsHelpers.docs(@add_predicate_opts)}
+  #{Spark.OptionsHelpers.docs(@add_predicate_opts)}
   """
   def add_predicate(form, field, operator_or_function, value, opts \\ []) do
-    opts = Ash.OptionsHelpers.validate!(opts, @add_predicate_opts)
+    opts = Spark.OptionsHelpers.validate!(opts, @add_predicate_opts)
 
     predicate_id = Ash.UUID.generate()
 
@@ -681,10 +681,10 @@ defmodule AshPhoenix.FilterForm do
 
   Options:
 
-  #{Ash.OptionsHelpers.docs(@add_group_opts)}
+  #{Spark.OptionsHelpers.docs(@add_group_opts)}
   """
   def add_group(form, opts \\ []) do
-    opts = Ash.OptionsHelpers.validate!(opts, @add_group_opts)
+    opts = Spark.OptionsHelpers.validate!(opts, @add_group_opts)
 
     group_id = Ash.UUID.generate()
     group = %__MODULE__{operator: opts[:operator], id: group_id}
