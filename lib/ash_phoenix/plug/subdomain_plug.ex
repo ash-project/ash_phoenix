@@ -26,7 +26,7 @@ defmodule AshPhoenix.SubdomainPlug do
 
   Options:
 
-  #{Ash.OptionsHelpers.docs(@plug_options)}
+  #{Spark.OptionsHelpers.docs(@plug_options)}
 
   To plug it on your router, you can use:
       plug Ash.SubdomainPlug,
@@ -58,7 +58,7 @@ defmodule AshPhoenix.SubdomainPlug do
   alias Plug.Conn
 
   @doc false
-  def init(opts), do: Ash.OptionsHelpers.validate!(opts, @plug_options)
+  def init(opts), do: Spark.OptionsHelpers.validate!(opts, @plug_options)
 
   @doc false
   def call(conn, opts) do

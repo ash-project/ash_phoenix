@@ -338,7 +338,7 @@ defmodule AshPhoenix.Form do
 
     {opts, extra} = Keyword.split(opts, keys)
 
-    opts = Ash.OptionsHelpers.validate!(opts, schema)
+    opts = Spark.OptionsHelpers.validate!(opts, schema)
 
     Keyword.merge(opts, extra)
   end
@@ -379,7 +379,7 @@ defmodule AshPhoenix.Form do
   Creates a form corresponding to a create action on a resource.
 
   Options:
-  #{Ash.OptionsHelpers.docs(@for_opts)}
+  #{Spark.OptionsHelpers.docs(@for_opts)}
 
   Any *additional* options will be passed to the underlying call to `Ash.Changeset.for_create/4`. This means
   you can set things like the tenant/actor. These will be retained, and provided again when `Form.submit/3` is called.
@@ -392,7 +392,7 @@ defmodule AshPhoenix.Form do
   manipulation of the auto forms, you can also call `AshPhoenix.Form.Auto.auto/2`, and then manipulate the
   result and pass it to the `forms` option.
 
-  #{Ash.OptionsHelpers.docs(@nested_form_opts)}
+  #{Spark.OptionsHelpers.docs(@nested_form_opts)}
   """
   @spec for_create(Ash.Resource.t(), action :: atom, opts :: Keyword.t()) :: t()
   def for_create(resource, action, opts \\ []) when is_atom(resource) do
@@ -466,7 +466,7 @@ defmodule AshPhoenix.Form do
   Creates a form corresponding to an update action on a record.
 
   Options:
-  #{Ash.OptionsHelpers.docs(@for_opts)}
+  #{Spark.OptionsHelpers.docs(@for_opts)}
 
   Any *additional* options will be passed to the underlying call to `Ash.Changeset.for_update/4`. This means
   you can set things like the tenant/actor. These will be retained, and provided again when `Form.submit/3` is called.
@@ -548,7 +548,7 @@ defmodule AshPhoenix.Form do
   Creates a form corresponding to a destroy action on a record.
 
   Options:
-  #{Ash.OptionsHelpers.docs(@for_opts)}
+  #{Spark.OptionsHelpers.docs(@for_opts)}
 
   Any *additional* options will be passed to the underlying call to `Ash.Changeset.for_destroy/4`. This means
   you can set things like the tenant/actor. These will be retained, and provided again when `Form.submit/3` is called.
@@ -630,7 +630,7 @@ defmodule AshPhoenix.Form do
   Creates a form corresponding to a read action on a resource.
 
   Options:
-  #{Ash.OptionsHelpers.docs(@for_opts)}
+  #{Spark.OptionsHelpers.docs(@for_opts)}
 
   Any *additional* options will be passed to the underlying call to `Ash.Query.for_read/4`. This means
   you can set things like the tenant/actor. These will be retained, and provided again when `Form.submit/3` is called.
@@ -641,7 +641,7 @@ defmodule AshPhoenix.Form do
 
   ## Nested Form Options
 
-  #{Ash.OptionsHelpers.docs(@nested_form_opts)}
+  #{Spark.OptionsHelpers.docs(@nested_form_opts)}
   """
   @spec for_read(Ash.Resource.t(), action :: atom, opts :: Keyword.t()) :: t()
   def for_read(resource, action, opts \\ []) when is_atom(resource) do
@@ -783,7 +783,7 @@ defmodule AshPhoenix.Form do
 
   Options:
 
-  #{Ash.OptionsHelpers.docs(@validate_opts)}
+  #{Spark.OptionsHelpers.docs(@validate_opts)}
   """
   @spec validate(t(), map, Keyword.t()) :: t()
   def validate(form, new_params, opts \\ []) do
@@ -1309,7 +1309,7 @@ defmodule AshPhoenix.Form do
 
   Options:
 
-  #{Ash.OptionsHelpers.docs(@submit_opts)}
+  #{Spark.OptionsHelpers.docs(@submit_opts)}
   """
   @spec submit(t(), Keyword.t()) ::
           {:ok, Ash.Resource.record() | nil | list(Ash.Notifier.Notification.t())}
@@ -1347,7 +1347,7 @@ defmodule AshPhoenix.Form do
         """
       end
 
-      case Ash.Api.resource(form.api, form.resource) do
+      case Ash.Api.Info.resource(form.api, form.resource) do
         {:ok, _} ->
           :ok
 
@@ -1515,7 +1515,7 @@ defmodule AshPhoenix.Form do
 
   @spec update_form(t(), list(atom | integer) | String.t(), (t() -> t())) :: t()
   def update_form(form, path, func, opts \\ []) do
-    opts = Ash.OptionsHelpers.validate!(opts, @update_form_opts)
+    opts = Spark.OptionsHelpers.validate!(opts, @update_form_opts)
 
     path =
       case path do
@@ -1675,7 +1675,7 @@ defmodule AshPhoenix.Form do
   By default, only errors on the form being passed in (not nested forms) are provided.
   Use `for_path` to get errors for nested forms.
 
-  #{Ash.OptionsHelpers.docs(@errors_opts)}
+  #{Spark.OptionsHelpers.docs(@errors_opts)}
   """
   @spec errors(t(), Keyword.t()) ::
           ([{atom, {String.t(), Keyword.t()}}]
@@ -2105,11 +2105,11 @@ defmodule AshPhoenix.Form do
   `add_form` with not string keys/values you may not be able to depend on the shape of the `params` map (which you should ideally
   not depend on anyway).
 
-  #{Ash.OptionsHelpers.docs(@add_form_opts)}
+  #{Spark.OptionsHelpers.docs(@add_form_opts)}
   """
   @spec add_form(t(), String.t() | list(atom | integer), Keyword.t()) :: t()
   def add_form(form, path, opts \\ []) do
-    opts = Ash.OptionsHelpers.validate!(opts, @add_form_opts)
+    opts = Spark.OptionsHelpers.validate!(opts, @add_form_opts)
 
     form =
       if is_binary(path) do
@@ -2155,7 +2155,7 @@ defmodule AshPhoenix.Form do
   ```
   """
   def remove_form(form, path, opts \\ []) do
-    opts = Ash.OptionsHelpers.validate!(opts, @remove_form_opts)
+    opts = Spark.OptionsHelpers.validate!(opts, @remove_form_opts)
 
     if has_form?(form, path) do
       form =
