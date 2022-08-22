@@ -2019,7 +2019,7 @@ defmodule AshPhoenix.Form do
     if transform? do
       apply_or_return(transformed_via_option, form.transform_params, :validate)
     else
-      params
+      transformed_via_option
     end
   end
 
