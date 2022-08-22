@@ -5,6 +5,27 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.7.7](https://github.com/ash-project/ash_phoenix/compare/v0.7.6-rc.0...v0.7.7) (2022-08-22)
+
+
+
+
+### Bug Fixes:
+
+* remove typo from new transform_params logic
+
+* shore up missing cases around transform_params
+
+* mark forms updated with `update_form/4` as touched by default
+
+### Improvements:
+
+* unlock unnecessary deps
+
+* update to latest ash
+
+* support non-map type nested forms
+
 ## [v0.7.6-rc.0](https://github.com/ash-project/ash_phoenix/compare/v0.7.5...v0.7.6-rc.0) (2022-08-15)
 
 
