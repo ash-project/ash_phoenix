@@ -182,8 +182,12 @@ defmodule AshPhoenix.Form.Auto do
           if key do
             opts
             |> Keyword.put(:forms, [])
-            |> Keyword.put(:transform_params, fn params ->
-              Map.get(params, to_string(key))
+            |> Keyword.put(:transform_params, fn params, type ->
+              if type == :nested do
+                Map.get(params, to_string(key))
+              else
+                params
+              end
             end)
           else
             Keyword.put(opts, :forms, [])

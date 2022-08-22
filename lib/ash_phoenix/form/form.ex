@@ -239,13 +239,13 @@ defmodule AshPhoenix.Form do
       """
     ],
     prepare_params: [
-      type: {:or, [{:fun, 1}, {:in, [nil]}]},
+      type: {:or, [{:fun, 2}, {:in, [nil]}]},
       doc: """
       A function for pre-processing the form parameters before they are handled by the form.
       """
     ],
     transform_params: [
-      type: {:or, [{:fun, 1}, {:in, [nil]}]},
+      type: {:or, [{:fun, 2}, {:in, [nil]}]},
       doc: """
       A function for post-processing the form parameters before they are used for changeset validation/submission.
       """
@@ -791,7 +791,7 @@ defmodule AshPhoenix.Form do
 
     new_params =
       if form.prepare_params do
-        form.prepare_params.(new_params)
+        form.prepare_params.(new_params, :validate)
       else
         new_params
       end
@@ -832,7 +832,7 @@ defmodule AshPhoenix.Form do
 
       changeset_params =
         if form.transform_params do
-          form.transform_params.(changeset_params)
+          form.transform_params.(changeset_params, :validate)
         else
           changeset_params
         end
@@ -1025,7 +1025,8 @@ defmodule AshPhoenix.Form do
                   |> List.wrap()
                   |> Enum.with_index()
                   |> Map.new(fn {form, index} ->
-                    {to_string(index), apply_or_return(form.params, form.transform_params)}
+                    {to_string(index),
+                     apply_or_return(form.params, form.transform_params, :nested)}
                   end)
 
                 Map.put(params, to_string(opts[:as] || key), new_nested)
@@ -1073,7 +1074,7 @@ defmodule AshPhoenix.Form do
               Map.put(
                 params,
                 to_string(opts[:as] || key),
-                apply_or_return(new_forms[key].params, new_forms[key].transform_params)
+                apply_or_return(new_forms[key].params, new_forms[key].transform_params, :nested)
               )
 
             {new_forms, new_params}
@@ -1338,12 +1339,7 @@ defmodule AshPhoenix.Form do
           raise error
       end
 
-      changeset_params =
-        if form.transform_params do
-          form.transform_params.(opts[:override_params] || params(form))
-        else
-          opts[:override_params] || params(form)
-        end
+      changeset_params = opts[:override_params] || params(form)
 
       {original_changeset_or_query, result} =
         case form.type do
@@ -1868,10 +1864,12 @@ defmodule AshPhoenix.Form do
     indexer = opts[:indexer]
     indexed_lists? = opts[:indexed_lists?] || not is_nil(indexer) || false
     transform = opts[:transform]
+    transform? = Keyword.get(opts, :transform?, true)
     produce = opts[:produce]
     set_params = opts[:set_params]
     only_touched? = Keyword.get(opts, :only_touched?, true)
     filter = opts[:filter] || fn _ -> true end
+    opts = Keyword.put(opts, :transform?, false)
 
     form_keys =
       form.form_keys
@@ -1917,6 +1915,9 @@ defmodule AshPhoenix.Form do
                 if form.form_keys[key][:merge?] do
                   Map.merge(nested_params || %{}, params)
                 else
+                  nested_params =
+                    apply_or_return(nested_params, nested_form.transform_params, :nested)
+
                   Map.put(params, for_name, nested_params)
                 end
               end
@@ -1943,7 +1944,12 @@ defmodule AshPhoenix.Form do
                 |> Map.update!(for_name, fn current ->
                   if indexer do
                     Enum.reduce(forms, current, fn form, current ->
-                      Map.put(current, indexer.(form), params(form, opts))
+                      nested_params =
+                        form
+                        |> params(opts)
+                        |> apply_or_return(form.transform_params, :nested)
+
+                      Map.put(current, indexer.(form), nested_params)
                     end)
                   else
                     max =
@@ -1954,7 +1960,12 @@ defmodule AshPhoenix.Form do
 
                     forms
                     |> Enum.reduce({current, max + 1}, fn form, {current, i} ->
-                      {Map.put(current, to_string(i), params(form, opts)), i + 1}
+                      nested_params =
+                        form
+                        |> params(opts)
+                        |> apply_or_return(form.transform_params, :nested)
+
+                      {Map.put(current, to_string(i), nested_params), i + 1}
                     end)
                     |> elem(0)
                   end
@@ -1963,7 +1974,12 @@ defmodule AshPhoenix.Form do
                 params
                 |> Map.put_new(for_name, [])
                 |> Map.update!(for_name, fn current ->
-                  current ++ Enum.map(forms, &params(&1, opts))
+                  current ++
+                    Enum.map(forms, fn form ->
+                      form
+                      |> params(opts)
+                      |> apply_or_return(form.transform_params, :nested)
+                    end)
                 end)
               end
             else
@@ -1993,10 +2009,17 @@ defmodule AshPhoenix.Form do
         with_produced_params
       end
 
-    if transform do
-      Map.new(with_set_params, transform)
+    transformed_via_option =
+      if transform do
+        Map.new(with_set_params, transform)
+      else
+        with_set_params
+      end
+
+    if transform? do
+      apply_or_return(transformed_via_option, form.transform_params, :validate)
     else
-      with_set_params
+      params
     end
   end
 
@@ -2081,7 +2104,7 @@ defmodule AshPhoenix.Form do
       end
 
     if opts[:validate?] do
-      validate(form, params(form), opts[:validate_opts] || [])
+      validate(form, params(form, transform?: false), opts[:validate_opts] || [])
     else
       set_changed?(form)
     end
@@ -2130,7 +2153,7 @@ defmodule AshPhoenix.Form do
       form = set_changed?(form)
 
       if opts[:validate?] do
-        validate(form, params(form), opts[:validate_opts] || [])
+        validate(form, params(form, transform?: false), opts[:validate_opts] || [])
       else
         form
       end
@@ -2247,8 +2270,8 @@ defmodule AshPhoenix.Form do
     end
   end
 
-  defp apply_or_return(value, nil), do: value
-  defp apply_or_return(value, function), do: function.(value)
+  defp apply_or_return(value, nil, _type), do: value
+  defp apply_or_return(value, function, type), do: function.(value, type)
 
   def hidden_fields(form) do
     hidden =
