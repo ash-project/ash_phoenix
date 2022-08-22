@@ -95,7 +95,6 @@ defmodule AshPhoenix.Form.Auto do
 
     action.arguments
     |> Enum.reject(& &1.private?)
-    |> Enum.filter(&(&1.type in [{:array, :map}, :map, Ash.Type.Map, {:array, Ash.Type.Map}]))
     |> Enum.flat_map(fn arg ->
       case find_manage_change(arg, action) do
         nil ->
@@ -164,9 +163,55 @@ defmodule AshPhoenix.Form.Auto do
         end
       ]
 
+      opts =
+        if map_type?(arg.type) do
+          opts
+        else
+          key =
+            opts[:value_is_key] ||
+              relationship.destination
+              |> Ash.Resource.Info.primary_key()
+              |> case do
+                [key] ->
+                  key
+
+                _ ->
+                  nil
+              end
+
+          if key do
+            opts
+            |> Keyword.put(:forms, [])
+            |> Keyword.put(:transform_params, fn params ->
+              Map.get(params, to_string(key))
+            end)
+          else
+            Keyword.put(opts, :forms, [])
+          end
+        end
+
       {arg.name, opts}
     end)
     |> Keyword.new()
+  end
+
+  defp map_type?({:array, type}) do
+    map_type?(type)
+  end
+
+  defp map_type?(:map), do: true
+  defp map_type?(Ash.Type.Map), do: true
+
+  defp map_type?(type) do
+    if Ash.Type.embedded_type?(type) do
+      if is_atom(type) && :erlang.function_exported(type, :admin_map_type?, 0) do
+        type.admin_map_type?()
+      else
+        false
+      end
+    else
+      false
+    end
   end
 
   defp add_nested_forms(opts, auto_opts) do

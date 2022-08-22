@@ -25,6 +25,11 @@ defmodule AshPhoenix.Test.Post do
       change(manage_relationship(:author, type: :direct_control, on_missing: :unrelate))
     end
 
+    create :create_with_non_map_relationship_args do
+      argument(:comment_ids, {:array, :integer})
+      change(manage_relationship(:comment_ids, :comments, type: :replace))
+    end
+
     create :create_author_required do
       argument(:author, :map, allow_nil?: false)
       change(manage_relationship(:author, type: :direct_control, on_missing: :unrelate))
@@ -51,8 +56,8 @@ defmodule AshPhoenix.Test.Post do
 
     many_to_many(:linked_posts, AshPhoenix.Test.Post,
       through: AshPhoenix.Test.PostLink,
-      destination_field_on_join_table: :destination_post_id,
-      source_field_on_join_table: :source_post_id
+      destination_attribute_on_join_resource: :destination_post_id,
+      source_attribute_on_join_resource: :source_post_id
     )
   end
 end

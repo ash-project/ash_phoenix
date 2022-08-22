@@ -30,6 +30,26 @@ defmodule AshPhoenix.AutoFormTest do
     assert forms[:linked_posts][:create_action] == :create
   end
 
+  test "when using a non-map value it operates on maps, then transforms the params accordingly" do
+    form =
+      Post
+      |> AshPhoenix.Form.for_create(:create_with_non_map_relationship_args, forms: [auto?: true])
+
+    assert is_function(form.form_keys[:comment_ids][:transform_params])
+    assert form.form_keys[:comment_ids][:transform_params].(%{"id" => 1}) == 1
+
+    validated =
+      form
+      |> AshPhoenix.Form.validate(%{"comment_ids" => %{"0" => %{"id" => 1}}})
+
+    assert validated.source.arguments[:comment_ids] == [1]
+
+    # assert forms[:comments][:update_action] == :update
+    # assert forms[:comments][:create_action] == :create
+    # assert forms[:linked_posts][:update_action] == :update
+    # assert forms[:linked_posts][:create_action] == :create
+  end
+
   defp auto_forms(resource, action) do
     [forms: Auto.auto(resource, action)]
   end
