@@ -52,13 +52,54 @@ defmodule AshPhoenix.MixProject do
     ]
   end
 
+  defp extras() do
+    "documentation/**/*.md"
+    |> Path.wildcard()
+    |> Enum.map(fn path ->
+      title =
+        path
+        |> Path.basename(".md")
+        |> String.split(~r/[-_]/)
+        |> Enum.map(&String.capitalize/1)
+        |> Enum.join(" ")
+        |> case do
+          "F A Q" ->
+            "FAQ"
+
+          other ->
+            other
+        end
+
+      {String.to_atom(path),
+       [
+         title: title
+       ]}
+    end)
+  end
+
   defp docs do
     [
-      main: "readme",
+      main: "working-with-phoenix",
       source_ref: "v#{@version}",
       logo: "logos/small-logo.png",
-      extras: [
-        "README.md"
+      extras: extras(),
+      groups_for_modules: [
+        "Phoenix Helpers": [
+          AshPhoenix.Form,
+          AshPhoenix.Form.Auto,
+          AshPhoenix.FilterForm,
+          AshPhoenix.FilterForm.Predicate,
+          AshPhoenix.LiveView,
+          AshPhoenix.FormData.Error,
+          AshPhoenix.SubdomainPlug
+        ],
+        Errors: [
+          AshPhoenix.Form.InvalidPath,
+          AshPhoenix.Form.NoActionConfigured,
+          AshPhoenix.Form.NoDataLoaded,
+          AshPhoenix.Form.NoFormConfigured,
+          AshPhoenix.Form.NoResourceConfigured
+        ]
       ]
     ]
   end

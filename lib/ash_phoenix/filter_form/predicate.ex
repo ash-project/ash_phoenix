@@ -1,6 +1,9 @@
 defmodule AshPhoenix.FilterForm.Predicate do
   @moduledoc """
-  An experimental tool to build forms that can produce an `Ash.Filter`.
+  Represents an individual predicate appearing in a filter form.
+
+  Predicates are grouped up in an `AshPhoenix.FilterForm` to create boolean
+  filter statements.
   """
 
   defstruct [
