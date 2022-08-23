@@ -451,8 +451,8 @@ defmodule AshPhoenix.Form.Auto do
         case Map.get(root, relationship.join_relationship) do
           value when is_list(value) ->
             Enum.find(value, fn join ->
-              Map.get(join, relationship.destination_field_on_join_table) ==
-                Map.get(parent, relationship.destination_field)
+              Map.get(join, relationship.destination_attribute_on_join_resource) ==
+                Map.get(parent, relationship.destination_attribute)
             end)
 
           _ ->

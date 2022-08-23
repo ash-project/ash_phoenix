@@ -24,14 +24,14 @@ defmodule AshPhoenix.DocIndex do
          AshPhoenix.LiveView,
          AshPhoenix.FormData.Error,
          AshPhoenix.SubdomainPlug
-       ],
-       {"Errors",
-        [
-          AshPhoenix.Form.InvalidPath,
-          AshPhoenix.Form.NoActionConfigured,
-          AshPhoenix.Form.NoDataLoaded,
-          AshPhoenix.Form.NoFormConfigured,
-          AshPhoenix.FOrm.NoResourceConfigured
-        ]}}
+       ]},
+      {"Errors",
+       [
+         AshPhoenix.Form.InvalidPath,
+         AshPhoenix.Form.NoActionConfigured,
+         AshPhoenix.Form.NoDataLoaded,
+         AshPhoenix.Form.NoFormConfigured,
+         AshPhoenix.FOrm.NoResourceConfigured
+       ]}
     ]
 end

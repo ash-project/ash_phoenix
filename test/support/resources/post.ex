@@ -56,8 +56,8 @@ defmodule AshPhoenix.Test.Post do
 
     many_to_many(:linked_posts, AshPhoenix.Test.Post,
       through: AshPhoenix.Test.PostLink,
-      destination_field_on_join_table: :destination_post_id,
-      source_field_on_join_table: :source_post_id
+      destination_attribute_on_join_resource: :destination_post_id,
+      source_attribute_on_join_resource: :source_post_id
     )
   end
 end
