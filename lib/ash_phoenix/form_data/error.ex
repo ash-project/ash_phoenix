@@ -1,4 +1,14 @@
 defprotocol AshPhoenix.FormData.Error do
+  @moduledoc """
+  A protocol for allowing errors to be rendered into a form.
+
+  To implement, define a `to_form_error/1` and return a single error or list of errors of the following shape:
+
+  `{:field_name, message, replacements}`
+
+  Replacements is a keyword list to allow for translations, by extracting out the constants like numbers from the message.
+  """
+
   def to_form_error(exception)
 end
 

@@ -332,7 +332,6 @@ defmodule AshPhoenix.Form do
     ]
   ]
 
-  @doc false
   defp validate_opts_with_extra_keys(opts, schema) do
     keys = Keyword.keys(schema)
 
@@ -1497,6 +1496,13 @@ defmodule AshPhoenix.Form do
     ]
   ]
 
+  @doc """
+  Updates the form at the provided path using the given function.
+
+  Marks all forms along the path as touched by default. To prevent it, provide `mark_as_touched?: false`.
+
+  This can be useful if you have a button that should modify a nested form in some way, for example.
+  """
   @spec update_form(t(), list(atom | integer) | String.t(), (t() -> t())) :: t()
   def update_form(form, path, func, opts \\ []) do
     opts = Spark.OptionsHelpers.validate!(opts, @update_form_opts)
@@ -1557,6 +1563,9 @@ defmodule AshPhoenix.Form do
     end
   end
 
+  @doc """
+  Returns true if a given form path exists in the form
+  """
   @spec has_form?(t(), list(atom | integer) | String.t()) :: boolean
   def has_form?(form, path) do
     not is_nil(get_form(form, path))
@@ -1565,6 +1574,9 @@ defmodule AshPhoenix.Form do
       false
   end
 
+  @doc """
+  Gets the form at the specified path
+  """
   @spec get_form(t(), list(atom | integer) | String.t()) :: t() | nil
   def get_form(form, path) do
     path =
@@ -1748,6 +1760,7 @@ defmodule AshPhoenix.Form do
     end)
   end
 
+  @doc false
   @spec errors_for(t(), list(atom | integer) | String.t(), type :: :simple | :raw | :plaintext) ::
           [{atom, {String.t(), Keyword.t()}}] | [String.t()] | map | nil
   @deprecated "Use errors/2 instead"
@@ -2136,6 +2149,8 @@ defmodule AshPhoenix.Form do
   ```elixir
   Enum.reduce(removed_form_paths, form, &AshPhoenix.Form.remove_form(&2, &1))
   ```
+
+  #{Spark.OptionsHelpers.docs(@remove_form_opts)}
   """
   def remove_form(form, path, opts \\ []) do
     opts = Spark.OptionsHelpers.validate!(opts, @remove_form_opts)
@@ -2214,6 +2229,7 @@ defmodule AshPhoenix.Form do
     end)
   end
 
+  @doc false
   def arguments_changed?(form) do
     changeset = form.source
 
@@ -2273,6 +2289,9 @@ defmodule AshPhoenix.Form do
   defp apply_or_return(value, nil, _type), do: value
   defp apply_or_return(value, function, type), do: function.(value, type)
 
+  @doc """
+  Returns the hidden fields for a form as a keyword list
+  """
   def hidden_fields(form) do
     hidden =
       if form.type in [:read, :update, :destroy] && form.data do

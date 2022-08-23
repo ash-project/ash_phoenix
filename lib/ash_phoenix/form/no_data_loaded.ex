@@ -1,4 +1,5 @@
 defmodule AshPhoenix.Form.NoDataLoaded do
+  @moduledoc "Raised when a data needed to be used but the required data was not loaded"
   defexception [:path]
 
   def exception(opts) do

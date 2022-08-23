@@ -1,4 +1,5 @@
 defmodule AshPhoenix.Form.NoResourceConfigured do
+  @moduledoc "Raised when a form needed to be constructed but the resource for that form could not be determined"
   defexception [:path]
 
   def exception(opts) do
