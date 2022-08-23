@@ -1,5 +1,5 @@
 defmodule AshPhoenix.Form.NoFormConfigured do
-    @moduledoc "Raised when attempting to refer to a form but no nested form with that name was configured.
+  @moduledoc "Raised when attempting to refer to a form but no nested form with that name was configured."
   defexception [:field, :available, :path]
 
   def exception(opts) do
