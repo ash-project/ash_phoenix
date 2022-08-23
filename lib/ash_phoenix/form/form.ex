@@ -2,14 +2,24 @@ defmodule AshPhoenix.Form do
   @moduledoc """
   A module to allow you to fluidly use resources with phoenix forms.
 
+  ### Life cycle
+
   The general workflow is, with either liveview or phoenix forms:
 
   1. Create a form with `AshPhoenix.Form`
   2. Render that form with Phoenix's `form_for` (or, if using surface, <Form>)
   3. To validate the form (e.g with `on-change` for liveview), pass the input to `AshPhoenix.Form.validate(form, params)`
-  4. On form submission, pass the input to `AshPhoenix.Form.validate(form, params)` and then use `AshPhoenix.Form.submit(form, ApiModule)`
+  4. On form submission, pass the input to `AshPhoenix.Form.validate(form, params)` and then use `AshPhoenix.Form.submit(form)`
+  5. On success, use the result to redirect or assign. On failure, reassign the provided form.
+
+  The following keys exist on the form to show where in the lifecycle you are:
+
+  - `submitted_once?` - If the form has ever been submitted. Useful for not showing any errors on the first attempt to fill out a form.
+  - `just_submitted?` - If the form has just been submitted and *no validation* has happened since. Useful for things like
+    triggering a UI effect that should stop when the form is modified again.
 
   ### Working with related data
+
   If your resource action accepts related data, (for example a managed relationship argument, or an embedded resource attribute), you can
   use Phoenix's `inputs_for` for that field, *but* you must do one of two things:
 
