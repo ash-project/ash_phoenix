@@ -1,7 +1,5 @@
 defmodule AshPhoenix.DocIndex do
-  @moduledoc """
-  The doc index for ash_phoenix in ash-hq.org
-  """
+  @moduledoc false
 
   use Spark.DocIndex,
     guides_from: [
@@ -31,7 +29,7 @@ defmodule AshPhoenix.DocIndex do
          AshPhoenix.Form.NoActionConfigured,
          AshPhoenix.Form.NoDataLoaded,
          AshPhoenix.Form.NoFormConfigured,
-         AshPhoenix.FOrm.NoResourceConfigured
+         AshPhoenix.Form.NoResourceConfigured
        ]}
     ]
 end

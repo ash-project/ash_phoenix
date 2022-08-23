@@ -1,9 +1,5 @@
 defmodule AshPhoenix do
-  @moduledoc """
-  General helpers for AshPhoenix.
-
-  These will be deprecated at some point, once the work on `AshPhoenix.Form` is complete.
-  """
+  @moduledoc false
 
   @doc false
   def replace_vars(message, vars) do

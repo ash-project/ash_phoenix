@@ -1674,8 +1674,7 @@ defmodule AshPhoenix.Form do
       The path of the form you want errors for, either as a list or as a string, e.g `[:comments, 0]` or `form[comments][0]`
       Passing `:all` will cause this function to return a map of path to its errors, like so:
 
-      ```elixir
-      %{[:comments, 0] => [body: "is invalid"], ...}
+      `%{[:comments, 0] => [body: "is invalid"], ...}`
       ```
       """
     ]
