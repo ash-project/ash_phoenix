@@ -1,8 +1,10 @@
 defmodule AshPhoenix.Form.Auto do
   @moduledoc """
-  A (slightly) experimental tool to automatically generate available nested forms based on a resource and action.
+  A tool to automatically generate available nested forms based on a resource and action.
 
   To use this, specify `forms: [auto?: true]` when creating the form.
+
+  Keep in mind, you can always specify these manually when creating a form by simply specifying the `forms` option.
 
   There are two things that this builds forms for:
 
@@ -25,7 +27,7 @@ defmodule AshPhoenix.Form.Auto do
       <%= text_input comment_form, :on_create_field %>
     <% else %>
       <%= text_input comment_form, :text %>
-      <%= text_input comment_form, :on_create_field %>
+      <%= text_input comment_form, :on_update_field %>
     <% end %>
 
     <button phx-click="remove_form" phx-value-path="<%= comment_form.name %>">Add Comment</button>

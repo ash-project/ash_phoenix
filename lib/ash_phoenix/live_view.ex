@@ -74,6 +74,12 @@ defmodule AshPhoenix.LiveView do
   Additionally, you'll need to define a `handle_info/2` callback for your liveview to receive any
   notifications, and pass that notification into `handle_live/3`. See `handle_live/3` for more.
 
+  ## Important
+
+  The logic for handling events to keep data live is currently very limited. It will simply rerun the query
+  every time. To this end, you should feel free to intercept individual events and handle them yourself for
+  more optimized liveness.
+
   ## Pagination
 
   To make paginated views convenient, as well as making it possible to keep those views live, Ash does not
@@ -89,7 +95,7 @@ defmodule AshPhoenix.LiveView do
   ## Options:
   #{NimbleOptions.docs(@opts)}
 
-  A great way to get readable millisecond values, you can use the functions in erlang's `:timer` module,
+  A great way to get readable millisecond values is to use the functions in erlang's `:timer` module,
   like `:timer.hours/1`, `:timer.minutes/1`, and `:timer.seconds/1`
 
   #### refetch_interval
