@@ -71,6 +71,11 @@ defmodule AshPhoenix.Form.Auto do
       doc:
         "Sets all list type forms to `sparse?: true` by default. Has no effect on forms derived for embedded resources.",
       default: false
+    ],
+    include_non_map_types?: [
+      type: :boolean,
+      doc: "Creates form for non map or array of map type inputs",
+      default: false
     ]
   ]
 
@@ -95,6 +100,7 @@ defmodule AshPhoenix.Form.Auto do
 
     action.arguments
     |> Enum.reject(& &1.private?)
+    |> exclude_non_map_types(auto_opts)
     |> Enum.flat_map(fn arg ->
       case find_manage_change(arg, action) do
         nil ->
@@ -197,6 +203,16 @@ defmodule AshPhoenix.Form.Auto do
       {arg.name, opts}
     end)
     |> Keyword.new()
+  end
+
+  defp exclude_non_map_types(args, opts) do
+    if opts[:include_non_map_types?] do
+      args
+    else
+      Enum.filter(args, fn %{type: type} ->
+        map_type?(type)
+      end)
+    end
   end
 
   defp map_type?({:array, type}) do

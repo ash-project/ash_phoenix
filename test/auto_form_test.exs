@@ -33,7 +33,12 @@ defmodule AshPhoenix.AutoFormTest do
   test "when using a non-map value it operates on maps, then transforms the params accordingly" do
     form =
       Post
-      |> AshPhoenix.Form.for_create(:create_with_non_map_relationship_args, forms: [auto?: true])
+      |> AshPhoenix.Form.for_create(:create_with_non_map_relationship_args,
+        forms:
+          AshPhoenix.Form.Auto.auto(Post, :create_with_non_map_relationship_args,
+            include_non_map_types?: true
+          )
+      )
 
     assert is_function(form.form_keys[:comment_ids][:transform_params])
     assert form.form_keys[:comment_ids][:transform_params].(%{"id" => 1}, :nested) == 1
