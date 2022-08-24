@@ -17,6 +17,9 @@ defmodule AshPhoenix.Form do
   - `submitted_once?` - If the form has ever been submitted. Useful for not showing any errors on the first attempt to fill out a form.
   - `just_submitted?` - If the form has just been submitted and *no validation* has happened since. Useful for things like
     triggering a UI effect that should stop when the form is modified again.
+  - `.changed?` - If something about the form is different than it originally was. Note that in some cases this can yield a
+    false positive, specifically if a nested form is removed and then a new one is added with the exact same values.
+  - `.touched_forms` - A MapSet containing all keys in the form that have been modified. When submitting a form, only these keys are included in the parameters.
 
   ### Working with related data
 
@@ -1685,7 +1688,6 @@ defmodule AshPhoenix.Form do
       Passing `:all` will cause this function to return a map of path to its errors, like so:
 
       `%{[:comments, 0] => [body: "is invalid"], ...}`
-      ```
       """
     ]
   ]
