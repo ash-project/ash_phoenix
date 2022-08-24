@@ -1916,7 +1916,12 @@ defmodule AshPhoenix.Form do
                   Map.merge(nested_params || %{}, params)
                 else
                   nested_params =
-                    apply_or_return(nested_params, nested_form.transform_params, :nested)
+                    apply_or_return(
+                      nested_params,
+                      nested_form.transform_params,
+                      :nested,
+                      transform?
+                    )
 
                   Map.put(params, for_name, nested_params)
                 end
@@ -1947,7 +1952,7 @@ defmodule AshPhoenix.Form do
                       nested_params =
                         form
                         |> params(opts)
-                        |> apply_or_return(form.transform_params, :nested)
+                        |> apply_or_return(form.transform_params, :nested, transform?)
 
                       Map.put(current, indexer.(form), nested_params)
                     end)
@@ -1963,7 +1968,7 @@ defmodule AshPhoenix.Form do
                       nested_params =
                         form
                         |> params(opts)
-                        |> apply_or_return(form.transform_params, :nested)
+                        |> apply_or_return(form.transform_params, :nested, transform?)
 
                       {Map.put(current, to_string(i), nested_params), i + 1}
                     end)
@@ -1978,7 +1983,7 @@ defmodule AshPhoenix.Form do
                     Enum.map(forms, fn form ->
                       form
                       |> params(opts)
-                      |> apply_or_return(form.transform_params, :nested)
+                      |> apply_or_return(form.transform_params, :nested, transform?)
                     end)
                 end)
               end
@@ -2016,11 +2021,7 @@ defmodule AshPhoenix.Form do
         with_set_params
       end
 
-    if transform? do
-      apply_or_return(transformed_via_option, form.transform_params, :validate)
-    else
-      transformed_via_option
-    end
+    apply_or_return(transformed_via_option, form.transform_params, :validate, transform?)
   end
 
   defp only_touched(form_keys, form, true) do
@@ -2270,8 +2271,10 @@ defmodule AshPhoenix.Form do
     end
   end
 
-  defp apply_or_return(value, nil, _type), do: value
-  defp apply_or_return(value, function, type), do: function.(value, type)
+  defp apply_or_return(value, function, type, condition \\ true)
+  defp apply_or_return(value, _function, _type, false), do: value
+  defp apply_or_return(value, nil, _type, _), do: value
+  defp apply_or_return(value, function, type, _), do: function.(value, type)
 
   def hidden_fields(form) do
     hidden =
