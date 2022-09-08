@@ -673,7 +673,6 @@ defmodule AshPhoenix.Form do
         opts[:forms] || [],
         !!opts[:errors],
         [],
-        nil,
         name,
         id,
         opts[:transform_errors],
