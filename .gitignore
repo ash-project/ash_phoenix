@@ -27,3 +27,4 @@ ash_phoenix-*.tar
 /tmp
 
 .vscode
+.DS_Store
