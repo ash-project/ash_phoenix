@@ -2130,7 +2130,7 @@ defmodule AshPhoenix.Form do
 
   #{Spark.OptionsHelpers.docs(@add_form_opts)}
   """
-  @spec add_form(t(), String.t() | list(atom | integer), Keyword.t()) :: t()
+  @spec add_form(t(), String.t() | atom | list(atom | integer), Keyword.t()) :: t()
   def add_form(form, path, opts \\ []) do
     opts = Spark.OptionsHelpers.validate!(opts, @add_form_opts)
 

@@ -11,7 +11,7 @@ defmodule AshPhoenix.Test.PostLink do
   end
 
   relationships do
-    belongs_to(:source_post, AshPhoenix.Test.Post, primary_key?: true, required?: true)
-    belongs_to(:destination_post, AshPhoenix.Test.Post, primary_key?: true, required?: true)
+    belongs_to(:source_post, AshPhoenix.Test.Post, primary_key?: true, allow_nil?: false)
+    belongs_to(:destination_post, AshPhoenix.Test.Post, primary_key?: true, allow_nil?: false)
   end
 end
