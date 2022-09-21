@@ -27,7 +27,7 @@ defmodule AshPhoenix.Test.Post do
 
     create :create_with_non_map_relationship_args do
       argument(:comment_ids, {:array, :integer})
-      change(manage_relationship(:comment_ids, :comments, type: :replace))
+      change(manage_relationship(:comment_ids, :comments, type: :append_and_remove))
     end
 
     create :create_author_required do
@@ -37,7 +37,7 @@ defmodule AshPhoenix.Test.Post do
 
     update :update_with_replace do
       argument(:comments, {:array, :map})
-      change(manage_relationship(:comments, type: :replace))
+      change(manage_relationship(:comments, type: :append_and_remove))
     end
 
     update :update do

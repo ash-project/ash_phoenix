@@ -1,15 +1,15 @@
+defmodule UnknownError do
+  @moduledoc false
+  use Ash.Resource.Change
+
+  def change(changeset, _, _) do
+    Ash.Changeset.add_error(changeset, Ash.Error.to_error_class("something went super wrong"))
+  end
+end
+
 defmodule AshPhoenix.Test.Comment do
   @moduledoc false
   use Ash.Resource, data_layer: Ash.DataLayer.Ets
-
-  defmodule UnknownError do
-    @moduledoc false
-    use Ash.Resource.Change
-
-    def change(changeset, _, _) do
-      Ash.Changeset.add_error(changeset, Ash.Error.to_error_class("something went super wrong"))
-    end
-  end
 
   ets do
     private?(true)

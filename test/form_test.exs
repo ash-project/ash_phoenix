@@ -126,7 +126,7 @@ defmodule AshPhoenix.FormTest do
     assert form.valid? == false
   end
 
-  test "it supports forms with data and a `type: :replace`" do
+  test "it supports forms with data and a `type: :append_and_remove`" do
     post =
       Post
       |> Ash.Changeset.new(%{text: "post"})
@@ -135,7 +135,7 @@ defmodule AshPhoenix.FormTest do
     comment =
       Comment
       |> Ash.Changeset.new(%{text: "comment"})
-      |> Ash.Changeset.replace_relationship(:post, post)
+      |> Ash.Changeset.manage_relationship(:post, post, type: :append_and_remove)
       |> Api.create!()
 
     form =
@@ -170,7 +170,7 @@ defmodule AshPhoenix.FormTest do
     comment =
       Comment
       |> Ash.Changeset.new(%{text: "comment"})
-      |> Ash.Changeset.replace_relationship(:post, post)
+      |> Ash.Changeset.manage_relationship(:post, post, type: :append_and_remove)
       |> Api.create!()
 
     form =
@@ -289,7 +289,7 @@ defmodule AshPhoenix.FormTest do
       comment =
         Comment
         |> Ash.Changeset.new(%{text: "comment"})
-        |> Ash.Changeset.replace_relationship(:post, post)
+        |> Ash.Changeset.manage_relationship(:post, post, type: :append_and_remove)
         |> Api.create!()
 
       # Check the persisted post.comments count after create
@@ -336,7 +336,7 @@ defmodule AshPhoenix.FormTest do
       comment =
         Comment
         |> Ash.Changeset.new(%{text: "comment"})
-        |> Ash.Changeset.replace_relationship(:post, post)
+        |> Ash.Changeset.manage_relationship(:post, post, type: :append_and_remove)
         |> Api.create!()
 
       # Check the persisted post.comments count after create
@@ -422,7 +422,7 @@ defmodule AshPhoenix.FormTest do
       comment =
         Comment
         |> Ash.Changeset.new(%{text: "comment"})
-        |> Ash.Changeset.replace_relationship(:post, post)
+        |> Ash.Changeset.manage_relationship(:post, post, type: :append_and_remove)
         |> Api.create!()
 
       comment = Comment |> Api.get!(comment.id)
@@ -1298,7 +1298,7 @@ defmodule AshPhoenix.FormTest do
       comment =
         Comment
         |> Ash.Changeset.new(%{text: "comment"})
-        |> Ash.Changeset.replace_relationship(:post, post)
+        |> Ash.Changeset.manage_relationship(:post, post, type: :append_and_remove)
         |> Api.create!()
 
       # Check the persisted post.comments count after create
