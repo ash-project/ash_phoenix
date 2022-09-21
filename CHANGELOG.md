@@ -5,6 +5,27 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.0.0-rc.1](https://github.com/ash-project/ash_phoenix/compare/v1.0.0-rc.0...v1.0.0-rc.1) (2022-09-21)
+
+
+
+
+### Bug Fixes:
+
+* only impl Phoenix.HTML.Safe if it hasn't already been
+
+* argument mismatch when calling handle_forms (#50)
+
+* call `get_function/3`
+
+### Improvements:
+
+* update to latest ash
+
+* support latest ash
+
+* decimal protocols (#51)
+
 ## [v0.7.7](https://github.com/ash-project/ash_phoenix/compare/v0.7.6-rc.0...v0.7.7) (2022-08-22)
 
 
