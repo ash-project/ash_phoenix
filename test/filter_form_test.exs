@@ -163,6 +163,21 @@ defmodule AshPhoenix.FilterFormTest do
              )
     end
 
+    test "predicates with fields that refer to a relationship will be appended to the path" do
+      form =
+        FilterForm.new(Post,
+          params: %{
+            field: :comments,
+            operator: :contains,
+            path: "",
+            value: "new"
+          }
+        )
+
+      assert hd(form.components).path == [:comments]
+      assert hd(form.components).field == nil
+    end
+
     test "predicates can be added with paths" do
       form = FilterForm.new(Post)
 
