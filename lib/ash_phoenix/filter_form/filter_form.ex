@@ -351,17 +351,31 @@ defmodule AshPhoenix.FilterForm do
   end
 
   defp new_predicate(params, form) do
+    {path, field} = parse_path_and_field(params, form)
+
     predicate = %AshPhoenix.FilterForm.Predicate{
       id: params["id"],
-      field: to_existing_atom(params["field"]),
+      field: field,
       value: params["value"],
-      path: parse_path(params),
+      path: path,
       params: params,
       negated?: negated?(params),
       operator: to_existing_atom(params["operator"] || :eq)
     }
 
     %{predicate | errors: predicate_errors(predicate, form.resource)}
+  end
+
+  defp parse_path_and_field(params, form) do
+    path = parse_path(params)
+    field = to_existing_atom(params["field"])
+
+    extended_path = path ++ [field]
+
+    case Ash.Resource.Info.related(form.resource, extended_path) do
+      nil -> {path, field}
+      _ -> {extended_path, nil}
+    end
   end
 
   defp parse_path(params) do
