@@ -589,9 +589,9 @@ defmodule AshPhoenix.LiveView do
 
   defp mark_page_as_first(page), do: page
 
-  case Code.ensure_compiled(Phoenix.LiveView.Component) do
+  case Code.ensure_compiled(Phoenix.Component) do
     {:module, _} ->
-      if function_exported?(Phoenix.LiveView.Component, :assign, 3) do
+      if function_exported?(Phoenix.Component, :assign, 3) do
         defp assign(%Phoenix.LiveView.Socket{} = socket, one, two) do
           Phoenix.Component.assign(socket, one, two)
         end
