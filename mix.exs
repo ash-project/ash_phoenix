@@ -116,7 +116,7 @@ defmodule AshPhoenix.MixProject do
   defp deps do
     [
       {:ash, ash_version("~> 2.0.0-rc.9")},
-      {:phoenix, "~> 1.5.6 or ~> 1.6.0"},
+      {:phoenix, "~> 1.5.6 or ~> 1.6"},
       {:phoenix_html, "~> 2.14 or ~> 3.0"},
       {:phoenix_live_view, "~> 0.15"},
       {:git_ops, "~> 2.4.4", only: :dev},
