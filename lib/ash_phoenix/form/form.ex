@@ -2871,30 +2871,47 @@ defmodule AshPhoenix.Form do
     }
   end
 
-  defp synthesize_action_errors(form, trail \\ []) do
+  defp synthesize_action_errors(form, trail \\ [], further_errors \\ []) do
+    errors =
+      form.source.errors
+      |> List.wrap()
+      |> Enum.flat_map(&expand_error/1)
+      |> Enum.map(fn error ->
+        %{error | path: trail ++ error.path}
+      end)
+
+    further_errors = further_errors ++ Enum.reject(errors, &(&1.path == trail))
+
     new_forms =
       form.forms
       |> Map.new(fn {key, forms} ->
+        config = form.form_keys[key]
+
         new_forms =
           if is_list(forms) do
-            Enum.map(forms, fn form ->
-              synthesize_action_errors(form, [key | trail])
+            forms
+            |> Enum.with_index()
+            |> Enum.map(fn {form, index} ->
+              synthesize_action_errors(
+                form,
+                trail ++ [config[:for] || key, index],
+                further_errors
+              )
             end)
           else
             if forms do
-              synthesize_action_errors(forms, [key | trail])
+              synthesize_action_errors(forms, trail ++ [config[:for] || key], further_errors)
             end
           end
 
         {key, new_forms}
       end)
 
-    errors =
-      form.source.errors
-      |> List.wrap()
-      |> Enum.flat_map(&expand_error/1)
-
-    %{form | submit_errors: transform_errors(form, errors, [], form.form_keys), forms: new_forms}
+    %{
+      form
+      | submit_errors: transform_errors(form, errors ++ further_errors, trail, form.form_keys),
+        forms: new_forms
+    }
   end
 
   defp expand_error(%class_mod{} = error)
