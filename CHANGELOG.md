@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.0-rc.1](https://github.com/ash-project/ash_phoenix/compare/v1.1.0-rc.0...v1.1.0-rc.1) (2022-09-28)
+
+
+
+
+### Bug Fixes:
+
+* properly synthesize nested action errors
+
 ## [v1.1.0-rc.0](https://github.com/ash-project/ash_phoenix/compare/v1.0.0-rc.1...v1.1.0-rc.0) (2022-09-27)
 
 
