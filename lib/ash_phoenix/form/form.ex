@@ -2097,7 +2097,7 @@ defmodule AshPhoenix.Form do
         "Options to pass to `validate`. Only used if `validate?` is set to `true` (the default)"
     ],
     type: [
-      type: {:one_of, [:read, :create]},
+      type: {:one_of, [:read, :create, :update, :destroy]},
       default: :create,
       doc:
         "If `type` is set to `:read`, the form will be created for a read action. A hidden field will be set in the form called `_form_type` to track this information."
