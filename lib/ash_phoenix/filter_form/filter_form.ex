@@ -82,7 +82,7 @@ defmodule AshPhoenix.FilterForm do
     %{
       form
       | components:
-          parse_components(resource, form, params["components"],
+          parse_components(form, params["components"],
             remove_empty_groups?: opts[:remove_empty_groups?]
           )
     }
@@ -318,24 +318,24 @@ defmodule AshPhoenix.FilterForm do
         end
 
       %{
-        "components" => components || %{},
         "id" => params[:id] || params["id"] || Ash.UUID.generate(),
-        "operator" => to_string(params[:operator] || params["operator"] || "and")
+        "operator" => to_string(params[:operator] || params["operator"] || "and"),
+        "negated" => params[:negated] || params["negated"] || false,
+        "components" => components || %{}
       }
     end
   end
 
-  defp parse_components(resource, parent, component_params, form_opts) do
+  defp parse_components(parent, component_params, form_opts) do
     component_params
     |> Kernel.||(%{})
     |> Enum.sort_by(fn {key, _value} ->
       String.to_integer(key)
     end)
-    |> Enum.map(&elem(&1, 1))
-    |> Enum.map(&parse_component(resource, parent, &1, form_opts))
+    |> Enum.map(&parse_component(parent, &1, form_opts))
   end
 
-  defp parse_component(resource, parent, params, form_opts) do
+  defp parse_component(parent, {key, params}, form_opts) do
     if is_predicate?(params) do
       # Eventually, components may have references w/ paths
       # also, we should validate references here
@@ -344,8 +344,8 @@ defmodule AshPhoenix.FilterForm do
       params = Map.put_new(params, "id", Ash.UUID.generate())
 
       new(
-        resource,
-        Keyword.merge(form_opts, params: params, as: parent.name <> "[#{params["id"]}]")
+        parent.resource,
+        Keyword.merge(form_opts, params: params, as: parent.name <> "[components][#{key}]")
       )
     end
   end
@@ -409,11 +409,10 @@ defmodule AshPhoenix.FilterForm do
     |> Enum.sort_by(fn {key, _} ->
       String.to_integer(key)
     end)
-    |> Enum.map(&elem(&1, 1))
     |> Enum.map(&validate_component(form_without_components, &1, form.components))
   end
 
-  defp validate_component(form, params, current_components) do
+  defp validate_component(form, {key, params}, current_components) do
     id = params[:id] || params["id"]
 
     match_component =
@@ -422,7 +421,7 @@ defmodule AshPhoenix.FilterForm do
     if match_component do
       case match_component do
         %__MODULE__{} ->
-          validate(form, params)
+          validate(match_component, params)
 
         %Predicate{} ->
           new_predicate(params, form)
@@ -435,7 +434,7 @@ defmodule AshPhoenix.FilterForm do
 
         new(form.resource,
           params: params,
-          as: form.name <> "[#{params["id"]}]",
+          as: form.name <> "[components][#{key}]",
           remove_empty_groups?: form.remove_empty_groups?
         )
       end
@@ -577,6 +576,16 @@ defmodule AshPhoenix.FilterForm do
     end
   end
 
+  defp do_add_predicate(%__MODULE__{id: id} = form, id, predicate) do
+    %{form | components: form.components ++ [predicate]}
+  end
+
+  defp do_add_predicate(%__MODULE__{} = form, id, predicate) do
+    %{form | components: Enum.map(form.components, &do_add_predicate(&1, id, predicate))}
+  end
+
+  defp do_add_predicate(other, _, _), do: other
+
   defp set_validity(%__MODULE__{components: components} = form) do
     components = Enum.map(components, &set_validity/1)
 
@@ -663,16 +672,6 @@ defmodule AshPhoenix.FilterForm do
     end
   end
 
-  defp do_add_predicate(%__MODULE__{id: id} = form, id, predicate) do
-    %{form | components: form.components ++ [predicate]}
-  end
-
-  defp do_add_predicate(%__MODULE__{} = form, id, predicate) do
-    %{form | components: Enum.map(form.components, &do_add_predicate(&1, id, predicate))}
-  end
-
-  defp do_add_predicate(other, _, _), do: other
-
   @add_group_opts [
     to: [
       type: :string,
@@ -699,15 +698,19 @@ defmodule AshPhoenix.FilterForm do
   """
   def add_group(form, opts \\ []) do
     opts = Spark.OptionsHelpers.validate!(opts, @add_group_opts)
-
     group_id = Ash.UUID.generate()
-    group = %__MODULE__{operator: opts[:operator], id: group_id}
+
+    group = %__MODULE__{resource: form.resource, operator: opts[:operator], id: group_id}
 
     new_form =
       if opts[:to] && opts[:to] != form.id do
         set_validity(%{
           form
-          | components: Enum.map(form.components, &do_add_group(&1, opts[:to], group))
+          | components:
+              Enum.map(
+                Enum.with_index(form.components),
+                &do_add_group(&1, opts[:to], group)
+              )
         })
       else
         set_validity(%{form | components: form.components ++ [group]})
@@ -719,6 +722,20 @@ defmodule AshPhoenix.FilterForm do
       new_form
     end
   end
+
+  defp do_add_group({%AshPhoenix.FilterForm{id: id, name: parent_name} = form, i}, id, group) do
+    name = parent_name <> "[components][#{i}]"
+    %{form | components: form.components ++ [%{group | name: name}]}
+  end
+
+  defp do_add_group({%AshPhoenix.FilterForm{} = form, _i}, id, group) do
+    %{
+      form
+      | components: Enum.map(Enum.with_index(form.components), &do_add_group(&1, id, group))
+    }
+  end
+
+  defp do_add_group({other, _i}, _, _), do: other
 
   @doc "Remove the group with the given id"
   def remove_group(form, group_id) do
@@ -758,16 +775,6 @@ defmodule AshPhoenix.FilterForm do
     end
   end
 
-  defp do_add_group(%AshPhoenix.FilterForm{id: id} = form, id, group) do
-    %{form | components: form.components ++ [group]}
-  end
-
-  defp do_add_group(%AshPhoenix.FilterForm{} = form, id, group) do
-    %{form | components: Enum.map(form.components, &do_add_group(&1, id, group))}
-  end
-
-  defp do_add_group(other, _, _), do: other
-
   defimpl Phoenix.HTML.FormData do
     @impl true
     def to_form(form, opts) do
@@ -787,13 +794,15 @@ defmodule AshPhoenix.FilterForm do
     end
 
     @impl true
-    def to_form(form, _phoenix_form, :components, _opts) do
+    def to_form(form, phoenix_form, :components, _opts) do
       form.components
       |> Enum.with_index()
       |> Enum.map(fn {component, index} ->
+        name = Map.get(component, :name, phoenix_form.name)
+
         Phoenix.HTML.Form.form_for(component, "action",
           transform_errors: form.transform_errors,
-          as: form.name <> "[components][#{index}]"
+          as: name <> "[components][#{index}]"
         )
       end)
     end

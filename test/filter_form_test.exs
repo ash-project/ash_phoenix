@@ -73,6 +73,34 @@ defmodule AshPhoenix.FilterFormTest do
 
       assert %FilterForm{components: []} = form
     end
+
+    test "the form ids and names for deeply nested components are correct" do
+      form =
+        Post
+        |> FilterForm.new()
+        |> FilterForm.add_group(return_id?: true)
+        |> then(fn {form, id} -> FilterForm.add_group(form, to: id, return_id?: true) end)
+        |> then(fn {form, id} -> FilterForm.add_group(form, to: id, return_id?: true) end)
+        |> then(fn {form, id} ->
+          FilterForm.add_predicate(form, :title, :eq, "new_post", to: id)
+        end)
+        |> form_for("action")
+
+      assert [group_form] = inputs_for(form, :components)
+
+      assert group_form.id == group_form.source.id
+      assert group_form.name == form.name <> "[components][0]"
+
+      assert [sub_group_form] = inputs_for(group_form, :components)
+
+      assert sub_group_form.id == sub_group_form.source.id
+      assert sub_group_form.name == form.name <> "[components][0][components][0]"
+
+      assert [predicate_form] = inputs_for(sub_group_form, :components)
+
+      assert predicate_form.id == predicate_form.source.id
+      assert predicate_form.name == form.name <> "[components][0][components][0][components][0]"
+    end
   end
 
   describe "to_filter/1" do
@@ -340,7 +368,7 @@ defmodule AshPhoenix.FilterFormTest do
         FilterForm.validate(form, %{
           "components" => %{
             "0" => %{
-              id: predicate.id,
+              id: Map.get(predicate, :id),
               field: :title,
               value: "new post 2"
             }
@@ -354,6 +382,57 @@ defmodule AshPhoenix.FilterFormTest do
                | value: "new post 2",
                  params: Map.put(predicate.params, "value", "new post 2")
              } == new_predicate
+    end
+
+    test "the form names for deeply nested components are correct" do
+      form =
+        Post
+        |> FilterForm.new()
+        |> FilterForm.add_group(return_id?: true)
+        |> then(fn {form, id} -> FilterForm.add_group(form, to: id, return_id?: true) end)
+        |> then(fn {form, id} -> FilterForm.add_group(form, to: id, return_id?: true) end)
+        |> then(fn {form, id} ->
+          FilterForm.add_predicate(form, :title, :eq, "new_post", to: id)
+        end)
+
+      original_form = form_for(form, "action")
+
+      assert [group_form] = inputs_for(original_form, :components)
+      assert group_form.name == form.name <> "[components][0]"
+      assert [sub_group_form] = inputs_for(group_form, :components)
+      assert sub_group_form.name == form.name <> "[components][0][components][0]"
+      assert [predicate_form] = inputs_for(sub_group_form, :components)
+      assert predicate_form.name == form.name <> "[components][0][components][0][components][0]"
+
+      form =
+        FilterForm.validate(form, %{
+          "id" => original_form.id,
+          "components" => %{
+            "0" => %{
+              "id" => group_form.id,
+              "components" => %{
+                "0" => %{
+                  "id" => sub_group_form.id,
+                  "components" => %{
+                    "0" => %{
+                      "id" => predicate_form.id,
+                      "field" => "title",
+                      "value" => "new post"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        })
+        |> form_for("action")
+
+      assert [group_form] = inputs_for(form, :components)
+      assert group_form.name == form.name <> "[components][0]"
+      assert [sub_group_form] = inputs_for(group_form, :components)
+      assert sub_group_form.name == form.name <> "[components][0][components][0]"
+      assert [predicate_form] = inputs_for(sub_group_form, :components)
+      assert predicate_form.name == form.name <> "[components][0][components][0][components][0]"
     end
   end
 
