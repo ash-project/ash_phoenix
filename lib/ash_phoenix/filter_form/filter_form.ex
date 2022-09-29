@@ -637,7 +637,7 @@ defmodule AshPhoenix.FilterForm do
               func.(pred)
 
             predicate ->
-              [predicate]
+              predicate
           end)
     }
     |> set_validity()
