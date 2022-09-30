@@ -377,7 +377,7 @@ defmodule AshPhoenix.FilterForm do
         {path, field}
 
       related ->
-        %{name: new_field} = hd(Ash.Resource.Info.public_attributes(related)) || nil
+        %{name: new_field} = List.first(Ash.Resource.Info.public_attributes(related))
         {extended_path, new_field}
     end
   end
