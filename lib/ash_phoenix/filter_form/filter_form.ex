@@ -373,8 +373,12 @@ defmodule AshPhoenix.FilterForm do
     extended_path = path ++ [field]
 
     case Ash.Resource.Info.related(form.resource, extended_path) do
-      nil -> {path, field}
-      _ -> {extended_path, nil}
+      nil ->
+        {path, field}
+
+      related ->
+        %{name: new_field} = List.first(Ash.Resource.Info.public_attributes(related))
+        {extended_path, new_field}
     end
   end
 
@@ -633,7 +637,7 @@ defmodule AshPhoenix.FilterForm do
               func.(pred)
 
             predicate ->
-              [predicate]
+              predicate
           end)
     }
     |> set_validity()

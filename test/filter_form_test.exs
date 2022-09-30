@@ -203,7 +203,7 @@ defmodule AshPhoenix.FilterFormTest do
         )
 
       assert hd(form.components).path == [:comments]
-      assert hd(form.components).field == nil
+      assert hd(form.components).field == :id
     end
 
     test "predicates can be added with paths" do
