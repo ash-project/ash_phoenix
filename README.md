@@ -10,7 +10,7 @@ See the module documentation for more information:
 - `AshPhoenix.LiveView`: for liveview querying utilities
 - `AshPhoenix.Form`: Utilities for using forms with Ash changesets 
 
-Roadmap:
+## Roadmap
 
 - UI authorization utilities e.g `<%= if authorized_to_do?(resource, action, actor) do %>`
 - Potentially helpers for easily connecting buttons to resource actions
@@ -22,3 +22,13 @@ def deps do
   ]
 end
 ```
+
+## Contributors
+
+Ash is made possible by its excellent community!
+
+<a href="https://github.com/ash-project/ash_phoenix/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=ash-project/ash_phoenix" />
+</a>
+
+[Become a contributor](https://ash-hq.org/docs/guides/ash/latest/how_to/contribute.md)
