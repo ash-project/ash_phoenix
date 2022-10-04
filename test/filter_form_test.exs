@@ -384,6 +384,32 @@ defmodule AshPhoenix.FilterFormTest do
              } == new_predicate
     end
 
+    test "changing the field clears the value" do
+      form =
+        Post
+        |> FilterForm.new(
+          params: %{
+            field: :title,
+            value: "new post"
+          }
+        )
+
+      predicate = Enum.at(form.components, 0)
+
+      form =
+        FilterForm.validate(form, %{
+          "components" => %{
+            "0" => %{
+              id: Map.get(predicate, :id),
+              field: :other,
+              value: "new post"
+            }
+          }
+        })
+
+      assert is_nil(Enum.at(form.components, 0).value)
+    end
+
     test "the form names for deeply nested components are correct" do
       form =
         Post

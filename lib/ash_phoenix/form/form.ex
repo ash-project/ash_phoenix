@@ -1260,6 +1260,11 @@ defmodule AshPhoenix.Form do
       default: [],
       doc: "Opts to pass to the call to the api when submitting"
     ],
+    errors: [
+      type: :boolean,
+      default: true,
+      doc: "Wether or not to show errors after submitting.`"
+    ],
     override_params: [
       type: :any,
       doc: """
@@ -1337,6 +1342,13 @@ defmodule AshPhoenix.Form do
           opts[:params],
           Keyword.take(opts, Keyword.keys(@validate_opts))
         )
+      else
+        form
+      end
+
+    form =
+      if Keyword.get(opts, :errors, true) do
+        update_all_forms(form, &%{&1 | errors: true})
       else
         form
       end
@@ -2417,8 +2429,6 @@ defmodule AshPhoenix.Form do
   end
 
   defp update_all_forms(form, func) do
-    form = func.(form)
-
     form
     |> func.()
     |> Map.update!(:forms, fn forms ->
@@ -2431,7 +2441,7 @@ defmodule AshPhoenix.Form do
             {key, Enum.map(list, &update_all_forms(&1, func))}
 
           other ->
-            {key, other}
+            {key, update_all_forms(other, func)}
         end
       end)
     end)

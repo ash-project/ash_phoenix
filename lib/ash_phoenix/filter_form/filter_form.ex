@@ -427,8 +427,15 @@ defmodule AshPhoenix.FilterForm do
         %__MODULE__{} ->
           validate(match_component, params)
 
-        %Predicate{} ->
-          new_predicate(params, form)
+        %Predicate{field: field, value: value} ->
+          new_predicate = new_predicate(params, form)
+
+          if new_predicate.field != field && not is_nil(new_predicate.value) &&
+               value == new_predicate.value do
+            %{new_predicate | value: nil, params: Map.put(new_predicate.params, "value", nil)}
+          else
+            new_predicate
+          end
       end
     else
       if is_predicate?(params) do
