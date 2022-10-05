@@ -246,6 +246,49 @@ defmodule AshPhoenix.FormData.Helpers do
     end
   end
 
+  def transform_arguments_error(arguments, error, transform_errors) do
+    case transform_errors do
+      transformer when is_function(transformer, 2) ->
+        case transformer.(arguments, error) do
+          error when is_exception(error) ->
+            if AshPhoenix.FormData.Error.impl_for(error) do
+              List.wrap(to_form_error(error))
+            else
+              []
+            end
+
+          {key, value, vars} ->
+            [{key, value, vars}]
+
+          list when is_list(list) ->
+            Enum.flat_map(list, fn
+              error when is_exception(error) ->
+                if AshPhoenix.FormData.Error.impl_for(error) do
+                  List.wrap(to_form_error(error))
+                else
+                  []
+                end
+
+              {key, value, vars} ->
+                [{key, value, vars}]
+            end)
+        end
+
+      nil ->
+        case error do
+          {_key, _value, _vars} = error ->
+            [error]
+
+          error ->
+            if AshPhoenix.FormData.Error.impl_for(error) do
+              List.wrap(to_form_error(error))
+            else
+              []
+            end
+        end
+    end
+  end
+
   defp to_form_error(exception) when is_exception(exception) do
     case AshPhoenix.FormData.Error.to_form_error(exception) do
       nil ->

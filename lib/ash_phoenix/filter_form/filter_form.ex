@@ -135,8 +135,11 @@ defmodule AshPhoenix.FilterForm do
         {:ok, expr} ->
           {:ok, expr}
 
-        {:error, form} ->
+        {:error, %__MODULE__{} = form} ->
           {:error, form}
+
+        {:error, error} ->
+          {:error, %{form | errors: List.wrap(error)}}
       end
     else
       {:error, form}
@@ -151,7 +154,7 @@ defmodule AshPhoenix.FilterForm do
       {:ok, filter} ->
         filter
 
-      {:error, form} ->
+      {:error, %__MODULE__{} = form} ->
         error =
           form
           |> errors()
@@ -165,6 +168,9 @@ defmodule AshPhoenix.FilterForm do
           |> Ash.Error.to_error_class()
 
         raise error
+
+      {:error, error} ->
+        raise Ash.Error.to_error_class(error)
     end
   end
 
@@ -224,35 +230,63 @@ defmodule AshPhoenix.FilterForm do
          %Predicate{
            field: field,
            value: value,
+           arguments: arguments,
            operator: operator,
            negated?: negated?,
            path: path
          } = predicate,
          resource
        ) do
-    ref = Ash.Query.expr(ref(^field, ^path))
+    ref =
+      case Ash.Resource.Info.public_calculation(Ash.Resource.Info.related(resource, path), field) do
+        nil ->
+          {:ok, Ash.Query.expr(ref(^field, ^path))}
 
-    expr =
-      if Ash.Filter.get_operator(operator) do
-        {:ok, %Ash.Query.Call{name: operator, args: [ref, value], operator?: true}}
-      else
-        if Ash.Filter.get_function(operator, resource, true) do
-          {:ok, %Ash.Query.Call{name: operator, args: [ref, value]}}
-        else
-          {:error, {:operator, "No such function or operator #{operator}", []}}
-        end
+        calc ->
+          case Ash.Query.validate_calculation_arguments(
+                 calc,
+                 arguments.input || %{}
+               ) do
+            {:ok, input} ->
+              {:ok,
+               %Ash.Query.Call{
+                 name: calc.name,
+                 args: [Map.to_list(input)],
+                 relationship_path: path
+               }}
+
+            {:error, error} ->
+              {:error, error}
+          end
       end
 
-    case expr do
-      {:ok, expr} ->
-        if negated? do
-          {:ok, Ash.Query.Not.new(expr)}
-        else
-          {:ok, expr}
+    case ref do
+      {:ok, ref} ->
+        expr =
+          if Ash.Filter.get_operator(operator) do
+            {:ok, %Ash.Query.Call{name: operator, args: [ref, value], operator?: true}}
+          else
+            if Ash.Filter.get_function(operator, resource, true) do
+              {:ok, %Ash.Query.Call{name: operator, args: [ref, value]}}
+            else
+              {:error, {:operator, "No such function or operator #{operator}", []}}
+            end
+          end
+
+        case expr do
+          {:ok, expr} ->
+            if negated? do
+              {:ok, Ash.Query.Not.new(expr)}
+            else
+              {:ok, expr}
+            end
+
+          {:error, error} ->
+            {:error, %{predicate | errors: predicate.errors ++ [error]}}
         end
 
       {:error, error} ->
-        {:error, %{predicate | errors: predicate.errors ++ [error]}}
+        {:error, error}
     end
   end
 
@@ -353,11 +387,22 @@ defmodule AshPhoenix.FilterForm do
   defp new_predicate(params, form) do
     {path, field} = parse_path_and_field(params, form)
 
+    arguments =
+      with related when not is_nil(related) <- Ash.Resource.Info.related(form.resource, path),
+           calc when not is_nil(calc) <- Ash.Resource.Info.calculation(related, field) do
+        calc.arguments
+      else
+        _ ->
+          []
+      end
+
     predicate = %AshPhoenix.FilterForm.Predicate{
       id: params["id"],
       field: field,
       value: params["value"],
       path: path,
+      transform_errors: form.transform_errors,
+      arguments: AshPhoenix.FilterForm.Arguments.new(params["arguments"] || %{}, arguments),
       params: params,
       negated?: negated?(params),
       operator: to_existing_atom(params["operator"] || :eq)
@@ -431,7 +476,12 @@ defmodule AshPhoenix.FilterForm do
           new_predicate = new_predicate(params, form)
 
           if new_predicate.field != field && not is_nil(new_predicate.value) do
-            %{new_predicate | value: nil, params: Map.put(new_predicate.params, "value", nil)}
+            %{
+              new_predicate
+              | value: nil,
+                operator: nil,
+                params: Map.merge(new_predicate.params, %{"value" => nil, "operator" => nil})
+            }
           else
             new_predicate
           end

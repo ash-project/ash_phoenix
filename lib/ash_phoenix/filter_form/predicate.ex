@@ -10,8 +10,10 @@ defmodule AshPhoenix.FilterForm.Predicate do
     :id,
     :field,
     :value,
+    :transform_errors,
     operator: :eq,
     params: %{},
+    arguments: nil,
     negated?: false,
     path: [],
     errors: [],
@@ -83,7 +85,23 @@ defmodule AshPhoenix.FilterForm.Predicate do
     def input_type(_, _, _), do: :text_input
 
     @impl true
-    def to_form(_, _, _, _), do: []
+    def to_form(form, phoenix_form, :arguments, _opts) do
+      if form.arguments do
+        [
+          Phoenix.HTML.Form.form_for(form.arguments, "arguments",
+            transform_errors: form.transform_errors,
+            id: form.id <> "_arguments",
+            as: phoenix_form.name <> "[arguments]"
+          )
+        ]
+      else
+        []
+      end
+    end
+
+    def to_form(_, _, other, _) do
+      raise "Invalid inputs_for name #{other}. Only :arguments is supported"
+    end
 
     @impl true
     def input_value(%{id: id}, _, :id), do: id
