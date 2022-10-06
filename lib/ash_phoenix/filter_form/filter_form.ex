@@ -329,6 +329,7 @@ defmodule AshPhoenix.FilterForm do
         "id" => params[:id] || params["id"] || Ash.UUID.generate(),
         "operator" => to_string(params[:operator] || params["operator"] || "eq"),
         "negated" => params[:negated] || params["negated"] || false,
+        "arguments" => params["arguments"],
         "field" => field,
         "value" => params[:value] || params["value"],
         "path" => path
