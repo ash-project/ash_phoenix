@@ -112,7 +112,8 @@ defmodule AshPhoenix.FilterForm do
       form
       | params: params,
         components: validate_components(form, params["components"]),
-        operator: to_existing_atom(params["operator"] || :and)
+        operator: to_existing_atom(params["operator"] || :and),
+        negated?: params["negated"] || false
     }
     |> set_validity()
   end
