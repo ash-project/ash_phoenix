@@ -5,6 +5,33 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.0-rc.2](https://github.com/ash-project/ash_phoenix/compare/v1.1.0-rc.1...v1.1.0-rc.2) (2022-10-07)
+
+
+
+
+### Bug Fixes:
+
+* populate hidden fields from server-side form by default
+
+* don't sanitize arguments out of predicate form
+
+* change filter form value even if value doesn't match
+
+* select first public attribute as field when remapping path
+
+* update_predicate correctly handles existing predicate
+
+* nested groups have correct form names (#54)
+
+### Improvements:
+
+* support calculation arguments in FilterForm
+
+* clear filter form value when field changes
+
+* add `update` and `destroy` types to `add_form`
+
 ## [v1.1.0-rc.1](https://github.com/ash-project/ash_phoenix/compare/v1.1.0-rc.0...v1.1.0-rc.1) (2022-09-28)
 
 
