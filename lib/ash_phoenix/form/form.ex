@@ -258,9 +258,10 @@ defmodule AshPhoenix.Form do
       """
     ],
     transform_params: [
-      type: {:or, [{:fun, 2}, {:in, [nil]}]},
+      type: {:or, [{:fun, 2}, {:fun, 3}, {:in, [nil]}]},
       doc: """
       A function for post-processing the form parameters before they are used for changeset validation/submission.
+      Use a 3 argument function to pattern match on the `AshPhoenix.Form` struct.
       """
     ],
     method: [
@@ -843,7 +844,11 @@ defmodule AshPhoenix.Form do
 
       changeset_params =
         if form.transform_params do
-          form.transform_params.(changeset_params, :validate)
+          if is_function(form.transform_params, 2) do
+            form.transform_params.(changeset_params, :validate)
+          else
+            form.transform_params.(form, changeset_params, :validate)
+          end
         else
           changeset_params
         end
@@ -1911,7 +1916,7 @@ defmodule AshPhoenix.Form do
   @spec params(t()) :: map
   def params(form, opts \\ []) do
     # These options aren't documented because they are still experimental
-    hidden? = opts[:hidden?] || false
+    hidden? = Keyword.get(opts, :hidden?, true)
     indexer = opts[:indexer]
     indexed_lists? = opts[:indexed_lists?] || not is_nil(indexer) || false
     transform = opts[:transform]

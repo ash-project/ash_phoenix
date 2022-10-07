@@ -158,7 +158,9 @@ defmodule AshPhoenix.FormTest do
 
     form = Form.validate(form, %{"comments" => [%{"id" => comment.id}]})
 
-    assert Form.params(form) == %{"comments" => [%{"id" => comment.id}]}
+    comment_id = comment.id
+
+    assert %{"comments" => [%{"id" => ^comment_id}]} = Form.params(form)
   end
 
   test "ignoring a form filters it from the parameters" do
@@ -193,15 +195,16 @@ defmodule AshPhoenix.FormTest do
 
     form = Form.validate(form, %{"comments" => [%{"id" => comment.id, "_ignore" => "true"}]})
 
-    assert Form.params(form) == %{"comments" => []}
+    assert %{"comments" => []} = Form.params(form)
 
     form = Form.validate(form, %{"comments" => [%{"id" => comment.id, "_ignore" => "false"}]})
 
-    assert Form.params(form) == %{"comments" => [%{"id" => comment.id, "_ignore" => "false"}]}
+    comment_id = comment.id
+    assert %{"comments" => [%{"id" => ^comment_id, "_ignore" => "false"}]} = Form.params(form)
 
     form = Form.validate(form, %{"comments" => [%{"id" => comment.id, "_ignore" => "true"}]})
 
-    assert Form.params(form) == %{"comments" => []}
+    assert %{"comments" => []} = Form.params(form)
   end
 
   describe "the .changed? field is updated as data changes" do
@@ -316,6 +319,54 @@ defmodule AshPhoenix.FormTest do
       form = Form.remove_form(form, [:comments, 0])
 
       assert form.changed?
+    end
+
+    test "generated forms have default values even with no server round-trips" do
+      post =
+        Post
+        |> Ash.Changeset.new(%{text: "post"})
+        |> Api.create!()
+
+      comment =
+        Comment
+        |> Ash.Changeset.new(%{text: "comment"})
+        |> Ash.Changeset.manage_relationship(:post, post, type: :append_and_remove)
+        |> Api.create!()
+
+      # Check the persisted post.comments count after create
+      post = Post |> Api.get!(post.id) |> Api.load!(:comments)
+      assert Enum.count(post.comments) == 1
+
+      form =
+        post
+        |> Form.for_update(:update,
+          api: Api,
+          forms: [
+            comments: [
+              resource: Comment,
+              type: :list,
+              data: [comment],
+              create_action: :create,
+              update_action: :update
+            ]
+          ]
+        )
+
+      form = AshPhoenix.Form.add_form(form, :comments)
+
+      assert AshPhoenix.Form.params(form) == %{
+               "_form_type" => "update",
+               "_touched" => "comments",
+               "comments" => [
+                 %{
+                   "_form_type" => "update",
+                   "_touched" => "_form_type,id",
+                   "id" => post.comments |> Enum.at(0) |> Map.get(:id)
+                 },
+                 %{"_form_type" => "create", "_touched" => "_form_type"}
+               ],
+               "id" => post.id
+             }
     end
 
     test "removing a non-existant form should not change touched_forms" do
@@ -537,7 +588,7 @@ defmodule AshPhoenix.FormTest do
         |> Form.add_form(:post, params: %{})
         |> Form.validate(%{"text" => "text"})
 
-      assert Form.params(form) == %{"text" => "text", "post" => nil}
+      assert %{"text" => "text", "post" => nil} = Form.params(form)
     end
 
     test "nested forms submit empty list values when not present in input params" do
@@ -557,7 +608,12 @@ defmodule AshPhoenix.FormTest do
 
       assert Form.value(form, :text) == "text"
 
-      assert Form.params(form) == %{"text" => "text", "post" => []}
+      assert %{
+               "text" => "text",
+               "post" => [],
+               "_form_type" => "create",
+               "_touched" => "_form_type,_touched,post,text"
+             } = Form.params(form)
     end
 
     test "nested errors are set on the appropriate form after submit for many to many relationships" do
@@ -653,13 +709,13 @@ defmodule AshPhoenix.FormTest do
           }
         })
 
-      assert Form.params(form) == %{
+      assert %{
                "post" => [
-                 %{"comments" => [%{"id" => comment_id}], "id" => post1_id},
-                 %{"id" => post2_id}
+                 %{"comments" => [%{"id" => ^comment_id}], "id" => ^post1_id},
+                 %{"id" => ^post2_id}
                ],
                "text" => "text"
-             }
+             } = Form.params(form)
     end
   end
 
@@ -987,7 +1043,7 @@ defmodule AshPhoenix.FormTest do
         |> Form.validate(%{})
 
       assert [] = inputs_for(form_for(form, "action"), :post)
-      assert Form.params(form) == %{"post" => []}
+      assert %{"post" => []} = Form.params(form)
     end
 
     test "when all values have been removed from an existing relationship, the empty list remains" do
@@ -1023,7 +1079,7 @@ defmodule AshPhoenix.FormTest do
         |> Form.remove_form([:post, 0])
         |> Form.validate(%{})
 
-      assert Form.params(form) == %{"post" => []}
+      assert %{"post" => []} = Form.params(form)
     end
 
     test "when all values have been removed from an existing `:single` relationship, the empty list remains" do
