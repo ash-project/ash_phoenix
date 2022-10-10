@@ -159,6 +159,7 @@ defmodule AshPhoenix.Form do
   ```
   """
 
+  @derive {Inspect, except: [:opts]}
   defstruct [
     :resource,
     :action,
@@ -188,8 +189,6 @@ defmodule AshPhoenix.Form do
     submitted_once?: false,
     just_submitted?: false
   ]
-
-  @derive {Inspect, except: [:prev_data_trail, :opts]}
 
   alias AshPhoenix.Form.InvalidPath
 
