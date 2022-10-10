@@ -126,6 +126,24 @@ defmodule AshPhoenix.FormTest do
     assert form.valid? == false
   end
 
+  test "phoenix forms are accepted as input in some cases" do
+    form = Form.for_create(PostWithDefault, :create, api: Api)
+    form = AshPhoenix.Form.validate(form, %{"text" => ""}, errors: form.submitted_once?)
+    form = form_for(form, "foo")
+    # This simply shouldn't raise
+    AshPhoenix.Form.params(form)
+  end
+
+  test "a friendly error is provided if you use a phoenix form where you shouldn't have" do
+    form = Form.for_create(PostWithDefault, :create, api: Api)
+    form = AshPhoenix.Form.validate(form, %{"text" => ""}, errors: form.submitted_once?)
+    form = form_for(form, "foo")
+
+    assert_raise ArgumentError, ~r//, fn ->
+      AshPhoenix.Form.validate(form, %{})
+    end
+  end
+
   test "it supports forms with data and a `type: :append_and_remove`" do
     post =
       Post

@@ -158,6 +158,7 @@ defmodule AshPhoenix.Form do
   end
   ```
   """
+
   defstruct [
     :resource,
     :action,
@@ -187,6 +188,8 @@ defmodule AshPhoenix.Form do
     submitted_once?: false,
     just_submitted?: false
   ]
+
+  @derive {Inspect, except: [:prev_data_trail, :opts]}
 
   alias AshPhoenix.Form.InvalidPath
 
@@ -3900,14 +3903,6 @@ defmodule AshPhoenix.Form do
 
   defp form_for_method(:create), do: "post"
   defp form_for_method(_), do: "put"
-
-  defimpl Inspect do
-    import Inspect.Algebra
-
-    def inspect(form, opts) do
-      to_doc(Map.put(form, :prev_data_trail, "..."), opts)
-    end
-  end
 
   defimpl Phoenix.HTML.FormData do
     import AshPhoenix.FormData.Helpers
