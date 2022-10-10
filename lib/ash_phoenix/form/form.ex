@@ -765,11 +765,14 @@ defmodule AshPhoenix.Form do
 
   @doc "A utility to get the list of attributes the action underlying the form accepts"
   def attributes(form) do
+    form = to_form!(form)
     AshPhoenix.Form.Auto.accepted_attributes(form.resource, form.source.action)
   end
 
   @doc "A utility to get the list of arguments the action underlying the form accepts"
   def arguments(form) do
+    form = to_form!(form)
+
     action =
       case form.source.action do
         action when is_atom(action) ->
@@ -799,6 +802,7 @@ defmodule AshPhoenix.Form do
   """
   @spec validate(t(), map, Keyword.t()) :: t()
   def validate(form, new_params, opts \\ []) do
+    form = require_form!(form)
     opts = validate_opts_with_extra_keys(opts, @validate_opts)
 
     new_params =
@@ -914,6 +918,7 @@ defmodule AshPhoenix.Form do
   Merge the new options with the saved options on a form. See `update_options/2` for more.
   """
   def merge_options(form, opts) do
+    form = require_form!(form)
     update_options(form, &Keyword.merge(&1, opts))
   end
 
@@ -926,6 +931,7 @@ defmodule AshPhoenix.Form do
   You may want to validate again after this has been changed if it can change the results of your form validation.
   """
   def update_options(form, fun) do
+    form = require_form!(form)
     %{form | opts: fun.(form.opts)}
   end
 
@@ -1338,6 +1344,7 @@ defmodule AshPhoenix.Form do
           | :ok
           | {:error, t()}
   def submit(form, opts \\ []) do
+    form = require_form!(form)
     changeset_opts = Keyword.drop(form.opts, [:forms, :errors, :id, :method, :for, :as])
 
     form =
@@ -1518,6 +1525,8 @@ defmodule AshPhoenix.Form do
   """
   @spec submit!(t(), Keyword.t()) :: Ash.Resource.record() | :ok | no_return
   def submit!(form, opts \\ []) do
+    form = require_form!(form)
+
     case submit(form, Keyword.put(opts, :raise?, true)) do
       {:ok, value} ->
         value
@@ -1550,6 +1559,7 @@ defmodule AshPhoenix.Form do
   """
   @spec update_form(t(), list(atom | integer) | String.t(), (t() -> t())) :: t()
   def update_form(form, path, func, opts \\ []) do
+    form = require_form!(form)
     opts = Spark.OptionsHelpers.validate!(opts, @update_form_opts)
 
     path =
@@ -1613,6 +1623,7 @@ defmodule AshPhoenix.Form do
   """
   @spec has_form?(t(), list(atom | integer) | String.t()) :: boolean
   def has_form?(form, path) do
+    form = to_form!(form)
     not is_nil(get_form(form, path))
   rescue
     InvalidPath ->
@@ -1622,8 +1633,10 @@ defmodule AshPhoenix.Form do
   @doc """
   Gets the form at the specified path
   """
-  @spec get_form(t(), list(atom | integer) | String.t()) :: t() | nil
+  @spec get_form(t() | Phoenix.HTML.Form.t(), list(atom | integer) | String.t()) :: t() | nil
   def get_form(form, path) do
+    form = to_form!(form)
+
     path =
       case path do
         [] ->
@@ -1664,6 +1677,35 @@ defmodule AshPhoenix.Form do
             nil
         end
     end
+  end
+
+  defp to_form!(%__MODULE__{} = form), do: form
+  defp to_form!(%Phoenix.HTML.Form{source: %__MODULE__{} = form}), do: form
+
+  defp to_form!(%Phoenix.HTML.Form{source: inner_form}) do
+    raise ArgumentError, """
+    Expected to receive either an `%AshPhoenix.Form{}` or a `%Phoenix.HTML.Form{}` with `%AshPhoenix.Form{}` as its source.
+
+    Got a `%Phoenix.HTML.Form{}` with source: #{inspect(inner_form)}
+    """
+  end
+
+  defp to_form!(form) do
+    raise ArgumentError, """
+    Expected to receive either an `%AshPhoenix.Form{}` or a `%Phoenix.HTML.Form{}` with `%AshPhoenix.Form{}` as its source.
+
+    Got: #{inspect(form)}
+    """
+  end
+
+  defp require_form!(%__MODULE__{} = form), do: form
+
+  defp require_form!(form) do
+    raise ArgumentError, """
+    Expected to receive an `%AshPhoenix.Form{}`.
+
+    Got: #{inspect(form)}
+    """
   end
 
   defp add_index(form_params, index, opts) do
@@ -1716,7 +1758,7 @@ defmodule AshPhoenix.Form do
 
   #{Spark.OptionsHelpers.docs(@errors_opts)}
   """
-  @spec errors(t(), Keyword.t()) ::
+  @spec errors(t() | Phoenix.HTML.Form.t(), Keyword.t()) ::
           ([{atom, {String.t(), Keyword.t()}}]
            | [String.t()]
            | [{atom, String.t()}])
@@ -1724,6 +1766,7 @@ defmodule AshPhoenix.Form do
               list => [{atom, {String.t(), Keyword.t()}}] | [String.t()] | [{atom, String.t()}]
             }
   def errors(form, opts \\ []) do
+    form = to_form!(form)
     opts = validate_opts_with_extra_keys(opts, @errors_opts)
 
     case opts[:for_path] do
@@ -1804,10 +1847,16 @@ defmodule AshPhoenix.Form do
   end
 
   @doc false
-  @spec errors_for(t(), list(atom | integer) | String.t(), type :: :simple | :raw | :plaintext) ::
+  @spec errors_for(
+          t() | Phoenix.HTML.Form.t(),
+          list(atom | integer) | String.t(),
+          type :: :simple | :raw | :plaintext
+        ) ::
           [{atom, {String.t(), Keyword.t()}}] | [String.t()] | map | nil
   @deprecated "Use errors/2 instead"
   def errors_for(form, path, type \\ :raw) do
+    form = to_form!(form)
+
     path =
       case path do
         [] ->
@@ -1865,6 +1914,8 @@ defmodule AshPhoenix.Form do
   for read actions
   """
   def set_data(form, data) do
+    form = require_form!(form)
+
     case form.source do
       %Ash.Changeset{} = source ->
         %{form | data: data, source: %{source | data: data}}
@@ -1877,11 +1928,56 @@ defmodule AshPhoenix.Form do
   @doc """
   Gets the value for a given field in the form.
   """
-  @spec value(t(), atom) :: any()
+  @spec value(t() | Phoenix.HTML.Form.t(), atom) :: any()
   def value(form, field) do
-    form
-    |> Phoenix.HTML.Form.form_for("form")
-    |> Phoenix.HTML.Form.input_value(field)
+    form = to_form!(form)
+    do_value(form, field)
+  end
+
+  defp do_value(%{source: %Ash.Changeset{} = changeset}, field) do
+    with :error <- get_changing_value(changeset, field),
+         :error <- Ash.Changeset.fetch_argument(changeset, field),
+         :error <- get_non_attribute_non_argument_param(changeset, field),
+         :error <- Map.fetch(changeset.data, field) do
+      nil
+    else
+      {:ok, %Ash.NotLoaded{}} ->
+        nil
+
+      {:ok, value} ->
+        value
+    end
+  end
+
+  defp do_value(%{source: %Ash.Query{} = query, data: data}, field) do
+    case Ash.Query.fetch_argument(query, field) do
+      {:ok, value} ->
+        value
+
+      :error ->
+        case Map.fetch(query.params, to_string(field)) do
+          {:ok, value} ->
+            value
+
+          :error ->
+            if data do
+              Map.get(data, field)
+            end
+        end
+    end
+  end
+
+  defp get_changing_value(changeset, field) do
+    Map.fetch(changeset.attributes, field)
+  end
+
+  defp get_non_attribute_non_argument_param(changeset, field) do
+    if Ash.Resource.Info.attribute(changeset.resource, field) ||
+         Enum.any?(changeset.action.arguments, &(&1.name == field)) do
+      :error
+    else
+      Map.fetch(changeset.params, Atom.to_string(field))
+    end
   end
 
   @doc """
@@ -1892,6 +1988,8 @@ defmodule AshPhoenix.Form do
   """
   @spec ignore(t()) :: t()
   def ignore(form) do
+    form = require_form!(form)
+
     if ignored?(form) do
       %{form | params: Map.delete(form.params, "_ignore")}
     else
@@ -1902,8 +2000,9 @@ defmodule AshPhoenix.Form do
   @doc """
   Returns true if the form is ignored
   """
-  @spec ignored?(t()) :: boolean
+  @spec ignored?(t() | Phoenix.HTML.Form.t()) :: boolean
   def ignored?(form) do
+    form = to_form!(form)
     form.params["_ignore"] == "true"
   end
 
@@ -1913,8 +2012,9 @@ defmodule AshPhoenix.Form do
   This can be useful if you want to get the parameters and manipulate them/build a custom changeset
   afterwards.
   """
-  @spec params(t()) :: map
+  @spec params(t() | Phoenix.HTML.Form.t()) :: map
   def params(form, opts \\ []) do
+    form = to_form!(form)
     # These options aren't documented because they are still experimental
     hidden? = Keyword.get(opts, :hidden?, true)
     indexer = opts[:indexer]
@@ -2149,6 +2249,7 @@ defmodule AshPhoenix.Form do
   """
   @spec add_form(t(), String.t() | atom | list(atom | integer), Keyword.t()) :: t()
   def add_form(form, path, opts \\ []) do
+    form = require_form!(form)
     opts = Spark.OptionsHelpers.validate!(opts, @add_form_opts)
 
     form =
@@ -2197,6 +2298,7 @@ defmodule AshPhoenix.Form do
   #{Spark.OptionsHelpers.docs(@remove_form_opts)}
   """
   def remove_form(form, path, opts \\ []) do
+    form = require_form!(form)
     opts = Spark.OptionsHelpers.validate!(opts, @remove_form_opts)
 
     if has_form?(form, path) do
@@ -2275,6 +2377,7 @@ defmodule AshPhoenix.Form do
 
   @doc false
   def arguments_changed?(form) do
+    form = to_form!(form)
     changeset = form.source
 
     changeset.arguments
@@ -2338,7 +2441,10 @@ defmodule AshPhoenix.Form do
   @doc """
   Returns the hidden fields for a form as a keyword list
   """
+  @spec hidden_fields(t() | Phoenix.HTML.Form.t()) :: Keyword.t()
   def hidden_fields(form) do
+    form = to_form!(form)
+
     hidden =
       if form.type in [:read, :update, :destroy] && form.data do
         pkey =
@@ -2972,7 +3078,10 @@ defmodule AshPhoenix.Form do
   [:comments, 0, :sub_comments, 0]
   ```
   """
+  @spec parse_path!(t() | Phoenix.HTML.Form.t(), String.t()) :: list(atom | integer) | no_return
   def parse_path!(%{name: name} = form, original_path) do
+    form = to_form!(form)
+
     path =
       original_path
       |> Plug.Conn.Query.decode()
@@ -3792,6 +3901,14 @@ defmodule AshPhoenix.Form do
   defp form_for_method(:create), do: "post"
   defp form_for_method(_), do: "put"
 
+  defimpl Inspect do
+    import Inspect.Algebra
+
+    def inspect(form, opts) do
+      to_doc(Map.put(form, :prev_data_trail, "..."), opts)
+    end
+  end
+
   defimpl Phoenix.HTML.FormData do
     import AshPhoenix.FormData.Helpers
 
@@ -3863,46 +3980,8 @@ defmodule AshPhoenix.Form do
     end
 
     @impl true
-    def input_value(%{source: %Ash.Changeset{} = changeset}, _form, field) do
-      with :error <- get_changing_value(changeset, field),
-           :error <- Ash.Changeset.fetch_argument(changeset, field),
-           :error <- get_non_attribute_non_argument_param(changeset, field),
-           :error <- Map.fetch(changeset.data, field) do
-        nil
-      else
-        {:ok, %Ash.NotLoaded{}} ->
-          nil
-
-        {:ok, value} ->
-          value
-      end
-    end
-
-    def input_value(%{source: %Ash.Query{} = query, data: data}, _form, field) do
-      case Ash.Query.fetch_argument(query, field) do
-        {:ok, value} ->
-          value
-
-        :error ->
-          case Map.fetch(query.params, to_string(field)) do
-            {:ok, value} ->
-              value
-
-            :error ->
-              if data do
-                Map.get(data, field)
-              end
-          end
-      end
-    end
-
-    defp get_non_attribute_non_argument_param(changeset, field) do
-      if Ash.Resource.Info.attribute(changeset.resource, field) ||
-           Enum.any?(changeset.action.arguments, &(&1.name == field)) do
-        :error
-      else
-        Map.fetch(changeset.params, Atom.to_string(field))
-      end
+    def input_value(form, _form, field) do
+      AshPhoenix.Form.value(form, field)
     end
 
     @impl true
@@ -3968,9 +4047,5 @@ defmodule AshPhoenix.Form do
     end
 
     defp type_validations(_), do: []
-
-    defp get_changing_value(changeset, field) do
-      Map.fetch(changeset.attributes, field)
-    end
   end
 end
