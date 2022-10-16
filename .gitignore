@@ -28,3 +28,4 @@ ash_phoenix-*.tar
 
 .vscode
 .DS_Store
+.envrc
