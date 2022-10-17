@@ -18,7 +18,7 @@ See the module documentation for more information:
 ```elixir
 def deps do
   [
-    {:ash_phoenix, "~> 0.7.7"}
+    {:ash_phoenix, "~> 1.1"}
   ]
 end
 ```
