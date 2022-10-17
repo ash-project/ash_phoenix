@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.0](https://github.com/ash-project/ash_phoenix/compare/v0.7.7...v1.1.0) (2022-10-17)
+
+
+
+
+### Bug Fixes:
+
+* specify `@derive` in proper place
+
+* infinite loop in inspect
+
+### Improvements:
+
+* update to Ash 2.0
+
 ## [v1.1.0-rc.3](https://github.com/ash-project/ash_phoenix/compare/v1.1.0-rc.2...v1.1.0-rc.3) (2022-10-10)
 
 
