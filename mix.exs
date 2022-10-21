@@ -34,6 +34,10 @@ defmodule AshPhoenix.MixProject do
     ]
   end
 
+  defp elixirc_paths(:dev) do
+    ["lib/", "demo/"]
+  end
+
   defp elixirc_paths(:test) do
     ["test/support/", "lib/"]
   end
@@ -106,7 +110,16 @@ defmodule AshPhoenix.MixProject do
     ]
   end
 
-  def application do
+  def application, do: application(Mix.env())
+
+  def application(:dev) do
+    [
+      mod: {Demo.Application, []},
+      extra_applications: [:logger, :runtime_tools]
+    ]
+  end
+
+  def application(_) do
     [
       extra_applications: [:logger]
     ]
@@ -119,6 +132,7 @@ defmodule AshPhoenix.MixProject do
       {:phoenix, "~> 1.5.6 or ~> 1.6"},
       {:phoenix_html, "~> 2.14 or ~> 3.0"},
       {:phoenix_live_view, "~> 0.15"},
+      {:plug_cowboy, "~> 2.5", only: :dev},
       {:git_ops, "~> 2.5.1", only: :dev},
       {:ex_doc, "~> 0.23", only: :dev, runtime: false},
       {:ex_check, "~> 0.14", only: :dev},

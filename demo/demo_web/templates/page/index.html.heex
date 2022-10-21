@@ -1,0 +1,9 @@
+<%= if @current_user do %>
+  <h2>Current user: <%= @current_user.email %></h2>
+
+  <%= link("Sign out", to: Routes.auth_path(@conn, :sign_out)) %>
+<% else %>
+  <h2>Please sign in</h2>
+
+  <%= link("Sign in", to: Routes.auth_path(@conn, :sign_in)) %>
+<% end  %>

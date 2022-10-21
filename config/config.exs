@@ -14,3 +14,5 @@ if Mix.env() == :dev do
     manage_readme_version: "README.md",
     version_tag_prefix: "v"
 end
+
+import_config "#{config_env()}.exs"
