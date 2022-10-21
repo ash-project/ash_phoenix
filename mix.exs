@@ -25,7 +25,7 @@ defmodule AshPhoenix.MixProject do
         "coveralls.github": :test
       ],
       dialyzer: [
-        plt_add_apps: [:ex_unit]
+        plt_add_apps: [:ex_unit, :ash_authentication]
       ],
       docs: docs(),
       package: package(),
@@ -129,6 +129,9 @@ defmodule AshPhoenix.MixProject do
   defp deps do
     [
       {:ash, ash_version("~> 2.0.0-rc.9")},
+      {:ash_authentication,
+       github: "team-alembic/ash_authentication", optional: true, branch: "feat/identity"},
+      {:bcrypt_elixir, "~> 3.0", only: :dev},
       {:phoenix, "~> 1.5.6 or ~> 1.6"},
       {:phoenix_html, "~> 2.14 or ~> 3.0"},
       {:phoenix_live_view, "~> 0.15"},
