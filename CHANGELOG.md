@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.1](https://github.com/ash-project/ash_phoenix/compare/v1.1.0...v1.1.1) (2022-10-28)
+
+
+
+
+### Bug Fixes:
+
+* properly retain sorting of list forms
+
 ## [v1.1.0](https://github.com/ash-project/ash_phoenix/compare/v0.7.7...v1.1.0) (2022-10-17)
 
 
