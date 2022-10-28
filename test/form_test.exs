@@ -801,6 +801,67 @@ defmodule AshPhoenix.FormTest do
     end
   end
 
+  test "it properly retains form order" do
+    form =
+      Comment
+      |> Form.for_create(:create,
+        forms: [
+          post: [
+            type: :list,
+            resource: Post,
+            create_action: :create,
+            forms: [
+              comments: [
+                type: :list,
+                resource: Comment,
+                create_action: :create
+              ]
+            ]
+          ],
+          other_post: [
+            type: :single,
+            for: :for_posts,
+            resource: Post,
+            create_action: :create
+          ]
+        ]
+      )
+      |> Form.add_form("form[post]", params: %{"text" => "post_text"})
+      |> Form.add_form("form[post][0][comments]", params: %{"text" => "0"})
+      |> Form.add_form("form[post][0][comments]", params: %{"text" => "1"})
+      |> Form.add_form("form[post][0][comments]", params: %{"text" => "2"})
+      |> Form.add_form("form[post][0][comments]", params: %{"text" => "3"})
+      |> Form.add_form("form[post][0][comments]", params: %{"text" => "4"})
+      |> Form.add_form("form[post][0][comments]", params: %{"text" => "5"})
+      |> Form.add_form("form[post][0][comments]", params: %{"text" => "6"})
+      |> Form.add_form("form[post][0][comments]", params: %{"text" => "7"})
+      |> Form.add_form("form[post][0][comments]", params: %{"text" => "8"})
+      |> Form.add_form("form[post][0][comments]", params: %{"text" => "9"})
+      |> Form.add_form("form[post][0][comments]", params: %{"text" => "10"})
+      |> Form.add_form("form[post][0][comments]", params: %{"text" => "11"})
+
+    assert %{
+             "post" => [
+               %{
+                 "comments" => [
+                   %{"text" => "0"},
+                   %{"text" => "1"},
+                   %{"text" => "2"},
+                   %{"text" => "3"},
+                   %{"text" => "4"},
+                   %{"text" => "5"},
+                   %{"text" => "6"},
+                   %{"text" => "7"},
+                   %{"text" => "8"},
+                   %{"text" => "9"},
+                   %{"text" => "10"},
+                   %{"text" => "11"}
+                 ]
+               }
+             ]
+           } = Form.params(form)
+  end
+
   describe "`inputs_for` with no configuration" do
     test "it should raise an error" do
       form =
