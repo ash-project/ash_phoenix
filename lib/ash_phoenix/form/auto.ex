@@ -176,7 +176,7 @@ defmodule AshPhoenix.Form.Auto do
           opts
         else
           key =
-            opts[:value_is_key] ||
+            manage_opts[:value_is_key] ||
               relationship.destination
               |> Ash.Resource.Info.primary_key()
               |> case do
