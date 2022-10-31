@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.2](https://github.com/ash-project/ash_phoenix/compare/v1.1.1...v1.1.2) (2022-10-31)
+
+
+
+
+### Bug Fixes:
+
+* properly honor `value_is_key` option
+
 ## [v1.1.1](https://github.com/ash-project/ash_phoenix/compare/v1.1.0...v1.1.1) (2022-10-28)
 
 
