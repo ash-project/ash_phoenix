@@ -1042,7 +1042,7 @@ defmodule AshPhoenix.Form do
                   |> Enum.with_index()
                   |> Map.new(fn {form, index} ->
                     {to_string(index),
-                     apply_or_return(form.params, form.transform_params, :nested)}
+                     apply_or_return(form, form.params, form.transform_params, :nested)}
                   end)
 
                 Map.put(params, to_string(opts[:as] || key), new_nested)
@@ -1091,7 +1091,12 @@ defmodule AshPhoenix.Form do
                 Map.put(
                   params,
                   to_string(opts[:as] || key),
-                  apply_or_return(new_forms[key].params, new_forms[key].transform_params, :nested)
+                  apply_or_return(
+                    new_forms[key],
+                    new_forms[key].params,
+                    new_forms[key].transform_params,
+                    :nested
+                  )
                 )
 
               {new_forms, new_params}
@@ -2055,6 +2060,7 @@ defmodule AshPhoenix.Form do
                 else
                   nested_params =
                     apply_or_return(
+                      nested_form,
                       nested_params,
                       nested_form.transform_params,
                       :nested,
@@ -2088,9 +2094,13 @@ defmodule AshPhoenix.Form do
                   if indexer do
                     Enum.reduce(forms, current, fn form, current ->
                       nested_params =
-                        form
-                        |> params(opts)
-                        |> apply_or_return(form.transform_params, :nested, transform?)
+                        apply_or_return(
+                          form,
+                          params(form, opts),
+                          form.transform_params,
+                          :nested,
+                          transform?
+                        )
 
                       Map.put(current, indexer.(form), nested_params)
                     end)
@@ -2104,9 +2114,13 @@ defmodule AshPhoenix.Form do
                     forms
                     |> Enum.reduce({current, max + 1}, fn form, {current, i} ->
                       nested_params =
-                        form
-                        |> params(opts)
-                        |> apply_or_return(form.transform_params, :nested, transform?)
+                        apply_or_return(
+                          form,
+                          params(form, opts),
+                          form.transform_params,
+                          :nested,
+                          transform?
+                        )
 
                       {Map.put(current, to_string(i), nested_params), i + 1}
                     end)
@@ -2119,9 +2133,13 @@ defmodule AshPhoenix.Form do
                 |> Map.update!(for_name, fn current ->
                   current ++
                     Enum.map(forms, fn form ->
-                      form
-                      |> params(opts)
-                      |> apply_or_return(form.transform_params, :nested, transform?)
+                      apply_or_return(
+                        form,
+                        params(form, opts),
+                        form.transform_params,
+                        :nested,
+                        transform?
+                      )
                     end)
                 end)
               end
@@ -2159,7 +2177,7 @@ defmodule AshPhoenix.Form do
         with_set_params
       end
 
-    apply_or_return(transformed_via_option, form.transform_params, :validate, transform?)
+    apply_or_return(form, transformed_via_option, form.transform_params, :validate, transform?)
   end
 
   defp only_touched(form_keys, form, true) do
@@ -2415,10 +2433,15 @@ defmodule AshPhoenix.Form do
     end
   end
 
-  defp apply_or_return(value, function, type, condition \\ true)
-  defp apply_or_return(value, _function, _type, false), do: value
-  defp apply_or_return(value, nil, _type, _), do: value
-  defp apply_or_return(value, function, type, _), do: function.(value, type)
+  defp apply_or_return(_form, value, function, type, condition \\ true)
+  defp apply_or_return(_form, value, _function, _type, false), do: value
+  defp apply_or_return(_form, value, nil, _type, _), do: value
+
+  defp apply_or_return(_, value, function, type, _) when is_function(function, 2),
+    do: function.(value, type)
+
+  defp apply_or_return(form, value, function, type, _) when is_function(function, 3),
+    do: function.(form, value, type)
 
   @doc """
   Returns the hidden fields for a form as a keyword list
