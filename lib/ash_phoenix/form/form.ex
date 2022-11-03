@@ -1283,7 +1283,7 @@ defmodule AshPhoenix.Form do
     errors: [
       type: :boolean,
       default: true,
-      doc: "Wether or not to show errors after submitting.`"
+      doc: "Wether or not to show errors after submitting."
     ],
     override_params: [
       type: :any,

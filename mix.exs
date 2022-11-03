@@ -19,6 +19,7 @@ defmodule AshPhoenix.MixProject do
       start_permanent: Mix.env() == :prod,
       test_coverage: [tool: ExCoveralls],
       compilers: [:phoenix] ++ Mix.compilers(),
+      aliases: aliases(),
       docs: docs(),
       preferred_cli_env: [
         coveralls: :test,
@@ -136,5 +137,11 @@ defmodule AshPhoenix.MixProject do
       "main" -> [git: "https://github.com/ash-project/ash.git"]
       version -> "~> #{version}"
     end
+  end
+
+  defp aliases do
+    [
+      docs: ["docs", "ash.replace_doc_links"]
+    ]
   end
 end
