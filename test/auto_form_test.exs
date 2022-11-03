@@ -41,11 +41,16 @@ defmodule AshPhoenix.AutoFormTest do
       )
 
     assert is_function(form.form_keys[:comment_ids][:transform_params])
-    assert form.form_keys[:comment_ids][:transform_params].(%{"id" => 1}, :nested) == 1
 
     validated =
       form
       |> AshPhoenix.Form.validate(%{"comment_ids" => %{"0" => %{"id" => 1}}})
+
+    assert validated.form_keys[:comment_ids][:transform_params].(
+             Enum.at(validated.forms[:comment_ids], 0),
+             %{"id" => 1},
+             :nested
+           ) == 1
 
     assert validated.source.arguments[:comment_ids] == [1]
   end

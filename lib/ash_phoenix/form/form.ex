@@ -439,6 +439,8 @@ defmodule AshPhoenix.Form do
         opts[:params] || %{},
         opts[:forms] || [],
         !!opts[:errors],
+        opts[:actor],
+        opts[:tenant],
         [],
         name,
         id,
@@ -516,6 +518,8 @@ defmodule AshPhoenix.Form do
         opts[:params] || %{},
         opts[:forms] || [],
         !!opts[:errors],
+        opts[:actor],
+        opts[:tenant],
         [
           data | opts[:prev_data_trail] || []
         ],
@@ -598,6 +602,8 @@ defmodule AshPhoenix.Form do
         opts[:params] || %{},
         opts[:forms] || [],
         !!opts[:errors],
+        opts[:actor],
+        opts[:tenant],
         [
           data | opts[:prev_data_trail] || []
         ],
@@ -675,6 +681,8 @@ defmodule AshPhoenix.Form do
         opts[:params] || %{},
         opts[:forms] || [],
         !!opts[:errors],
+        opts[:actor],
+        opts[:tenant],
         [],
         name,
         id,
@@ -982,6 +990,8 @@ defmodule AshPhoenix.Form do
                                 path: Enum.reverse(trail, [key])
 
                           for_action(resource, create_action,
+                            actor: form.opts[:actor],
+                            tenant: form.opts[:tenant],
                             params: params,
                             forms: opts[:forms] || [],
                             transform_params: opts[:transform_params],
@@ -1002,6 +1012,8 @@ defmodule AshPhoenix.Form do
                                 path: Enum.reverse(trail, [key])
 
                           for_action(resource, create_action,
+                            actor: form.opts[:actor],
+                            tenant: form.opts[:tenant],
                             params: params,
                             transform_params: opts[:transform_params],
                             forms: opts[:forms] || [],
@@ -1073,6 +1085,8 @@ defmodule AshPhoenix.Form do
 
                   new_form =
                     for_action(resource, create_action,
+                      actor: form.opts[:actor],
+                      tenant: form.opts[:tenant],
                       params: form_params,
                       transform_params: opts[:transform_params],
                       warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
@@ -1136,6 +1150,8 @@ defmodule AshPhoenix.Form do
                     form_values =
                       if (opts[:type] || :single) == :single do
                         for_action(data, update_action,
+                          actor: form.opts[:actor],
+                          tenant: form.opts[:tenant],
                           errors: errors?,
                           transform_params: opts[:transform_params],
                           warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
@@ -1150,6 +1166,8 @@ defmodule AshPhoenix.Form do
                         |> Enum.with_index()
                         |> Enum.map(fn {data, index} ->
                           for_action(data, update_action,
+                            actor: form.opts[:actor],
+                            tenant: form.opts[:tenant],
                             errors: errors?,
                             warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
                             transform_params: opts[:transform_params],
@@ -1196,6 +1214,8 @@ defmodule AshPhoenix.Form do
                         pkey = Ash.Resource.Info.primary_key(data.__struct__)
 
                         for_action(data, read_action,
+                          actor: form.opts[:actor],
+                          tenant: form.opts[:tenant],
                           errors: errors?,
                           warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
                           transform_params: opts[:transform_params],
@@ -1217,6 +1237,8 @@ defmodule AshPhoenix.Form do
                         |> Enum.with_index()
                         |> Enum.map(fn {data, index} ->
                           for_action(data, read_action,
+                            actor: form.opts[:actor],
+                            tenant: form.opts[:tenant],
                             errors: errors?,
                             prev_data_trail: prev_data_trail,
                             params: Map.new(pkey, &{to_string(&1), Map.get(data, &1)}),
@@ -2761,6 +2783,8 @@ defmodule AshPhoenix.Form do
             action,
             Keyword.merge(opts[:validate_opts] || [],
               params: opts[:params] || %{},
+              actor: form.opts[:actor],
+              tenant: form.opts[:tenant],
               transform_params: config[:transform_params],
               warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
               forms: config[:forms] || [],
@@ -3183,6 +3207,8 @@ defmodule AshPhoenix.Form do
          params,
          form_keys,
          error?,
+         actor,
+         tenant,
          prev_data_trail,
          name,
          id,
@@ -3199,6 +3225,8 @@ defmodule AshPhoenix.Form do
             form_params,
             opts,
             key,
+            actor,
+            tenant,
             trail,
             prev_data_trail,
             error?,
@@ -3214,6 +3242,8 @@ defmodule AshPhoenix.Form do
             params,
             opts,
             key,
+            actor,
+            tenant,
             trail,
             prev_data_trail,
             error?,
@@ -3231,6 +3261,8 @@ defmodule AshPhoenix.Form do
          params,
          opts,
          key,
+         actor,
+         tenant,
          trail,
          prev_data_trail,
          error?,
@@ -3268,6 +3300,8 @@ defmodule AshPhoenix.Form do
             form_values =
               if (opts[:type] || :single) == :single do
                 for_action(data, update_action,
+                  actor: actor,
+                  tenant: tenant,
                   errors: error?,
                   warn_on_unhandled_errors?: warn_on_unhandled_errors?,
                   transform_params: opts[:transform_params],
@@ -3282,6 +3316,8 @@ defmodule AshPhoenix.Form do
                 |> Enum.with_index()
                 |> Enum.map(fn {data, index} ->
                   for_action(data, update_action,
+                    actor: actor,
+                    tenant: tenant,
                     errors: error?,
                     warn_on_unhandled_errors?: warn_on_unhandled_errors?,
                     prev_data_trail: prev_data_trail,
@@ -3328,6 +3364,8 @@ defmodule AshPhoenix.Form do
                 pkey = Ash.Resource.Info.primary_key(data.__struct__)
 
                 for_action(data, read_action,
+                  actor: actor,
+                  tenant: tenant,
                   errors: error?,
                   warn_on_unhandled_errors?: warn_on_unhandled_errors?,
                   params: Map.new(pkey, &{to_string(&1), Map.get(data, &1)}),
@@ -3349,6 +3387,8 @@ defmodule AshPhoenix.Form do
                 |> Enum.with_index()
                 |> Enum.map(fn {data, index} ->
                   for_action(data, read_action,
+                    actor: actor,
+                    tenant: tenant,
                     errors: error?,
                     prev_data_trail: prev_data_trail,
                     params: Map.new(pkey, &{to_string(&1), Map.get(data, &1)}),
@@ -3381,6 +3421,8 @@ defmodule AshPhoenix.Form do
          form_params,
          opts,
          key,
+         actor,
+         tenant,
          trail,
          prev_data_trail,
          error?,
@@ -3395,6 +3437,8 @@ defmodule AshPhoenix.Form do
           opts,
           form_params,
           key,
+          actor,
+          tenant,
           trail,
           prev_data_trail,
           error?,
@@ -3408,6 +3452,8 @@ defmodule AshPhoenix.Form do
           opts,
           form_params,
           key,
+          actor,
+          tenant,
           trail,
           prev_data_trail,
           error?,
@@ -3425,6 +3471,8 @@ defmodule AshPhoenix.Form do
          opts,
          form_params,
          key,
+         actor,
+         tenant,
          trail,
          prev_data_trail,
          error?,
@@ -3447,6 +3495,8 @@ defmodule AshPhoenix.Form do
               path: Enum.reverse(trail, [key])
 
         for_action(resource, read_action,
+          actor: actor,
+          tenant: tenant,
           params: form_params,
           warn_on_unhandled_errors?: warn_on_unhandled_errors?,
           forms: opts[:forms] || [],
@@ -3470,6 +3520,8 @@ defmodule AshPhoenix.Form do
               path: Enum.reverse(trail, [key])
 
         for_action(resource, create_action,
+          actor: actor,
+          tenant: tenant,
           params: form_params,
           forms: opts[:forms] || [],
           transform_params: opts[:transform_params],
@@ -3499,6 +3551,8 @@ defmodule AshPhoenix.Form do
                 path: Enum.reverse(trail, [key])
 
           for_action(resource, read_action,
+            actor: actor,
+            tenant: tenant,
             params: add_index(form_params, original_index, opts),
             forms: opts[:forms] || [],
             transform_params: opts[:transform_params],
@@ -3522,6 +3576,8 @@ defmodule AshPhoenix.Form do
                 path: Enum.reverse(trail, [key])
 
           for_action(resource, create_action,
+            actor: actor,
+            tenant: tenant,
             params: add_index(form_params, original_index, opts),
             forms: opts[:forms] || [],
             warn_on_unhandled_errors?: warn_on_unhandled_errors?,
@@ -3541,6 +3597,8 @@ defmodule AshPhoenix.Form do
          opts,
          form_params,
          key,
+         actor,
+         tenant,
          trail,
          prev_data_trail,
          error?,
@@ -3590,6 +3648,8 @@ defmodule AshPhoenix.Form do
                   action: :destroy
 
             for_action(data, destroy_action,
+              actor: actor,
+              tenant: tenant,
               params: form_params,
               forms: opts[:forms] || [],
               transform_params: opts[:transform_params],
@@ -3616,6 +3676,8 @@ defmodule AshPhoenix.Form do
                   path: Enum.reverse(trail, [key])
 
             for_action(resource, create_action,
+              actor: actor,
+              tenant: tenant,
               params: form_params,
               forms: opts[:forms] || [],
               transform_params: opts[:transform_params],
@@ -3640,6 +3702,8 @@ defmodule AshPhoenix.Form do
                   action: :read
 
             for_action(resource, read_action,
+              actor: actor,
+              tenant: tenant,
               params: form_params,
               forms: opts[:forms] || [],
               transform_params: opts[:transform_params],
@@ -3677,6 +3741,8 @@ defmodule AshPhoenix.Form do
 
           form =
             for_action(resource, read_action,
+              actor: actor,
+              tenant: tenant,
               params: add_index(form_params, original_index, opts),
               forms: opts[:forms] || [],
               errors: error?,
@@ -3705,6 +3771,8 @@ defmodule AshPhoenix.Form do
 
               form =
                 for_action(resource, create_action,
+                  actor: actor,
+                  tenant: tenant,
                   params: add_index(form_params, original_index, opts),
                   forms: opts[:forms] || [],
                   transform_params: opts[:transform_params],
@@ -3728,6 +3796,8 @@ defmodule AshPhoenix.Form do
                         action: :destroy
 
                   for_action(data, destroy_action,
+                    actor: actor,
+                    tenant: tenant,
                     params: form_params,
                     forms: opts[:forms] || [],
                     transform_params: opts[:transform_params],
@@ -3746,6 +3816,8 @@ defmodule AshPhoenix.Form do
                         action: :update
 
                   for_action(data, update_action,
+                    actor: actor,
+                    tenant: tenant,
                     params: form_params,
                     forms: opts[:forms] || [],
                     transform_params: opts[:transform_params],
@@ -3774,6 +3846,8 @@ defmodule AshPhoenix.Form do
 
               form =
                 for_action(resource, create_action,
+                  actor: actor,
+                  tenant: tenant,
                   params: form_params,
                   forms: opts[:forms] || [],
                   transform_params: opts[:transform_params],
