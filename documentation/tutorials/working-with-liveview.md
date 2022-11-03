@@ -11,4 +11,8 @@ You'll want to have some level of familiarity with Phoenix and LiveView. Check o
 
 ## A simple LiveView
 
-Once you have LiveView up and running, here is a simple example using the resources from the [Getting Started Guide](https://ash-hq.org/docs/guides/ash/latest/tutorials/get-started.md)
+Once you have LiveView up and running, here is a simple example using the resources from the [Getting Started Guide](https://ash-hq.org/docs/guides/ash/latest/tutorials/get-started.md).
+
+```elixir
+defmodule MyApp.Ash
+```
