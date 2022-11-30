@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.2.0](https://github.com/ash-project/ash_phoenix/compare/v1.1.2...v1.2.0) (2022-11-30)
+
+
+
+
+### Features:
+
+* add custom HTTP status codes for specific types of errors that can be thrown (#62)
+
 ## [v1.1.2](https://github.com/ash-project/ash_phoenix/compare/v1.1.1...v1.1.2) (2022-10-31)
 
 
