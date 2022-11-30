@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.3](https://github.com/ash-project/ash_phoenix/compare/v1.1.2...v1.1.3) (2022-11-30)
+
+
+
+
+### Bug Fixes:
+
+* properly handle single values in `value_is_key` relationships
+
+### Improvements:
+
+* use new docs
+
+* properly pass actor and tenant down to nested changesets
+
 ## [v1.1.2](https://github.com/ash-project/ash_phoenix/compare/v1.1.1...v1.1.2) (2022-10-31)
 
 

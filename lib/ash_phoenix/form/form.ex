@@ -114,9 +114,11 @@ defmodule AshPhoenix.Form do
           data: post.comments,
           create_action: :create,
           update_action: :update
+          type: :list,
           forms: [
             sub_comments: [
               resource: Comment,
+              type: :list,
               data: &(&1.sub_comments),
               create_action: :create,
               update_action: :update
