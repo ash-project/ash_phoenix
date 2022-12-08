@@ -1943,10 +1943,10 @@ defmodule AshPhoenix.Form do
     do_value(form, field)
   end
 
-  defp do_value(%{source: %Ash.Changeset{} = changeset}, field) do
+  defp do_value(%{source: %Ash.Changeset{} = changeset} = form, field) do
     with :error <- get_changing_value(changeset, field),
          :error <- Ash.Changeset.fetch_argument(changeset, field),
-         :error <- get_non_attribute_non_argument_param(changeset, field),
+         :error <- get_non_attribute_non_argument_param(changeset, form, field),
          :error <- Map.fetch(changeset.data, field) do
       nil
     else
@@ -1980,12 +1980,12 @@ defmodule AshPhoenix.Form do
     Map.fetch(changeset.attributes, field)
   end
 
-  defp get_non_attribute_non_argument_param(changeset, field) do
+  defp get_non_attribute_non_argument_param(form, changeset, field) do
     if Ash.Resource.Info.attribute(changeset.resource, field) ||
          Enum.any?(changeset.action.arguments, &(&1.name == field)) do
       :error
     else
-      Map.fetch(changeset.params, Atom.to_string(field))
+      Map.fetch(AshPhoenix.Form.params(form), Atom.to_string(field))
     end
   end
 
