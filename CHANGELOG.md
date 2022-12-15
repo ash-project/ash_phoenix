@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.2.2](https://github.com/ash-project/ash_phoenix/compare/v1.2.1...v1.2.2) (2022-12-15)
+
+
+
+
+### Bug Fixes:
+
+* small logic bug when setting param value
+
+* transform params before providing them for a field value
+
+### Improvements:
+
+* add `prepare_source` option for seeding changesets
+
 ## [v1.2.1](https://github.com/ash-project/ash_phoenix/compare/v1.2.0...v1.2.1) (2022-12-05)
 
 
