@@ -179,6 +179,7 @@ defmodule AshPhoenix.Form do
     :original_data,
     :transform_params,
     :prepare_params,
+    :prepare_source,
     warn_on_unhandled_errors?: true,
     any_removed?: false,
     added?: false,
@@ -204,6 +205,8 @@ defmodule AshPhoenix.Form do
           forms: map,
           method: String.t(),
           submit_errors: Keyword.t() | nil,
+          prepare_source:
+            nil | (Ash.Changeset.t() -> Ash.Changeset.t()) | (Ash.Query.t() -> Ash.Query.t()),
           opts: Keyword.t(),
           transform_errors:
             nil
@@ -251,6 +254,16 @@ defmodule AshPhoenix.Form do
       If possible, try to implement `AshPhoenix.FormData.Error` for the error (if it as a custom one, for example).
       If that isn't possible, you can provide this function which will get the changeset and the error, and should
       return a list of ash phoenix formatted errors, e.g `[{field :: atom, message :: String.t(), substituations :: Keyword.t()}]`
+      """
+    ],
+    prepare_source: [
+      type: :any,
+      doc: """
+      Takes a function over a changeset and runs it before calling the relevant changeset function. This can be used to do things like:
+
+      * set private argument values before the validations are run using `Ash.Changeset.set_arguments/2` or `Ash.Changeset.set_argument/3`
+      * set changeset context
+      * do any other pre-processing on the changeset
       """
     ],
     prepare_params: [
@@ -428,7 +441,8 @@ defmodule AshPhoenix.Form do
         :for,
         :as,
         :transform_params,
-        :prepare_params
+        :prepare_params,
+        :prepare_source
       ])
 
     name = opts[:as] || "form"
@@ -448,6 +462,8 @@ defmodule AshPhoenix.Form do
         opts[:warn_on_unhandled_errors?]
       )
 
+    prepare_source = opts[:prepare_source] || (& &1)
+
     %__MODULE__{
       resource: resource,
       action: action,
@@ -465,10 +481,12 @@ defmodule AshPhoenix.Form do
       method: opts[:method] || form_for_method(:create),
       transform_params: opts[:transform_params],
       prepare_params: opts[:prepare_params],
+      prepare_source: opts[:prepare_source],
       opts: opts,
       source:
         resource
         |> Ash.Changeset.new()
+        |> prepare_source.()
         |> Ash.Changeset.for_create(
           action,
           params,
@@ -507,11 +525,14 @@ defmodule AshPhoenix.Form do
         :for,
         :as,
         :transform_params,
-        :prepare_params
+        :prepare_params,
+        :prepare_source
       ])
 
     name = opts[:as] || "form"
     id = opts[:id] || opts[:as] || "form"
+
+    prepare_source = opts[:prepare_source] || (& &1)
 
     {forms, params} =
       handle_forms(
@@ -547,12 +568,14 @@ defmodule AshPhoenix.Form do
       touched_forms: touched_forms(forms, params, opts),
       transform_params: opts[:transform_params],
       prepare_params: opts[:prepare_params],
+      prepare_source: opts[:prepare_source],
       opts: opts,
       id: id,
       name: name,
       source:
         data
         |> Ash.Changeset.new()
+        |> prepare_source.()
         |> Ash.Changeset.for_update(
           action,
           params,
@@ -591,11 +614,13 @@ defmodule AshPhoenix.Form do
         :for,
         :as,
         :transform_params,
-        :prepare_params
+        :prepare_params,
+        :prepare_source
       ])
 
     name = opts[:as] || "form"
     id = opts[:id] || opts[:as] || "form"
+    prepare_source = opts[:prepare_source] || (& &1)
 
     {forms, params} =
       handle_forms(
@@ -629,6 +654,7 @@ defmodule AshPhoenix.Form do
       id: id,
       transform_params: opts[:transform_params],
       prepare_params: opts[:prepare_params],
+      prepare_source: opts[:prepare_source],
       api: opts[:api],
       method: opts[:method] || form_for_method(:destroy),
       touched_forms: touched_forms(forms, params, opts),
@@ -637,6 +663,7 @@ defmodule AshPhoenix.Form do
       source:
         data
         |> Ash.Changeset.new()
+        |> prepare_source.()
         |> Ash.Changeset.for_destroy(
           action,
           params,
@@ -690,6 +717,8 @@ defmodule AshPhoenix.Form do
         opts[:warn_on_unhandled_errors?]
       )
 
+    prepare_source = opts[:prepare_source] || (& &1)
+
     query_opts =
       Keyword.drop(opts, [
         :forms,
@@ -700,7 +729,8 @@ defmodule AshPhoenix.Form do
         :for,
         :as,
         :transform_params,
-        :prepare_params
+        :prepare_params,
+        :prepare_source
       ])
 
     %__MODULE__{
@@ -722,9 +752,12 @@ defmodule AshPhoenix.Form do
       touched_forms: touched_forms(forms, params, opts),
       transform_params: opts[:transform_params],
       prepare_params: opts[:prepare_params],
+      prepare_source: opts[:prepare_source],
       source:
-        Ash.Query.for_read(
-          resource,
+        resource
+        |> Ash.Query.new()
+        |> prepare_source.()
+        |> Ash.Query.for_read(
           action,
           params || %{},
           query_opts
@@ -815,6 +848,8 @@ defmodule AshPhoenix.Form do
     form = require_form!(form)
     opts = validate_opts_with_extra_keys(opts, @validate_opts)
 
+    prepare_source = form.prepare_source || (& &1)
+
     new_params =
       if form.prepare_params do
         form.prepare_params.(new_params, :validate)
@@ -872,6 +907,7 @@ defmodule AshPhoenix.Form do
           :create ->
             form.resource
             |> Ash.Changeset.new()
+            |> prepare_source.()
             |> Ash.Changeset.for_create(
               form.action,
               changeset_params,
@@ -881,6 +917,7 @@ defmodule AshPhoenix.Form do
           :update ->
             form.data
             |> Ash.Changeset.new()
+            |> prepare_source.()
             |> Ash.Changeset.for_update(
               form.action,
               changeset_params,
@@ -890,6 +927,7 @@ defmodule AshPhoenix.Form do
           :destroy ->
             form.data
             |> Ash.Changeset.new()
+            |> prepare_source.()
             |> Ash.Changeset.for_destroy(
               form.action,
               changeset_params,
@@ -897,8 +935,10 @@ defmodule AshPhoenix.Form do
             )
 
           :read ->
-            Ash.Query.for_read(
-              form.resource,
+            form.resource
+            |> Ash.Query.new()
+            |> prepare_source.()
+            |> Ash.Query.for_read(
               form.action,
               changeset_params,
               source_opts
@@ -1400,11 +1440,14 @@ defmodule AshPhoenix.Form do
       end
 
       changeset_params = opts[:override_params] || params(form)
+      prepare_source = form.prepare_source || (& &1)
 
       {original_changeset_or_query, result} =
         case form.type do
           :create ->
             form.resource
+            |> Ash.Changeset.new()
+            |> prepare_source.()
             |> Ash.Changeset.for_create(
               form.source.action.name,
               changeset_params,
@@ -1415,6 +1458,8 @@ defmodule AshPhoenix.Form do
 
           :update ->
             form.original_data
+            |> Ash.Changeset.new()
+            |> prepare_source.()
             |> Ash.Changeset.for_update(
               form.source.action.name,
               changeset_params,
@@ -1425,6 +1470,8 @@ defmodule AshPhoenix.Form do
 
           :destroy ->
             form.original_data
+            |> Ash.Changeset.new()
+            |> prepare_source.()
             |> Ash.Changeset.for_destroy(
               form.source.action.name,
               changeset_params,
@@ -1436,6 +1483,8 @@ defmodule AshPhoenix.Form do
           :read ->
             if opts[:read_one?] do
               form.resource
+              |> Ash.Query.new()
+              |> prepare_source.()
               |> Ash.Query.for_read(
                 form.source.action.name,
                 changeset_params,
@@ -1980,7 +2029,7 @@ defmodule AshPhoenix.Form do
     Map.fetch(changeset.attributes, field)
   end
 
-  defp get_non_attribute_non_argument_param(form, changeset, field) do
+  defp get_non_attribute_non_argument_param(changeset, form, field) do
     if Ash.Resource.Info.attribute(changeset.resource, field) ||
          Enum.any?(changeset.action.arguments, &(&1.name == field)) do
       :error

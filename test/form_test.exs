@@ -758,6 +758,49 @@ defmodule AshPhoenix.FormTest do
     end
   end
 
+  describe "prepare_source" do
+    test "it runs on initial create" do
+      form =
+        Post
+        |> Form.for_create(:create,
+          api: Api,
+          prepare_source: &Ash.Changeset.put_context(&1, :foo, :bar)
+        )
+
+      assert form.source.context.foo == :bar
+    end
+
+    test "it is preserved on validate create" do
+      form =
+        Post
+        |> Form.for_create(:create,
+          api: Api,
+          prepare_source: &Ash.Changeset.put_context(&1, :foo, :bar)
+        )
+        |> Form.validate(%{text: "text"})
+
+      assert form.source.context.foo == :bar
+    end
+
+    test "it is preserved through to submit" do
+      result =
+        Post
+        |> Form.for_create(:create,
+          api: Api,
+          prepare_source: fn changeset ->
+            Ash.Changeset.before_action(
+              changeset,
+              &Ash.Changeset.force_change_attribute(&1, :title, "special_title")
+            )
+          end
+        )
+        |> Form.validate(%{text: "text"})
+        |> Form.submit!()
+
+      assert result.title == "special_title"
+    end
+  end
+
   describe "params" do
     test "it includes nested forms, and honors their `for` configuration" do
       form =
