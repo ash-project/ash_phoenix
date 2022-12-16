@@ -18,7 +18,6 @@ defmodule AshPhoenix.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       test_coverage: [tool: ExCoveralls],
-      compilers: [:phoenix] ++ Mix.compilers(),
       aliases: aliases(),
       docs: docs(),
       preferred_cli_env: [
