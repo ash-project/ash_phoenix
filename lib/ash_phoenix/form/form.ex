@@ -1609,6 +1609,91 @@ defmodule AshPhoenix.Form do
   ]
 
   @doc """
+  Mark a field or fields as touched
+
+  To mark nested fields as touched use with `update_form/4` or `update_forms_at_path/4`
+  """
+  def touch(form, fields) when is_list(fields) do
+    Enum.reduce(fields, form, &touch(&2, &1))
+  end
+
+  def touch(form, field) do
+    %{form | touched_forms: MapSet.put(form.touched_forms || MapSet.new(), to_string(field))}
+  end
+
+  @doc """
+  Updates the list of forms matching a given path. Does not validate that the path points at a single form like `update_form/4`.
+
+  Additionally, if it gets to a list of child forms and the next part of the path is not an integer,
+  it will update all of the forms at that path.
+  """
+  def update_forms_at_path(form, path, func, opts \\ [])
+
+  def update_forms_at_path(nil, _, _, _), do: nil
+
+  def update_forms_at_path(forms, [] = path, func, opts) when is_list(forms) do
+    Enum.map(forms, &update_forms_at_path(&1, path, func, opts))
+  end
+
+  def update_forms_at_path(forms, [next | rest] = path, func, opts) when is_list(forms) do
+    case Integer.parse(next) do
+      {integer, ""} ->
+        List.update_at(forms, integer, &update_forms_at_path(&1, rest, func, opts))
+
+      _ ->
+        Enum.map(forms, &update_forms_at_path(&1, path, func, opts))
+    end
+  end
+
+  def update_forms_at_path(form, path, func, opts) do
+    form = require_form!(form)
+    opts = Spark.OptionsHelpers.validate!(opts, @update_form_opts)
+
+    path =
+      case path do
+        [] ->
+          []
+
+        path when is_list(path) ->
+          path
+
+        path ->
+          path
+          |> Plug.Conn.Query.decode()
+          |> decoded_to_list()
+      end
+
+    case path do
+      [] ->
+        func.(form)
+
+      [key | rest] ->
+        new_forms =
+          form.forms
+          |> Map.new(fn {key, value} ->
+            if to_string(key) == key do
+              {key, update_forms_at_path(value, rest, func, opts)}
+            else
+              {key, value}
+            end
+          end)
+
+        if opts[:mark_as_touched?] do
+          %{
+            form
+            | forms: new_forms,
+              touched_forms: MapSet.put(form.touched_forms, key)
+          }
+        else
+          %{
+            form
+            | forms: new_forms
+          }
+        end
+    end
+  end
+
+  @doc """
   Updates the form at the provided path using the given function.
 
   Marks all forms along the path as touched by default. To prevent it, provide `mark_as_touched?: false`.
