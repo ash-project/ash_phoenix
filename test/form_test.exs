@@ -91,6 +91,20 @@ defmodule AshPhoenix.FormTest do
     end
   end
 
+  describe "clear_value/1" do
+    test "it clears attributes" do
+      form =
+        Post
+        |> Form.for_create(:create)
+        |> Form.validate(%{"text" => "text"})
+
+      assert Form.value(form, :text) == "text"
+
+      form = Form.clear_value(form, :text)
+      assert Form.value(form, :text) == nil
+    end
+  end
+
   describe "form_for fields" do
     test "it should show simple field values" do
       form =
