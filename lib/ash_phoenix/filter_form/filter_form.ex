@@ -131,9 +131,6 @@ defmodule AshPhoenix.FilterForm do
 
         {:error, %__MODULE__{} = form} ->
           {:error, form}
-
-        {:error, error} ->
-          {:error, %{form | errors: List.wrap(error)}}
       end
     else
       {:error, form}

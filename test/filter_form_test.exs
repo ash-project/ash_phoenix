@@ -190,11 +190,6 @@ defmodule AshPhoenix.FilterFormTest do
           }
         )
 
-      assert {:ok, %{"and" => [%{"comments" => %{"text" => %{"contains" => "new"}}}]} = filter} =
-               FilterForm.to_filter_map(form)
-
-      Ash.Filter.parse!(Post, filter) |> IO.inspect()
-
       assert Ash.Query.equivalent_to?(
                FilterForm.filter!(Post, form),
                contains(comments.text, "new")
