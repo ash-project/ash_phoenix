@@ -4172,11 +4172,14 @@ defmodule AshPhoenix.Form do
         name: form.name,
         errors: errors,
         data: form.data,
-        params: form.params || %{},
+        params: form_params(form),
         hidden: hidden,
         options: Keyword.put_new(opts, :method, form.method)
       }
     end
+
+    defp form_params(%{params: params}) when not is_nil(params), do: params
+    defp form_params(_), do: nil
 
     @impl true
     def to_form(form, _phoenix_form, field, opts) do
