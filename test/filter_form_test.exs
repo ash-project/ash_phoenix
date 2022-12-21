@@ -107,6 +107,8 @@ defmodule AshPhoenix.FilterFormTest do
     test "An empty form returns the filter `true`" do
       form = FilterForm.new(Post)
 
+      assert FilterForm.to_filter_map(form) == {:ok, true}
+
       assert Ash.Query.equivalent_to?(
                FilterForm.filter!(Post, form),
                true
@@ -121,6 +123,9 @@ defmodule AshPhoenix.FilterFormTest do
             value: "new post"
           }
         )
+
+      assert FilterForm.to_filter_map(form) ==
+               {:ok, %{"and" => [%{"title" => %{"eq" => "new post"}}]}}
 
       assert Ash.Query.equivalent_to?(
                FilterForm.filter!(Post, form),
@@ -185,9 +190,34 @@ defmodule AshPhoenix.FilterFormTest do
           }
         )
 
+      assert {:ok, %{"and" => [%{"comments" => %{"text" => %{"contains" => "new"}}}]} = filter} =
+               FilterForm.to_filter_map(form)
+
+      Ash.Filter.parse!(Post, filter) |> IO.inspect()
+
       assert Ash.Query.equivalent_to?(
                FilterForm.filter!(Post, form),
                contains(comments.text, "new")
+             )
+    end
+
+    test "predicates can reference paths for to_filter_map" do
+      form =
+        FilterForm.new(Post,
+          params: %{
+            field: :text,
+            operator: :eq,
+            path: "comments",
+            value: "new"
+          }
+        )
+
+      assert {:ok, %{"and" => [%{"comments" => %{"text" => %{"eq" => "new"}}}]} = filter} =
+               FilterForm.to_filter_map(form)
+
+      assert Ash.Query.equivalent_to?(
+               Ash.Query.filter(Post, ^Ash.Filter.parse!(Post, filter)),
+               comments.text == "new"
              )
     end
 

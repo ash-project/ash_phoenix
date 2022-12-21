@@ -119,6 +119,93 @@ defmodule AshPhoenix.FilterForm do
   end
 
   @doc """
+  Returns a filter map that can be provided to `Ash.Filter.parse`
+
+  This allows for things like saving a stored filter. Does not currently support parameterizing calculations or functions.
+  """
+  def to_filter_map(form) do
+    if form.valid? do
+      case do_to_filter_map(form, form.resource) do
+        {:ok, expr} ->
+          {:ok, expr}
+
+        {:error, %__MODULE__{} = form} ->
+          {:error, form}
+
+        {:error, error} ->
+          {:error, %{form | errors: List.wrap(error)}}
+      end
+    else
+      {:error, form}
+    end
+  end
+
+  defp do_to_filter_map(%__MODULE__{components: []}, _), do: {:ok, true}
+
+  defp do_to_filter_map(
+         %__MODULE__{components: components, operator: operator, negated?: negated?} = form,
+         resource
+       ) do
+    {filters, components, errors?} =
+      Enum.reduce(components, {[], [], false}, fn component, {filters, components, errors?} ->
+        case do_to_filter_map(component, resource) do
+          {:ok, component_filter} ->
+            {filters ++ [component_filter], components ++ [component], errors?}
+
+          {:error, component} ->
+            {filters, components ++ [component], true}
+        end
+      end)
+
+    if errors? do
+      {:error, %{form | components: components}}
+    else
+      expr = %{to_string(operator) => filters}
+
+      if negated? do
+        {:ok, %{"not" => expr}}
+      else
+        {:ok, expr}
+      end
+    end
+  end
+
+  defp do_to_filter_map(
+         %Predicate{
+           field: field,
+           value: value,
+           operator: operator,
+           negated?: negated?,
+           path: path
+         },
+         _resource
+       ) do
+    expr =
+      put_at_path(%{}, Enum.map(path, &to_string/1), %{
+        to_string(field) => %{to_string(operator) => value}
+      })
+
+    if negated? do
+      {:ok, %{"not" => expr}}
+    else
+      {:ok, expr}
+    end
+  end
+
+  defp put_at_path(_, [], value), do: value
+
+  defp put_at_path(map, [key], value) do
+    Map.put(map || %{}, key, value)
+  end
+
+  defp put_at_path(map, [key | rest], value) do
+    map
+    |> Kernel.||(%{})
+    |> Map.put_new(key, %{})
+    |> Map.update!(key, &put_at_path(&1, rest, value))
+  end
+
+  @doc """
   Returns a filter expression that can be provided to Ash.Query.filter/2
 
   To add this to a query, remember to use `^`, for example:
