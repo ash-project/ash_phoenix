@@ -17,15 +17,15 @@ jobs:
       fail-fast: false
       matrix:
         otp: ["23"]
-        elixir: ["1.13.2"]
-        ash: ["main", "2.4.2"]
+        elixir: ["1.14.1"]
+        ash: ["main", "2.4.26"]
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       ASH_VERSION: ${{matrix.ash}}
     steps:
       - run: sudo apt-get install --yes erlang-dev
       - uses: actions/checkout@v2
-      - uses: actions/setup-elixir@v1.5
+      - uses: erlef/setup-beam@v1
         with:
           experimental-otp: true
           otp-version: ${{matrix.otp}}
@@ -60,7 +60,7 @@ jobs:
     steps:
       - run: sudo apt-get install --yes erlang-dev
       - uses: actions/checkout@v2
-      - uses: actions/setup-elixir@v1.5
+      - uses: erlef/setup-beam@v1
         with:
           experimental-otp: true
           otp-version: ${{matrix.otp}}
@@ -81,13 +81,13 @@ jobs:
     strategy:
       matrix:
         otp: ["23"]
-        elixir: ["1.13.2"]
+        elixir: ["1.14.1"]
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - run: sudo apt-get install --yes erlang-dev
       - uses: actions/checkout@v2
-      - uses: actions/setup-elixir@v1.5
+      - uses: erlef/setup-beam@v1
         with:
           experimental-otp: true
           otp-version: ${{matrix.otp}}
