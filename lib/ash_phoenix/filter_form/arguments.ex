@@ -3,8 +3,6 @@ defmodule AshPhoenix.FilterForm.Arguments do
 
   defstruct [:input, :params, :arguments, errors: []]
 
-  import Ash.Filter.TemplateHelpers, only: [is_expr: 1]
-
   def new(params, []) do
     %__MODULE__{input: %{}, params: params, arguments: [], errors: []}
   end
