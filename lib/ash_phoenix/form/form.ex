@@ -4172,7 +4172,7 @@ defmodule AshPhoenix.Form do
         name: form.name,
         errors: errors,
         data: form.data,
-        params: form.params,
+        params: form.params || %{},
         hidden: hidden,
         options: Keyword.put_new(opts, :method, form.method)
       }
