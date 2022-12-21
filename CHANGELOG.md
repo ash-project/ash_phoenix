@@ -5,6 +5,23 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.2.3](https://github.com/ash-project/ash_phoenix/compare/v1.2.2...v1.2.3) (2022-12-21)
+
+
+
+
+### Bug Fixes:
+
+* update to latest ash and resolve warning
+
+### Improvements:
+
+* add `clear_value/1`
+
+* add update_forms_at_path/4` and `touch/2`
+
+* get rid of phoenix compiler
+
 ## [v1.2.2](https://github.com/ash-project/ash_phoenix/compare/v1.2.1...v1.2.2) (2022-12-15)
 
 
