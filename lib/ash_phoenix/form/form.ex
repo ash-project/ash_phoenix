@@ -2560,7 +2560,12 @@ defmodule AshPhoenix.Form do
             value
         end
 
-      Comp.not_equal?(value, original_value)
+      try do
+        Comp.not_equal?(value, original_value)
+      rescue
+        _ ->
+          true
+      end
     end)
   end
 
