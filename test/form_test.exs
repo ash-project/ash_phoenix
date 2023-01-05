@@ -99,7 +99,6 @@ defmodule AshPhoenix.FormTest do
         |> Form.validate(%{"text" => "text"})
 
       assert Form.value(form, :text) == "text"
-      assert form.source.arguments == %{}
       assert form.source.attributes == %{text: "text"}
       assert form.source.params == %{"text" => "text"}
       assert form.params == %{"text" => "text"}
@@ -107,8 +106,26 @@ defmodule AshPhoenix.FormTest do
       form = Form.clear_value(form, :text)
 
       assert Form.value(form, :text) == nil
-      assert form.source.arguments == %{}
       assert form.source.attributes == %{}
+      assert form.source.params == %{}
+      assert form.params == %{}
+    end
+
+    test "it clears arguments" do
+      form =
+        Post
+        |> Form.for_create(:create)
+        |> Form.validate(%{"excerpt" => "text"})
+
+      assert Form.value(form, :excerpt) == "text"
+      assert form.source.arguments == %{excerpt: "text"}
+      assert form.source.params == %{"excerpt" => "text"}
+      assert form.params == %{"excerpt" => "text"}
+
+      form = Form.clear_value(form, :excerpt)
+
+      assert Form.value(form, :excerpt) == nil
+      assert form.source.arguments == %{}
       assert form.source.params == %{}
       assert form.params == %{}
     end
