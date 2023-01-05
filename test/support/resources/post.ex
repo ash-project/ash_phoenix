@@ -20,6 +20,7 @@ defmodule AshPhoenix.Test.Post do
       argument(:author, :map, allow_nil?: true)
       argument(:comments, {:array, :map})
       argument(:linked_posts, {:array, :map})
+      argument(:excerpt, :string, allow_nil?: true)
       change(manage_relationship(:comments, type: :direct_control))
       change(manage_relationship(:linked_posts, type: :direct_control))
       change(manage_relationship(:author, type: :direct_control, on_missing: :unrelate))
