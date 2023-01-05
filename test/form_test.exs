@@ -99,9 +99,18 @@ defmodule AshPhoenix.FormTest do
         |> Form.validate(%{"text" => "text"})
 
       assert Form.value(form, :text) == "text"
+      assert form.source.arguments == %{}
+      assert form.source.attributes == %{text: "text"}
+      assert form.source.params == %{"text" => "text"}
+      assert form.params == %{"text" => "text"}
 
       form = Form.clear_value(form, :text)
+
       assert Form.value(form, :text) == nil
+      assert form.source.arguments == %{}
+      assert form.source.attributes == %{}
+      assert form.source.params == %{}
+      assert form.params == %{}
     end
   end
 

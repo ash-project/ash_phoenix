@@ -2082,17 +2082,17 @@ defmodule AshPhoenix.Form do
         source: %{
           form.source
           | params: Map.drop(form.source.params, string_and_atom),
-            arguments: Map.drop(form.source.params, string_and_atom)
+            arguments: Map.drop(form.source.arguments, string_and_atom)
         }
     }
 
     case form.source do
-      %Ash.Changeset{} = source ->
+      %Ash.Changeset{} = _source ->
         %{
           common_dropped
           | source: %{
-              source
-              | attributes: Map.drop(source.attributes, string_and_atom)
+              common_dropped.source
+              | attributes: Map.drop(common_dropped.source.attributes, string_and_atom)
             }
         }
 
