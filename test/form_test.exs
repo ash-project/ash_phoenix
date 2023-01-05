@@ -129,6 +129,31 @@ defmodule AshPhoenix.FormTest do
       assert form.source.params == %{}
       assert form.params == %{}
     end
+
+    test "it clears multiple fields" do
+      form =
+        Post
+        |> Form.for_create(:create)
+        |> Form.validate(%{"excerpt" => "text", "text" => "text"})
+
+      assert Form.value(form, :excerpt) == "text"
+      assert Form.value(form, :text) == "text"
+
+      assert form.source.attributes == %{text: "text"}
+      assert form.source.arguments == %{excerpt: "text"}
+      assert form.source.params == %{"excerpt" => "text", "text" => "text"}
+      assert form.params == %{"excerpt" => "text", "text" => "text"}
+
+      form = Form.clear_value(form, [:excerpt, :text])
+
+      assert Form.value(form, :text) == nil
+      assert Form.value(form, :excerpt) == nil
+
+      assert form.params == %{}
+      assert form.source.arguments == %{}
+      assert form.source.attributes == %{}
+      assert form.source.params == %{}
+    end
   end
 
   describe "form_for fields" do

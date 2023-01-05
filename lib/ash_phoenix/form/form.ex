@@ -2070,8 +2070,14 @@ defmodule AshPhoenix.Form do
 
   @doc """
   Clears a given input's value on a form.
+
+  Accepts a field (atom) or a list of fields (atoms) as a second argument.
   """
-  @spec clear_value(t(), atom) :: any()
+  @spec clear_value(t(), atom | [atom]) :: t()
+  def clear_value(form, field_or_fields) when is_list(field_or_fields) do
+    Enum.reduce(field_or_fields, form, &clear_value(&2, &1))
+  end
+
   def clear_value(form, field) do
     form = require_form!(form)
     string_and_atom = [field, to_string(field)]
