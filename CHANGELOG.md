@@ -5,6 +5,27 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.2.4](https://github.com/ash-project/ash_phoenix/compare/v1.2.3...v1.2.4) (2023-01-18)
+
+
+
+
+### Bug Fixes:
+
+* properly clear value in Form.clear_value/2 (#66)
+
+* handle raised errors when comparing values
+
+* ensure that params is always a map in Phoenix.HTML.Form
+
+### Improvements:
+
+* update to new ash docs patterns
+
+* accept multiple fields in `AshPhoenix.Form.clear_value/2` (#67)
+
+* add `to_filter_map/1` to filter_form
+
 ## [v1.2.3](https://github.com/ash-project/ash_phoenix/compare/v1.2.2...v1.2.3) (2022-12-21)
 
 
