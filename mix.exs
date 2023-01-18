@@ -102,7 +102,8 @@ defmodule AshPhoenix.MixProject do
           AshPhoenix.Form.NoFormConfigured,
           AshPhoenix.Form.NoResourceConfigured
         ]
-      ]
+      ],
+      Internals: ~r/.*/
     ]
   end
 
