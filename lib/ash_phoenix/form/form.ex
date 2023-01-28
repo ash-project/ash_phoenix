@@ -779,7 +779,7 @@ defmodule AshPhoenix.Form do
       attribute = Ash.Resource.Info.public_attribute(query.resource, key)
 
       if attribute do
-        case Ash.Changeset.cast_input(attribute.type, value, attribute.constraints, query) do
+        case Ash.Type.Helpers.cast_input(attribute.type, value, attribute.constraints, query) do
           {:ok, casted} ->
             %{query | params: Map.put(query.params, key, casted)}
 
@@ -794,7 +794,7 @@ defmodule AshPhoenix.Form do
             messages
             |> Enum.reduce(query, fn message, query ->
               message
-              |> Ash.Changeset.error_to_exception_opts(attribute)
+              |> Ash.Type.Helpers.error_to_exception_opts(attribute)
               |> Enum.reduce(query, fn opts, query ->
                 Ash.Query.add_error(query, Ash.Error.Changes.InvalidAttribute.exception(opts))
               end)
