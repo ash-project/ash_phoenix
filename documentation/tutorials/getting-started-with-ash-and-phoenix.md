@@ -90,7 +90,7 @@ Now in the terminal install these new dependencies.
 $ mix deps.get
 ```
 
-### Use `AshPostgres.Repo` and Create the Database
+### Use `AshPostgres.Repo`
 
 We need to swap `Ecto.Repo` for `AshPostgres.Repo`. `AshPostgres.Repo` enriches your repo with additional AshPostgres specific behaviour, but is essentially a thin wrapper around `Ecto.Repo`.
 To use `AshPostgres.Repo` change your repo module to look like this:
@@ -108,17 +108,10 @@ defmodule MyAshPhoenixApp.Repo do
 end
 ```
 
-After swapping `AshPostgres.Repo` in, you can now create the database using:
-
-```
-$ mix ash_postgres.create
-
-The database for MyAshPhoenixApp.Repo has been created
-```
-
 ### Edit Config
 
 We need to specify the Ash APIs that our application uses and some config for backwards compatibility that will be removed in the next major release.
+
 Add this to your config:
 
 ```elixir
@@ -136,10 +129,10 @@ config :my_ash_phoenix_app,
 
 ### Create the API and Registry
 
-An Ash API can be thought of as a [Bounded Context](https://martinfowler.com/bliki/BoundedContext.html) in Domain Driven Design terms and can seen as analogous to a Phoenix context. Put simply, its a way of grouping related resources together. In our case our API is called `MyAshPhoenixApp.Blog`.
+An Ash API can be thought of as a [Bounded Context](https://martinfowler.com/bliki/BoundedContext.html) in Domain Driven Design terms and can seen as analogous to a Phoenix context. Put simply, its a way of grouping related resources together. In our case our API will be called `MyAshPhoenixApp.Blog`.
 
-An Ash API points to an Ash registry. The registry in our case is `MyAshPhoenixApp.Blog.Registry`
-An Ash registry points to one or more resources. In our case we only have a single resource `MyAshPhoenixApp.Blog.Post`. We'll be taking a deeper look into that in the next section.
+An Ash API points to an Ash registry. The registry in our case will be `MyAshPhoenixApp.Blog.Registry`
+An Ash registry points to one or more resources. In our case we will only have a single resource `MyAshPhoenixApp.Blog.Post`. We'll be taking a deeper look into that in the next section.
 
 For now take a look at the `Blog` API and the `Blog.Registry`:
 
@@ -252,11 +245,19 @@ defmodule MyAshPhoenixApp.Blog.Post do
 end
 ```
 
-### Migrate the Database
+### Creating and Migrating the Database
 
 We have specified the resource in Ash. But we have yet to create it in our data layer (in our case Postgres).
 
-We created our database earlier, but now we need to populate it. We do this by generating and performing a migration.
+First we need to create our database:
+
+```bash
+$ mix ash_postgres.create
+
+The database for MyAshPhoenixApp.Repo has been created
+```
+
+Now we need to populate our database. We do this by generating and performing a migration.
 
 We can use a generator to produce a migration for us. Ash can deduce what needs to go into the migration and do the hard work for us, to do this use the command below:
 
@@ -330,7 +331,7 @@ MyAshPhoenixApp.Blog.Post
 
 # get single post by id
 MyAshPhoenixApp.Blog.Post
-|> Ash.Query.for_read(:by_id, %{id: first_post.id})
+|> Ash.Query.for_read(:by_id, %{id: new_post.id})
 |> MyAshPhoenixApp.Blog.read_one!()
 
 # update post
@@ -340,7 +341,7 @@ updated_post =
   |> MyAshPhoenixApp.Blog.update!()
 
 # delete post
-first_post
+new_post
 |> Ash.Changeset.for_destroy(:destroy)
 |> MyAshPhoenixApp.Blog.destroy!()
 ```
@@ -386,7 +387,7 @@ MyAshPhoenixApp.Blog.Post.read_all!()
 MyAshPhoenixApp.Blog.Post.get_by_id!(new_post.id)
 
 # update post
-updated_post = MyAshPhoenixApp.Blog.Post.update!(%{content: "hello to you too!"})
+updated_post = MyAshPhoenixApp.Blog.Post.update!(new_post, %{content: "hello to you too!"})
 
 # delete post
 MyAshPhoenixApp.Blog.Post.destroy!(updated_post)
