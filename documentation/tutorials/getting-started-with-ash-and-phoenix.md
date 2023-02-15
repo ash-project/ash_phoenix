@@ -476,7 +476,7 @@ defmodule MyAshPhoenixAppWeb.ExampleLiveView do
 
   defp post_selector(posts) do
     for post <- posts do
-      {:"#{post.title}", post.id}
+      {post.title, post.id}
     end
   end
 end
