@@ -66,12 +66,12 @@ We now need to add Ash, AshPhoenix and AshPostgres to our Phoenix project. We ne
 
   def deps do
     [
-      # use `mix hex.info <library_name>` to get the latest versions of dependencies
+      # use `mix hex.info <library_name>` to get the latest versions of each dependency, for example, `mix hex.info phoenix`
       {:phoenix, "~> x.x"},
       # ...
-      {:ash, "~> 2.6.2"},
-      {:ash_postgres, "~> 1.3.10"},
-      {:ash_phoenix, "~> 1.2.5"}
+      {:ash, "~> x.x"},
+      {:ash_postgres, "~> x.x"},
+      {:ash_phoenix, "~> x.x"}
     ]
   end
 ```
