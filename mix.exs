@@ -79,12 +79,23 @@ defmodule AshPhoenix.MixProject do
     end)
   end
 
+  defp groups_for_extras do
+    [
+      Tutorials: [
+        ~r'documentation/tutorials'
+      ],
+      "How To": ~r'documentation/how_to',
+      Topics: ~r'documentation/topics'
+    ]
+  end
+
   defp docs do
     [
       main: "working-with-phoenix",
       source_ref: "v#{@version}",
       logo: "logos/small-logo.png",
       extras: extras(),
+      groups_for_extras: groups_for_extras(),
       groups_for_modules: [
         "Phoenix Helpers": [
           AshPhoenix.Form,
