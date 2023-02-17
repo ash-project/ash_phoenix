@@ -191,6 +191,40 @@ defmodule AshPhoenix.FormTest do
     assert form.valid? == false
   end
 
+  test "blank form values unset - helps support dead view forms" do
+    form =
+      Form.for_create(PostWithDefault, :create, api: Api, exclude_fields_if_empty: [:text, :title])
+
+    {:ok, post} = Form.submit(form, params: %{"title" => "", "text" => "bar"})
+    assert post.text == "bar"
+    assert post.title == nil
+  end
+
+  test "blank nested form values unset - helps support dead view forms" do
+    form =
+      Comment
+      |> Form.for_create(:create,
+        api: Api,
+        forms: [
+          post: [
+            resource: PostWithDefault,
+            create_action: :create
+          ]
+        ],
+        exclude_fields_if_empty: [post: [:title, :description]]
+      )
+      |> Form.add_form(:post)
+
+    {:ok, comment} =
+      Form.submit(form,
+        params: %{"text" => "comment", "post" => %{"title" => "", "text" => "bar"}}
+      )
+
+    post = comment.post
+    assert post.text == "bar"
+    assert post.title == nil
+  end
+
   test "phoenix forms are accepted as input in some cases" do
     form = Form.for_create(PostWithDefault, :create, api: Api)
     form = AshPhoenix.Form.validate(form, %{"text" => ""}, errors: form.submitted_once?)

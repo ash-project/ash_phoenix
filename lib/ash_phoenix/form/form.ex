@@ -283,6 +283,16 @@ defmodule AshPhoenix.Form do
       type: :string,
       doc:
         "The http method to associate with the form. Defaults to `post` for creates, and `put` for everything else."
+    ],
+    exclude_fields_if_empty: [
+      type: {:list, {:or, [:atom, :string, {:tuple, [:any, :any]}]}},
+      doc: """
+      These fields will be ignored if they are empty strings.
+
+      This list of fields supports dead view forms. When a form is submitted from dead view
+      empty fields are submitted as empty strings. This is problematic for fields that allow_nil
+      or those that have default values.
+      """
     ]
   ]
 
@@ -2199,6 +2209,7 @@ defmodule AshPhoenix.Form do
     form = to_form!(form)
     # These options aren't documented because they are still experimental
     hidden? = Keyword.get(opts, :hidden?, true)
+    excluded_empty_fields = Keyword.get(opts, :exclude_fields_if_empty, Keyword.get(form.opts, :exclude_fields_if_empty, []))
     indexer = opts[:indexer]
     indexed_lists? = opts[:indexed_lists?] || not is_nil(indexer) || false
     transform = opts[:transform]
@@ -2214,7 +2225,10 @@ defmodule AshPhoenix.Form do
       |> Keyword.keys()
       |> Enum.flat_map(&[&1, to_string(&1)])
 
-    params = Map.drop(form.params, form_keys)
+    params =
+      form.params
+      |> Map.drop(form_keys)
+      |> exclude_empty_fields(excluded_empty_fields)
 
     params =
       if only_touched? do
@@ -2245,6 +2259,7 @@ defmodule AshPhoenix.Form do
             nested_form = form.forms[key]
 
             if nested_form && filter.(nested_form) do
+              opts = Keyword.put(opts, :exclude_fields_if_empty, Keyword.get(excluded_empty_fields, key, []))
               nested_params = params(nested_form, opts)
 
               if nested_params["_ignore"] == "true" do
@@ -4157,6 +4172,38 @@ defmodule AshPhoenix.Form do
 
   defp form_for_method(:create), do: "post"
   defp form_for_method(_), do: "put"
+
+  defp exclude_empty_fields(params, []) do
+    params
+  end
+
+  defp exclude_empty_fields(params, _) when params == %{} do
+    params
+  end
+
+  defp exclude_empty_fields(params, [unset_key | rest]) when is_atom(unset_key) do
+    {_, new} =
+      Map.get_and_update(params, to_string(unset_key), fn
+        "" -> :pop
+        nil -> :pop
+        value -> {value, value}
+      end)
+
+    exclude_empty_fields(new, rest)
+  end
+
+  defp exclude_empty_fields(params, [{nested_type, nested_keys} | rest]) do
+    {_, new} =
+      Map.get_and_update(params, to_string(nested_type), fn
+        nil ->
+          :pop
+
+        map ->
+          {map, exclude_empty_fields(map, nested_keys)}
+      end)
+
+    exclude_empty_fields(new, rest)
+  end
 
   defimpl Phoenix.HTML.FormData do
     import AshPhoenix.FormData.Helpers
