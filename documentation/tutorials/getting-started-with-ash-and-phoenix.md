@@ -471,7 +471,7 @@ defmodule MyAshPhoenixAppWeb.ExampleLiveView do
     post_id |> Post.get_by_id!() |> Post.update!(%{content: content})
     posts = Post.read_all!()
 
-    {:noreply, assign(socket, :posts, posts)}
+    {:noreply, assign(socket, posts: posts, post_selector: post_selector(posts))}
   end
 
   defp post_selector(posts) do
