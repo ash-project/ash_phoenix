@@ -600,6 +600,7 @@ defmodule AshPhoenix.LiveView do
           Phoenix.LiveView.assign(socket, one, two)
         end
       end
+
     {:error, :nofile} ->
       defp assign(%Phoenix.LiveView.Socket{} = socket, one, two) do
         Phoenix.LiveView.assign(socket, one, two)
