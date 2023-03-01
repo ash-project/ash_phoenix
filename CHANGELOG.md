@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.2.7](https://github.com/ash-project/ash_phoenix/compare/v1.2.6...v1.2.7) (2023-03-01)
+
+
+
+
+### Bug Fixes:
+
+* Support LV 0.15 (#73)
+
 ## [v1.2.6](https://github.com/ash-project/ash_phoenix/compare/v1.2.5...v1.2.6) (2023-02-15)
 
 
