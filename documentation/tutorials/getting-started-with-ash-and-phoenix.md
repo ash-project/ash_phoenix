@@ -444,8 +444,9 @@ defmodule MyAshPhoenixAppWeb.ExampleLiveView do
       assign(socket,
         posts: posts,
         post_selector: post_selector(posts),
-        create_form: AshPhoenix.Form.for_create(Post, :create),
-        update_form: AshPhoenix.Form.for_update(List.first(posts, %Post{}), :update)
+        # the `to_form/1` calls below are for liveview 0.18.12+. For earlier versions, remove those calls
+        create_form: AshPhoenix.Form.for_create(Post, :create) |> to_form(),
+        update_form: AshPhoenix.Form.for_update(List.first(posts, %Post{}), :update) |> to_form()
       )
 
     {:ok, socket}

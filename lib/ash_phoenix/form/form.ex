@@ -854,8 +854,15 @@ defmodule AshPhoenix.Form do
   #{Spark.OptionsHelpers.docs(@validate_opts)}
   """
   @spec validate(t(), map, Keyword.t()) :: t()
-  def validate(form, new_params, opts \\ []) do
-    form = require_form!(form)
+  @spec validate(Phoenix.HTML.Form.t(), map, Keyword.t()) :: Phoenix.HTML.Form.t()
+  def validate(form, new_params, opts \\ [])
+
+  def validate(%Phoenix.HTML.Form{} = form, new_params, opts) do
+    validate(form.source, new_params, opts)
+    |> Phoenix.HTML.FormData.to_form(form.options)
+  end
+
+  def validate(form, new_params, opts) do
     opts = validate_opts_with_extra_keys(opts, @validate_opts)
 
     prepare_source = form.prepare_source || (& &1)
@@ -977,8 +984,15 @@ defmodule AshPhoenix.Form do
   @doc """
   Merge the new options with the saved options on a form. See `update_options/2` for more.
   """
+  @spec merge_options(t(), Keyword.t()) :: t()
+  @spec merge_options(Phoenix.HTML.Form.t(), Keyword.t()) :: Phoenix.HTML.Form.t()
+  def merge_options(%Phoenix.HTML.Form{} = form, opts) do
+    form.source
+    |> update_options(opts)
+    |> Phoenix.HTML.FormData.to_form(form.options)
+  end
+
   def merge_options(form, opts) do
-    form = require_form!(form)
     update_options(form, &Keyword.merge(&1, opts))
   end
 
@@ -990,8 +1004,13 @@ defmodule AshPhoenix.Form do
 
   You may want to validate again after this has been changed if it can change the results of your form validation.
   """
+  def update_options(%Phoenix.HTML.Form{} = form, fun) do
+    form.source
+    |> update_options(fun)
+    |> Phoenix.HTML.FormData.to_form(form.options)
+  end
+
   def update_options(form, fun) do
-    form = require_form!(form)
     %{form | opts: fun.(form.opts)}
   end
 
@@ -1402,8 +1421,21 @@ defmodule AshPhoenix.Form do
           | {:ok, Ash.Resource.record(), list(Ash.Notifier.Notification.t())}
           | :ok
           | {:error, t()}
-  def submit(form, opts \\ []) do
-    form = require_form!(form)
+
+  @spec submit(Phoenix.HTML.Form.t(), Keyword.t()) ::
+          {:ok, Ash.Resource.record() | nil | list(Ash.Notifier.Notification.t())}
+          | {:ok, Ash.Resource.record(), list(Ash.Notifier.Notification.t())}
+          | :ok
+          | {:error, Phoenix.HTML.Form.t()}
+  def submit(form, opts \\ [])
+
+  def submit(%Phoenix.HTML.Form{} = form, opts) do
+    form.source
+    |> submit(opts)
+    |> Phoenix.HTML.FormData.to_form(form.options)
+  end
+
+  def submit(form, opts) do
     changeset_opts = Keyword.drop(form.opts, [:forms, :errors, :id, :method, :for, :as])
 
     form =
@@ -1593,8 +1625,6 @@ defmodule AshPhoenix.Form do
   """
   @spec submit!(t(), Keyword.t()) :: Ash.Resource.record() | :ok | no_return
   def submit!(form, opts \\ []) do
-    form = require_form!(form)
-
     case submit(form, Keyword.put(opts, :raise?, true)) do
       {:ok, value} ->
         value
@@ -1655,8 +1685,13 @@ defmodule AshPhoenix.Form do
     end
   end
 
+  def update_forms_at_path(%Phoenix.HTML.Form{} = form, path, func, opts) do
+    form.source
+    |> update_forms_at_path(path, func, opts)
+    |> Phoenix.HTML.FormData.to_form(form.options)
+  end
+
   def update_forms_at_path(form, path, func, opts) do
-    form = require_form!(form)
     opts = Spark.OptionsHelpers.validate!(opts, @update_form_opts)
 
     path =
@@ -1711,8 +1746,17 @@ defmodule AshPhoenix.Form do
   This can be useful if you have a button that should modify a nested form in some way, for example.
   """
   @spec update_form(t(), list(atom | integer) | String.t(), (t() -> t())) :: t()
-  def update_form(form, path, func, opts \\ []) do
-    form = require_form!(form)
+  @spec update_form(Phoenix.HTML.Form.t(), list(atom | integer) | String.t(), (t() -> t())) ::
+          Phoenix.HTML.Form.t()
+  def update_form(form, path, func, opts \\ [])
+
+  def update_form(%Phoenix.HTML.Form{} = form, path, func, opts) do
+    form.source
+    |> update_form(path, func, opts)
+    |> Phoenix.HTML.FormData.to_form(form.options)
+  end
+
+  def update_form(form, path, func, opts) do
     opts = Spark.OptionsHelpers.validate!(opts, @update_form_opts)
 
     path =
@@ -1846,16 +1890,6 @@ defmodule AshPhoenix.Form do
   defp to_form!(form) do
     raise ArgumentError, """
     Expected to receive either an `%AshPhoenix.Form{}` or a `%Phoenix.HTML.Form{}` with `%AshPhoenix.Form{}` as its source.
-
-    Got: #{inspect(form)}
-    """
-  end
-
-  defp require_form!(%__MODULE__{} = form), do: form
-
-  defp require_form!(form) do
-    raise ArgumentError, """
-    Expected to receive an `%AshPhoenix.Form{}`.
 
     Got: #{inspect(form)}
     """
@@ -2066,9 +2100,13 @@ defmodule AshPhoenix.Form do
   Queries do not track data (because that wouldn't make sense), so this will not update the data
   for read actions
   """
-  def set_data(form, data) do
-    form = require_form!(form)
+  def set_data(%Phoenix.HTML.Form{} = form, data) do
+    form.source
+    |> set_data(data)
+    |> Phoenix.HTML.FormData.to_form(form.options)
+  end
 
+  def set_data(form, data) do
     case form.source do
       %Ash.Changeset{} = source ->
         %{form | data: data, source: %{source | data: data}}
@@ -2084,12 +2122,17 @@ defmodule AshPhoenix.Form do
   Accepts a field (atom) or a list of fields (atoms) as a second argument.
   """
   @spec clear_value(t(), atom | [atom]) :: t()
+  def clear_value(%Phoenix.HTML.Form{} = form, field_or_fields) do
+    form.source
+    |> clear_value(field_or_fields)
+    |> Phoenix.HTML.FormData.to_form(form.options)
+  end
+
   def clear_value(form, field_or_fields) when is_list(field_or_fields) do
     Enum.reduce(field_or_fields, form, &clear_value(&2, &1))
   end
 
   def clear_value(form, field) do
-    form = require_form!(form)
     string_and_atom = [field, to_string(field)]
 
     common_dropped = %{
@@ -2179,9 +2222,13 @@ defmodule AshPhoenix.Form do
   to the string "true". Any other value will not result in the form being ignored.
   """
   @spec ignore(t()) :: t()
-  def ignore(form) do
-    form = require_form!(form)
+  def ignore(%Phoenix.HTML.Form{} = form) do
+    form.source
+    |> ignore()
+    |> Phoenix.HTML.FormData.to_form(form.options)
+  end
 
+  def ignore(form) do
     if ignored?(form) do
       %{form | params: Map.delete(form.params, "_ignore")}
     else
@@ -2204,12 +2251,19 @@ defmodule AshPhoenix.Form do
   This can be useful if you want to get the parameters and manipulate them/build a custom changeset
   afterwards.
   """
-  @spec params(t() | Phoenix.HTML.Form.t()) :: map
+  @spec params(t()) :: map
   def params(form, opts \\ []) do
     form = to_form!(form)
     # These options aren't documented because they are still experimental
     hidden? = Keyword.get(opts, :hidden?, true)
-    excluded_empty_fields = Keyword.get(opts, :exclude_fields_if_empty, Keyword.get(form.opts, :exclude_fields_if_empty, []))
+
+    excluded_empty_fields =
+      Keyword.get(
+        opts,
+        :exclude_fields_if_empty,
+        Keyword.get(form.opts, :exclude_fields_if_empty, [])
+      )
+
     indexer = opts[:indexer]
     indexed_lists? = opts[:indexed_lists?] || not is_nil(indexer) || false
     transform = opts[:transform]
@@ -2259,7 +2313,13 @@ defmodule AshPhoenix.Form do
             nested_form = form.forms[key]
 
             if nested_form && filter.(nested_form) do
-              opts = Keyword.put(opts, :exclude_fields_if_empty, Keyword.get(excluded_empty_fields, key, []))
+              opts =
+                Keyword.put(
+                  opts,
+                  :exclude_fields_if_empty,
+                  Keyword.get(excluded_empty_fields, key, [])
+                )
+
               nested_params = params(nested_form, opts)
 
               if nested_params["_ignore"] == "true" do
@@ -2458,8 +2518,17 @@ defmodule AshPhoenix.Form do
   #{Spark.OptionsHelpers.docs(@add_form_opts)}
   """
   @spec add_form(t(), String.t() | atom | list(atom | integer), Keyword.t()) :: t()
-  def add_form(form, path, opts \\ []) do
-    form = require_form!(form)
+  @spec add_form(Phoenix.HTML.Form.t(), String.t() | atom | list(atom | integer), Keyword.t()) ::
+          Phoenix.HTML.Form.t()
+  def add_form(form, path, opts \\ [])
+
+  def add_form(%Phoenix.HTML.Form{} = form, path, opts) do
+    form.source
+    |> add_form(path, opts)
+    |> Phoenix.HTML.FormData.to_form(form.options)
+  end
+
+  def add_form(form, path, opts) do
     opts = Spark.OptionsHelpers.validate!(opts, @add_form_opts)
 
     form =
@@ -2507,8 +2576,15 @@ defmodule AshPhoenix.Form do
 
   #{Spark.OptionsHelpers.docs(@remove_form_opts)}
   """
-  def remove_form(form, path, opts \\ []) do
-    form = require_form!(form)
+  def remove_form(form, path, opts \\ [])
+
+  def remove_form(%Phoenix.HTML.Form{} = form, path, opts) do
+    form.source
+    |> remove_form(path, opts)
+    |> Phoenix.HTML.FormData.to_form(form.options)
+  end
+
+  def remove_form(form, path, opts) do
     opts = Spark.OptionsHelpers.validate!(opts, @remove_form_opts)
 
     if has_form?(form, path) do
