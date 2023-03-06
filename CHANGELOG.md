@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.2.8](https://github.com/ash-project/ash_phoenix/compare/v1.2.7...v1.2.8) (2023-03-06)
+
+
+
+
+### Improvements:
+
+* return phoenix forms if phoenix forms are given
+
 ## [v1.2.7](https://github.com/ash-project/ash_phoenix/compare/v1.2.6...v1.2.7) (2023-03-01)
 
 
