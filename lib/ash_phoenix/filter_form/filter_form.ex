@@ -631,7 +631,6 @@ defmodule AshPhoenix.FilterForm do
   @doc "Returns the list of available predicates for the given resource, which may be functions or operators."
   def predicates(resource) do
     resource
-    |> Ash.DataLayer.data_layer()
     |> Ash.DataLayer.functions()
     |> Enum.concat(Ash.Filter.builtin_functions())
     |> Enum.filter(fn function ->
