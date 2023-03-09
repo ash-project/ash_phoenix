@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.2.9](https://github.com/ash-project/ash_phoenix/compare/v1.2.8...v1.2.9) (2023-03-09)
+
+
+
+
+### Bug Fixes:
+
+* Patch for new Form Access Protocol (#77)
+
+* Remove line causing errors (#76)
+
 ## [v1.2.8](https://github.com/ash-project/ash_phoenix/compare/v1.2.7...v1.2.8) (2023-03-06)
 
 
