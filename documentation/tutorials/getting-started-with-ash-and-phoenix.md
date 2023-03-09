@@ -138,7 +138,7 @@ An Ash registry points to one or more resources. In our case we will only have a
 For now take a look at the `Blog` API and the `Blog.Registry`:
 
 ```elixir
-# lib/my_ash_phoenix_app/blog.ex
+# lib/my_ash_phoenix_app/blog/blog.ex
 
 defmodule MyAshPhoenixApp.Blog do
   use Ash.Api
@@ -177,16 +177,16 @@ It's convention to place all the resource in their own resources folder. So when
 lib/
 ├─ my_ash_phoenix_app/
 │  ├─ blog/
+│  │  ├─ blog.ex
 │  │  ├─ registry.ex
 │  │  ├─ resources/
 │  │  │  ├─ post.ex
-│  ├─ blog.ex
 ```
 
 Below is the resource module. Read the comments carefully, every line is explained:
 
 ```elixir
-# lib/my_ash_phoenix_app/blog/post.ex
+# lib/my_ash_phoenix_app/blog/resources/post.ex
 
 defmodule MyAshPhoenixApp.Blog.Post do
   # Using Ash.Resource turns this module into an Ash resource.
