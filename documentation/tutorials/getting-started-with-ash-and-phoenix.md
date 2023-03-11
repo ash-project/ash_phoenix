@@ -308,6 +308,8 @@ We can run the `up/0` function which will perform the desired operations on the 
 $ mix ash_postgres.migrate
 ```
 
+> In case you want to drop the database and start over again during development you can use `mix ash_postgres.drop` followed by `mix ash_postgres.create` and `mix ash_postgres.migrate`.
+
 ## Interacting with your Resources
 
 **All interaction with your resource attributes always occur through an action**. In our resource we are using the default actions for `:create, :read, :update, :destroy` along with a custom action `:by_id`.
