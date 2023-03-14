@@ -858,7 +858,8 @@ defmodule AshPhoenix.Form do
   def validate(form, new_params, opts \\ [])
 
   def validate(%Phoenix.HTML.Form{} = form, new_params, opts) do
-    validate(form.source, new_params, opts)
+    form.source
+    |> validate(new_params, opts)
     |> Phoenix.HTML.FormData.to_form(form.options)
   end
 
@@ -1432,7 +1433,13 @@ defmodule AshPhoenix.Form do
   def submit(%Phoenix.HTML.Form{} = form, opts) do
     form.source
     |> submit(opts)
-    |> Phoenix.HTML.FormData.to_form(form.options)
+    |> case do
+      {:error, form} ->
+        Phoenix.HTML.FormData.to_form(form, form.options)
+
+      other ->
+        other
+    end
   end
 
   def submit(form, opts) do
