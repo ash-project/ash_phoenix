@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.2.10](https://github.com/ash-project/ash_phoenix/compare/v1.2.9...v1.2.10) (2023-03-14)
+
+
+
+
+### Bug Fixes:
+
+* properly handle submit results when given phoenix form
+
 ## [v1.2.9](https://github.com/ash-project/ash_phoenix/compare/v1.2.8...v1.2.9) (2023-03-09)
 
 
