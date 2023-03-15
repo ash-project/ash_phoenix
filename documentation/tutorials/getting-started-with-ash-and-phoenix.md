@@ -25,7 +25,7 @@ In this guide we will:
 
 - [Install Elixir](https://elixir-lang.org/install.html)
 - [Phoenix - Up and Running Guide](https://hexdocs.pm/phoenix/up_and_running.html)
-- [Philosophy Guide](/documentation/tutorials/philosophy.md)
+- [Philosophy Guide](https://hexdocs.pm/ash/philosophy.html)
 
 ## Requirements
 
