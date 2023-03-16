@@ -29,7 +29,7 @@ defmodule AshPhoenix.SubdomainPlug do
   #{Spark.OptionsHelpers.docs(@plug_options)}
 
   To plug it on your router, you can use:
-      plug Ash.SubdomainPlug,
+      plug AshPhoenix.SubdomainPlug,
         endpoint: MyApp.Endpoint
 
   An additional helper here can be used for determining the host in your liveview, and/or using
