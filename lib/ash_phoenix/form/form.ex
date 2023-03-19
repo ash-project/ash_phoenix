@@ -1434,8 +1434,8 @@ defmodule AshPhoenix.Form do
     form.source
     |> submit(opts)
     |> case do
-      {:error, form} ->
-        Phoenix.HTML.FormData.to_form(form, form.options)
+      {:error, new_form} ->
+        Phoenix.HTML.FormData.to_form(new_form, form.options)
 
       other ->
         other
