@@ -428,7 +428,7 @@ defmodule AshPhoenix.Form do
   You can add additional nested forms by including them in the `forms` config alongside `auto?: true`.
   See the module documentation of `AshPhoenix.Form.Auto` for more information. If you want to do some
   manipulation of the auto forms, you can also call `AshPhoenix.Form.Auto.auto/2`, and then manipulate the
-  result and pass it to the `forms` option.
+  result and pass it to the `forms` option. To pass options, use `auto?: [option1: :value]`.
 
   #{Spark.OptionsHelpers.docs(@nested_form_opts)}
   """
@@ -3236,9 +3236,18 @@ defmodule AshPhoenix.Form do
   defp add_auto(opts, resource, action) do
     if opts[:forms][:auto?] do
       Keyword.update!(opts, :forms, fn forms ->
+        opts =
+          case opts[:forms][:auto?] do
+            value when is_list(value) ->
+              value
+
+            _ ->
+              []
+          end
+
         auto =
           resource
-          |> AshPhoenix.Form.Auto.auto(action)
+          |> AshPhoenix.Form.Auto.auto(action, opts)
           |> Enum.reject(fn {key, _} -> Keyword.has_key?(forms, key) end)
 
         forms

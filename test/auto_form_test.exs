@@ -34,10 +34,9 @@ defmodule AshPhoenix.AutoFormTest do
     form =
       Post
       |> AshPhoenix.Form.for_create(:create_with_non_map_relationship_args,
-        forms:
-          AshPhoenix.Form.Auto.auto(Post, :create_with_non_map_relationship_args,
-            include_non_map_types?: true
-          )
+        forms: [
+          auto?: [include_non_map_types?: true]
+        ]
       )
 
     assert is_function(form.form_keys[:comment_ids][:transform_params])
