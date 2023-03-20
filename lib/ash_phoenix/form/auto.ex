@@ -1,4 +1,25 @@
 defmodule AshPhoenix.Form.Auto do
+  @auto_opts [
+    relationship_fetcher: [
+      type: :any,
+      doc: """
+      A two argument function that receives the parent data, the relationship to fetch.
+      The default simply fetches the relationship value, and if it isn't loaded, it uses `[]` or `nil`.
+      """
+    ],
+    sparse_lists?: [
+      type: :boolean,
+      doc:
+        "Sets all list type forms to `sparse?: true` by default. Has no effect on forms derived for embedded resources.",
+      default: false
+    ],
+    include_non_map_types?: [
+      type: :boolean,
+      doc: "Creates form for non map or array of map type inputs",
+      default: false
+    ]
+  ]
+
   @moduledoc """
   A tool to automatically generate available nested forms based on a resource and action.
 
@@ -40,6 +61,10 @@ defmodule AshPhoenix.Form.Auto do
   render a search form for that read action, and once they've selected a record, you could render the fields
   to update that record (in the case of `on_lookup: :relate_and_update` configurations).
 
+  ## Options
+
+  #{Spark.OptionsHelpers.docs(@auto_opts)}
+
   ## Special Considerations
 
   ### `on_lookup: :relate_and_update`
@@ -59,27 +84,6 @@ defmodule AshPhoenix.Form.Auto do
   """
 
   @dialyzer {:nowarn_function, rel_to_resource: 2}
-
-  @auto_opts [
-    relationship_fetcher: [
-      type: :any,
-      doc: """
-      A two argument function that receives the parent data, the relationship to fetch.
-      The default simply fetches the relationship value, and if it isn't loaded, it uses `[]` or `nil`.
-      """
-    ],
-    sparse_lists?: [
-      type: :boolean,
-      doc:
-        "Sets all list type forms to `sparse?: true` by default. Has no effect on forms derived for embedded resources.",
-      default: false
-    ],
-    include_non_map_types?: [
-      type: :boolean,
-      doc: "Creates form for non map or array of map type inputs",
-      default: false
-    ]
-  ]
 
   def auto(resource, action, opts \\ []) do
     opts = Spark.OptionsHelpers.validate!(opts, @auto_opts)
