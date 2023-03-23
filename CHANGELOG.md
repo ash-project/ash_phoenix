@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.2.11](https://github.com/ash-project/ash_phoenix/compare/v1.2.10...v1.2.11) (2023-03-23)
+
+
+
+
+### Bug Fixes:
+
+* use initial form options on failed submit (#82)
+
+### Improvements:
+
+* support auto? options as `auto?: [...]`
+
 ## [v1.2.10](https://github.com/ash-project/ash_phoenix/compare/v1.2.9...v1.2.10) (2023-03-14)
 
 
