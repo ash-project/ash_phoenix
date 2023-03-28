@@ -61,6 +61,31 @@ defmodule AshPhoenix.FilterFormTest do
              } = form
     end
 
+    test "group and predicates can be removed with remove_component" do
+      form = FilterForm.new(Post)
+
+      {form, group_id} = FilterForm.add_group(form, operator: :or, return_id?: true)
+
+      {form, predicate_id} =
+        FilterForm.add_predicate(form, :title, :eq, "new post", to: group_id, return_id?: true)
+
+      form = FilterForm.remove_component(form, predicate_id)
+
+      assert %FilterForm{
+               components: [
+                 %FilterForm{
+                   components: []
+                 }
+               ]
+             } = form
+
+      form = FilterForm.remove_component(form, group_id)
+
+      assert %FilterForm{
+               components: []
+             } = form
+    end
+
     test "with `remove_empty_groups?: true` empty groups are removed on component removal" do
       form = FilterForm.new(Post, remove_empty_groups?: true)
 
