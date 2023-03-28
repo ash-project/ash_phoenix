@@ -61,7 +61,7 @@ defmodule AshPhoenix.FilterFormTest do
              } = form
     end
 
-    test "group and predicates can be removed with remove_component" do
+    test "groups and predicates can be removed with remove_component" do
       form = FilterForm.new(Post)
 
       {form, group_id} = FilterForm.add_group(form, operator: :or, return_id?: true)
