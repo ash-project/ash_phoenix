@@ -511,9 +511,9 @@ We are really just scratching the surface of what can be done in Ash. Look below
 
 There's a few places you can go to learn more about how to use ash:
 
-- [Read more about how to query the data in your resources.](/documentation/module/ash/ash-query)
-- [Dig deeper into actions.](/documentation/topics/actions)
-- [Study resource relationship management](/documentation/topics/managing-relationships)
+- [Read more about how to query the data in your resources.](/docs/module/ash/latest/ash-query)
+- [Dig deeper into actions.](/docs/guides/ash/latest/topics/actions)
+- [Study resource relationship management](/docs/guides/ash/latest/topics/managing-relationships)
 
 ### Ash Authentication & Ash Authentication Phoenix
 
@@ -521,4 +521,4 @@ See the power Ash can bring to your web app or API. [Get authentication working 
 
 ### Add an API (or two)
 
-Check out the [AshJsonApi](/documentation/guides/ash_json_api/tutorials/getting-started-with-json-api) and [AshGraphql](/documentation/guides/ash_graphql/tutorials/getting-started-with-graphql) extensions to effortlessly build APIs around your resources.
+Check out the [AshJsonApi](/docs/guides/ash_json_api/latest/tutorials/getting-started-with-json-api) and [AshGraphql](/docs/guides/ash_graphql/latest/tutorials/getting-started-with-graphql) extensions to effortlessly build APIs around your resources.
