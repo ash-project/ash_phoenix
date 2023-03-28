@@ -930,7 +930,7 @@ defmodule AshPhoenix.FilterForm do
         impl: __MODULE__,
         id: opts[:id] || form.id,
         name: opts[:as] || form.name,
-        errors: [],
+        errors: opts[:errors] || [],
         data: form,
         params: form.params,
         hidden: hidden,
@@ -945,10 +945,21 @@ defmodule AshPhoenix.FilterForm do
       |> Enum.map(fn {component, index} ->
         name = Map.get(component, :name, phoenix_form.name)
 
-        Phoenix.HTML.Form.form_for(component, "action",
-          transform_errors: form.transform_errors,
-          as: name <> "[components][#{index}]"
-        )
+        case component do
+          %AshPhoenix.FilterForm{} ->
+            to_form(component,
+              as: name <> "[components][#{index}]",
+              id: component.id,
+              errors: AshPhoenix.FilterForm.errors(component)
+            )
+
+          %AshPhoenix.FilterForm.Predicate{} ->
+            Phoenix.HTML.FormData.AshPhoenix.FilterForm.Predicate.to_form(component,
+              as: name <> "[components][#{index}]",
+              id: component.id,
+              errors: AshPhoenix.FilterForm.errors(component)
+            )
+        end
       end)
     end
 
