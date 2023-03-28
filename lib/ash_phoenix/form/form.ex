@@ -107,6 +107,7 @@ defmodule AshPhoenix.Form do
       |> MyApi.load!(comments: [:sub_comments])
 
     form = AshPhoenix.Form.for_update(post,
+      :update,
       api: MyApp.MyApi,
       forms: [
         comments: [
