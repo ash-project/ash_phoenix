@@ -903,11 +903,11 @@ defmodule AshPhoenix.FilterForm do
     |> set_validity()
   end
 
-  @doc "Removes the group *or* component with the given id"
-  def remove_component(form, group_or_component_id) do
+  @doc "Removes the group *or* predicate with the given id"
+  def remove_component(form, group_or_predicate_id) do
     form
-    |> remove_group(group_or_component_id)
-    |> remove_component(group_or_component_id)
+    |> remove_group(group_or_predicate_id)
+    |> remove_predicate(group_or_predicate_id)
   end
 
   defp remove_if_empty(form, false), do: [form]
