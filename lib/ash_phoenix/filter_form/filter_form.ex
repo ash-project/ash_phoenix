@@ -1,4 +1,193 @@
 defmodule AshPhoenix.FilterForm do
+  @moduledoc """
+  A module to help you create complex forms that generate Ash filters.
+
+  ```elixir
+  # Create a FilterForm
+  filter_form = AshPhoenix.FilterForm.new(MyApp.Payroll.Employee)
+  ```
+
+  FilterForm's comprise 2 concepts, predicates and groups. Predicates are the simple boolean
+  expressions you can use to build a query (`name == "Joe"`), and groups can be used to group
+  predicates and more groups together. Groups can apply `and` or `or` operators to its nested
+  components.
+
+  ```elixir
+  # Add a predicate to the root of the form (which is itself a group)
+  filter_form = AshPhoenix.add_predicate(filter_form, :some_field, :eq, "Some Value")
+
+  # Add a group and another predicate to that group
+  {filter_form, group_id} = AshPhoenix.add_group(filter_form, operator: :or, return_id?: true)
+  filter_form = AshPhoenix.add_predicate(filter_form, :another, :eq, "Other", to: group_id)
+  ```
+
+  `validate/1` is used to merge the submitted form params into the filter form, and one of the
+  provided filter functions to apply the filter as a query, or generate an expression map,
+  depending on your requirements:
+
+  ```elixir
+  filter_form = AshPhoenix.validate(socket.assigns.filter_form, params)
+
+  # Generate a query and pass it to the Api
+  query = AshPhoenix.FilterForm.filter!(MyApp.Payroll.Employee, filter_form)
+  filtered_employees = MyApp.Payroll.read!(query)
+
+  # Or use one of the other filter functions
+  AshPhoenix.FilterForm.to_filter_expression(filter_form)
+  AshPhoenix.FilterForm.to_filter_map(filter_form)
+  ```
+
+  ## LiveView Example
+
+  You can build a form and handle adding and removing nested groups and predicates with the following:
+
+  ```elixir
+  alias MyApp.Payroll.Employee
+
+  @impl true
+  def render(assigns) do
+    ~H\"\"\"
+    <.simple_form
+      :let={filter_form}
+      for={@filter_form}
+      phx-change="filter_validate"
+      phx-submit="filter_submit"
+    >
+      <.filter_form_component component={filter_form} />
+      <:actions>
+        <.button>Submit</.button>
+      </:actions>
+    </.simple_form>
+    <.table id="employees" rows={@employees}>
+      <:col :let={employee} label="Payroll ID"><%= employee.employee_id %></:col>
+      <:col :let={employee} label="Name"><%= employee.name %></:col>
+      <:col :let={employee} label="Position"><%= employee.position %></:col>
+    </.table>
+    \"\"\"
+  end
+
+  attr :component, :map, required: true, doc: "Could be a FilterForm (group) or a Predicate"
+
+  defp filter_form_component(%{component: %{source: %AshPhoenix.FilterForm{}}} = assigns) do
+    ~H\"\"\"
+    <div class="border-gray-50 border-8 p-4 rounded-xl mt-4">
+      <div class="flex flex-row justify-between">
+        <div class="flex flex-row gap-2 items-center">Filter</div>
+        <div class="flex flex-row gap-2 items-center">
+          <.input type="select" field={@component[:operator]} options={["and", "or"]} />
+          <.button phx-click="add_filter_group" phx-value-component-id={@component.id} type="button">
+            Add Group
+          </.button>
+          <.button
+            phx-click="add_filter_predicate"
+            phx-value-component-id={@component.id}
+            type="button"
+          >
+            Add Predicate
+          </.button>
+          <.button
+            phx-click="remove_filter_component"
+            phx-value-component-id={@component.id}
+            type="button"
+          >
+            Remove Group
+          </.button>
+        </div>
+      </div>
+      <.inputs_for :let={component} field={@component[:components]}>
+        <.filter_form_component component={component} />
+      </.inputs_for>
+    </div>
+    \"\"\"
+  end
+
+  defp filter_form_component(
+         %{component: %{source: %AshPhoenix.FilterForm.Predicate{}}} = assigns
+       ) do
+    ~H\"\"\"
+    <div class="flex flex-row gap-2 mt-4">
+      <.input
+        type="select"
+        options={AshPhoenix.FilterForm.fields(Employee)}
+        field={@component[:field]}
+      />
+      <.input
+        type="select"
+        options={AshPhoenix.FilterForm.predicates(Employee)}
+        field={@component[:operator]}
+      />
+      <.input field={@component[:value]} />
+      <.button
+        phx-click="remove_filter_component"
+        phx-value-component-id={@component.id}
+        type="button"
+      >
+        Remove
+      </.button>
+    </div>
+    \"\"\"
+  end
+
+  @impl true
+  def mount(_params, _session, socket) do
+    socket =
+      socket
+      |> assign(:filter_form, AshPhoenix.FilterForm.new(Employee))
+      |> assign(:employees, Employee.read_all!())
+
+    {:ok, socket}
+  end
+
+  @impl true
+  def handle_event("filter_validate", %{"filter" => params}, socket) do
+    {:noreply,
+     assign(socket,
+       filter_form: AshPhoenix.FilterForm.validate(socket.assigns.filter_form, params)
+     )}
+  end
+
+  def handle_event("filter_submit", %{"filter" => params}, socket) do
+    filter_form = AshPhoenix.FilterForm.validate(socket.assigns.filter_form, params)
+
+    case AshPhoenix.FilterForm.filter(Employee, filter_form) do
+      {:ok, query} ->
+        {:noreply,
+         socket
+         |> assign(:employees, Employee.read_all!(query: query))
+         |> assign(:filter_form, filter_form)}
+
+      {:error, filter_form} ->
+        {:noreply, assign(socket, filter_form: filter_form)}
+    end
+  end
+
+  def handle_event("remove_filter_component", %{"component-id" => component_id}, socket) do
+    {:noreply,
+     assign(socket,
+       filter_form:
+         AshPhoenix.FilterForm.remove_component(socket.assigns.filter_form, component_id)
+     )}
+  end
+
+  def handle_event("add_filter_group", %{"component-id" => component_id}, socket) do
+    {:noreply,
+     assign(socket,
+       filter_form: AshPhoenix.FilterForm.add_group(socket.assigns.filter_form, to: component_id)
+     )}
+  end
+
+  def handle_event("add_filter_predicate", %{"component-id" => component_id}, socket) do
+    {:noreply,
+     assign(socket,
+       filter_form:
+         AshPhoenix.FilterForm.add_predicate(socket.assigns.filter_form, :name, :contains, nil,
+           to: component_id
+         )
+     )}
+  end
+  ```
+  """
+
   defstruct [
     :id,
     :resource,
@@ -47,7 +236,7 @@ defmodule AshPhoenix.FilterForm do
     ]
   ]
 
-  @moduledoc """
+  @doc """
   Create a new filter form.
 
   Options:
@@ -835,7 +1024,8 @@ defmodule AshPhoenix.FilterForm do
   ]
 
   @doc """
-  Adde a group to the filter.
+  Add a group to the filter. A group can contain predicates and other groups,
+  allowing you to build quite complex nested filters.
 
   Options:
 
