@@ -448,7 +448,7 @@ defmodule AshPhoenix.FilterForm do
     end
   end
 
-  @deprecated "Use to_filter_expression/1 instead"
+  @deprecated "Use to_filter_expression!/1 instead"
   def to_filter!(form), do: to_filter_expression!(form)
 
   @doc """
