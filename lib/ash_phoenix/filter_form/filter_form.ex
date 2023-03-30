@@ -421,9 +421,9 @@ defmodule AshPhoenix.FilterForm do
   end
 
   @doc """
-  Same as `to_filter/1`
+  Same as `to_filter_expression/1` but raises on errors.
   """
-  def to_filter!(form) do
+  def to_filter_expression!(form) do
     case to_filter_expression(form) do
       {:ok, filter} ->
         filter
@@ -447,6 +447,9 @@ defmodule AshPhoenix.FilterForm do
         raise Ash.Error.to_error_class(error)
     end
   end
+
+  @deprecated "Use to_filter_expression/1 instead"
+  def to_filter!(form), do: to_filter_expression!(form)
 
   @doc """
   Returns a flat list of all errors on all predicates in the filter.
@@ -581,7 +584,7 @@ defmodule AshPhoenix.FilterForm do
   Same as `filter/2` but raises on errors.
   """
   def filter!(query, form) do
-    Ash.Query.do_filter(query, to_filter!(form))
+    Ash.Query.do_filter(query, to_filter_expression!(form))
   end
 
   defp sanitize_params(params) do
