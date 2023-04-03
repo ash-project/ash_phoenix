@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.2.12](https://github.com/ash-project/ash_phoenix/compare/v1.2.11...v1.2.12) (2023-04-03)
+
+
+
+
+### Bug Fixes:
+
+* form_for deprecation warning (#84)
+
+### Improvements:
+
+* Rename to_filter! (#90)
+
 ## [v1.2.11](https://github.com/ash-project/ash_phoenix/compare/v1.2.10...v1.2.11) (2023-03-23)
 
 
