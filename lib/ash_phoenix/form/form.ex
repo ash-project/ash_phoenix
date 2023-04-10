@@ -70,61 +70,44 @@ defmodule AshPhoenix.Form do
   You can use phoenix events to add and remove form entries and `submit/2` to submit the form, like so:
 
   ```elixir
-  alias MyApp.MyApi.{Comment, Post}
-
   def render(assigns) do
-    ~L\"\"\"
-    <%= f = form_for @form, "#", [phx_change: :validate, phx_submit: :save] %>
-      <%= label f, :text %>
-      <%= text_input f, :text %>
-      <%= error_tag f, :text %>
-
-      <%= for comment_form <- inputs_for(f, :comments) do %>
-        <%= hidden_inputs_for(comment_form) %>
-        <%= text_input comment_form, :text %>
-
-        <%= for sub_comment_form <- inputs_for(comment_form, :sub_comments) do %>
-          <%= hidden_inputs_for(sub_comment_form) %>
-          <%= text_input sub_comment_form, :text %>
-          <button phx-click="remove_form" phx-value-path="<%= sub_comment_form.name %>">Add Comment</button>
-        <% end %>
-
-        <button phx-click="remove_form" phx-value-path="<%= comment_form.name %>">Add Comment</button>
-        <button phx-click="add_form" phx-value-path="<%= comment_form.name %>">Add Comment</button>
-      <% end %>
-
-      <button phx-click="add_form" phx-value-path="<%= comment_form.name %>">Add Comment</button>
-
-      <%= submit "Save" %>
-    </form>
+    ~H\"\"\"
+    <.simple_form for={@form} phx-change="validate" phx-submit="submit">
+      <%!-- Attributes for the parent resource --%>
+      <.input type="email" label="Email" field={@form[:email]} />
+      <%!-- Render nested forms for related data --%>
+      <.inputs_for :let={item_form} field={@form[:items]}>
+        <.input type="text" label="Item" field={item_form[:name]} />
+        <.input type="number" label="Amount" field={item_form[:amount]} />
+        <.button type="button" phx-click="remove_form" phx-value-path={item_form.name}>
+          Remove
+        </.button>
+      </.inputs_for>
+      <:actions>
+        <.button type="button" phx-click="add_form" phx-value-path={@form[:items].name}>
+          Add Item
+        </.button>
+        <.button>Save</.button>
+      </:actions>
+    </.simple_form>
     \"\"\"
   end
 
-  def mount(%{"post_id" => post_id}, _session, socket) do
-    post =
-      Post
-      |> MyApp.MyApi.get!(post_id)
-      |> MyApi.load!(comments: [:sub_comments])
-
-    form = AshPhoenix.Form.for_update(post,
-      :update,
-      api: MyApp.MyApi,
-      forms: [
-        comments: [
-          resource: Comment,
-          data: post.comments,
-          create_action: :create,
-          update_action: :update
-          forms: [
-            sub_comments: [
-              resource: Comment,
-              data: &(&1.sub_comments),
-              create_action: :create,
-              update_action: :update
-            ]
+  def mount(_params, _session, socket) do
+    form =
+      MyApp.Grocery.Order
+      |> AshPhoenix.Form.for_create(:create,
+        api: MyApp.Grocery,
+        forms: [
+          items: [
+            type: :list,
+            resource: MyApp.Grocery.Item,
+            create_action: :create
           ]
         ]
-      ])
+      )
+      |> AshPhoenix.Form.add_form([:items])
+      |> to_form()
 
     {:ok, assign(socket, form: form)}
   end
@@ -133,29 +116,30 @@ defmodule AshPhoenix.Form do
   # need to make sure that you are validating the form on change
   def handle_event("validate", %{"form" => params}, socket) do
     form = AshPhoenix.Form.validate(socket.assigns.form, params)
-    # You can also skip errors by setting `errors: false` if you only want to show errors on submit
-    # form = AshPhoenix.Form.validate(socket.assigns.form, params, errors: false)
-
-    {:ok, assign(socket, :form, form)}
+    {:noreply, assign(socket, form: form)}
   end
 
-  def handle_event("save", _params, socket) do
-    case AshPhoenix.Form.submit(socket.assigns.form) do
-      {:ok, result} ->
-        # Do something with the result, like redirect
+  def handle_event("submit", %{"form" => params}, socket) do
+    case AshPhoenix.Form.submit(socket.assigns.form, params: params) do
+      {:ok, order} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Saved order for \#{order.email}!")
+         |> push_navigate(to: ~p"/")}
+
       {:error, form} ->
-        assign(socket, :form, form)
+        {:noreply, assign(socket, form: form)}
     end
   end
 
   def handle_event("add_form", %{"path" => path}, socket) do
     form = AshPhoenix.Form.add_form(socket.assigns.form, path)
-    {:noreply, assign(socket, :form, form)}
+    {:noreply, assign(socket, form: form)}
   end
 
-  def handle_event("remove_form", %{"path" => path}) do
+  def handle_event("remove_form", %{"path" => path}, socket) do
     form = AshPhoenix.Form.remove_form(socket.assigns.form, path)
-    {:noreply, assign(socket, :form, form)}
+    {:noreply, assign(socket, form: form)}
   end
   ```
   """
