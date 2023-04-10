@@ -1,15 +1,15 @@
 defmodule AshPhoenix.Form do
   @moduledoc """
-  A module to allow you to fluidly use resources with phoenix forms.
+  A module to allow you to fluidly use resources with Phoenix forms.
 
   ### Life cycle
 
-  The general workflow is, with either liveview or phoenix forms:
+  The general workflow is, with either LiveView or Phoenix forms:
 
   1. Create a form with `AshPhoenix.Form`
-  2. Render that form with Phoenix's `form_for` (or, if using surface, <Form>)
-  3. To validate the form (e.g with `on-change` for liveview), pass the input to `AshPhoenix.Form.validate(form, params)`
-  4. On form submission, pass the input to `AshPhoenix.Form.validate(form, params)` and then use `AshPhoenix.Form.submit(form)`
+  2. Render the form with `Phoenix.Component.form` (or `CoreComponents.simple_form`), or, if using Surface, `<Form>`
+  3. To validate the form (e.g with `phx-change` for liveview), pass the submitted params to `AshPhoenix.Form.validate/3`
+  4. On form submission, pass the params to `AshPhoenix.Form.submit/2`
   5. On success, use the result to redirect or assign. On failure, reassign the provided form.
 
   The following keys exist on the form to show where in the lifecycle you are:
@@ -67,7 +67,7 @@ defmodule AshPhoenix.Form do
   ## LiveView
   `AshPhoenix.Form` (unlike ecto changeset based forms) expects to be reused throughout the lifecycle of the liveview.
 
-  You can use phoenix events to add and remove form entries and `submit/2` to submit the form, like so:
+  You can use Phoenix events to add and remove form entries and `submit/2` to submit the form, like so:
 
   ```elixir
   def render(assigns) do
@@ -285,7 +285,7 @@ defmodule AshPhoenix.Form do
     type: [
       type: {:one_of, [:list, :single]},
       default: :single,
-      doc: "The cardinality of the nested form."
+      doc: "The cardinality of the nested form - `:list` or `:single`."
     ],
     sparse?: [
       type: :boolean,
@@ -306,7 +306,8 @@ defmodule AshPhoenix.Form do
       update. Which could be very gnarly on deeply nested forms. If there is no primary key, or the primary key does not match anything, it is treated
       as a new form.
 
-      REMEMBER: You need to use `hidden_inputs_for` (or `HiddenInputs` if using surface) for the id to be automatically placed into the form.
+      REMEMBER: You need to use `Phoenix.Components.inputs_for` to render the nested forms, or manually add hidden inputs using
+      `hidden_inputs_for` (or `HiddenInputs` if using Surface) for the id to be automatically placed into the form.
       """
     ],
     forms: [
