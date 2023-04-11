@@ -511,9 +511,9 @@ We are really just scratching the surface of what can be done in Ash. Look below
 
 There's a few places you can go to learn more about how to use ash:
 
-- [Read more about how to query the data in your resources.](/documentation/module/ash/ash-query)
-- [Dig deeper into actions.](/documentation/topics/actions)
-- [Study resource relationship management](/documentation/topics/managing-relationships)
+- Read more about how to query the data in your resources - `Ash.Query`
+- [Dig deeper into actions.](https://hexdocs.pm/ash/actions.html)
+- [Study resource relationship management](https://hexdocs.pm/ash/managing-relationships.html)
 
 ### Ash Authentication & Ash Authentication Phoenix
 
