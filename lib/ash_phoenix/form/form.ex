@@ -484,6 +484,7 @@ defmodule AshPhoenix.Form do
         resource
         |> Ash.Changeset.new()
         |> prepare_source.()
+        |> set_accessing_from(opts)
         |> Ash.Changeset.for_create(
           action,
           params,
@@ -573,6 +574,7 @@ defmodule AshPhoenix.Form do
         data
         |> Ash.Changeset.new()
         |> prepare_source.()
+        |> set_accessing_from(opts)
         |> Ash.Changeset.for_update(
           action,
           params,
@@ -661,6 +663,7 @@ defmodule AshPhoenix.Form do
         data
         |> Ash.Changeset.new()
         |> prepare_source.()
+        |> set_accessing_from(opts)
         |> Ash.Changeset.for_destroy(
           action,
           params,
@@ -754,6 +757,7 @@ defmodule AshPhoenix.Form do
         resource
         |> Ash.Query.new()
         |> prepare_source.()
+        |> set_accessing_from(opts)
         |> Ash.Query.for_read(
           action,
           params || %{},
@@ -763,6 +767,26 @@ defmodule AshPhoenix.Form do
     }
     |> set_changed?()
     |> set_validity()
+  end
+
+  defp set_accessing_from(changeset_or_query, opts) do
+    case opts[:accessing_from] do
+      {source, name} ->
+        set_context(changeset_or_query, %{
+          accessing_from: %{source: source, name: name}
+        })
+
+      _ ->
+        changeset_or_query
+    end
+  end
+
+  defp set_context(%Ash.Changeset{} = changeset, context) do
+    Ash.Changeset.set_context(changeset, context)
+  end
+
+  defp set_context(%Ash.Query{} = query, context) do
+    Ash.Query.set_context(query, context)
   end
 
   defp add_errors_for_unhandled_params(%{action: nil} = query, _params), do: query
@@ -913,6 +937,9 @@ defmodule AshPhoenix.Form do
             form.resource
             |> Ash.Changeset.new()
             |> prepare_source.()
+            |> set_accessing_from(
+              accessing_from: opts[:accessing_from] || form.opts[:accessing_from]
+            )
             |> Ash.Changeset.for_create(
               form.action,
               changeset_params,
@@ -923,6 +950,9 @@ defmodule AshPhoenix.Form do
             form.data
             |> Ash.Changeset.new()
             |> prepare_source.()
+            |> set_accessing_from(
+              accessing_from: opts[:accessing_from] || form.opts[:accessing_from]
+            )
             |> Ash.Changeset.for_update(
               form.action,
               changeset_params,
@@ -933,6 +963,9 @@ defmodule AshPhoenix.Form do
             form.data
             |> Ash.Changeset.new()
             |> prepare_source.()
+            |> set_accessing_from(
+              accessing_from: opts[:accessing_from] || form.opts[:accessing_from]
+            )
             |> Ash.Changeset.for_destroy(
               form.action,
               changeset_params,
@@ -943,6 +976,9 @@ defmodule AshPhoenix.Form do
             form.resource
             |> Ash.Query.new()
             |> prepare_source.()
+            |> set_accessing_from(
+              accessing_from: opts[:accessing_from] || form.opts[:accessing_from]
+            )
             |> Ash.Query.for_read(
               form.action,
               changeset_params,
@@ -1049,6 +1085,7 @@ defmodule AshPhoenix.Form do
                           for_action(resource, create_action,
                             actor: form.opts[:actor],
                             tenant: form.opts[:tenant],
+                            accessing_from: opts[:managed_relationship],
                             params: params,
                             forms: opts[:forms] || [],
                             transform_params: opts[:transform_params],
@@ -1072,6 +1109,7 @@ defmodule AshPhoenix.Form do
                             actor: form.opts[:actor],
                             tenant: form.opts[:tenant],
                             params: params,
+                            accessing_from: opts[:managed_relationship],
                             transform_params: opts[:transform_params],
                             forms: opts[:forms] || [],
                             errors: errors?,
@@ -1090,6 +1128,7 @@ defmodule AshPhoenix.Form do
                       validate(matching_form, params,
                         errors: errors?,
                         matcher: matcher,
+                        accessing_from: opts[:managed_relationship],
                         prev_data_trail?: prev_data_trail
                       )
                       |> Map.put(:as, form.name <> "[#{key}][#{index}]")
@@ -1145,6 +1184,7 @@ defmodule AshPhoenix.Form do
                       actor: form.opts[:actor],
                       tenant: form.opts[:tenant],
                       params: form_params,
+                      accessing_from: opts[:managed_relationship],
                       transform_params: opts[:transform_params],
                       warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
                       forms: opts[:forms] || [],
@@ -1210,6 +1250,7 @@ defmodule AshPhoenix.Form do
                           actor: form.opts[:actor],
                           tenant: form.opts[:tenant],
                           errors: errors?,
+                          accessing_from: opts[:managed_relationship],
                           transform_params: opts[:transform_params],
                           warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
                           prev_data_trail: prev_data_trail,
@@ -1226,6 +1267,7 @@ defmodule AshPhoenix.Form do
                             actor: form.opts[:actor],
                             tenant: form.opts[:tenant],
                             errors: errors?,
+                            accessing_from: opts[:managed_relationship],
                             warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
                             transform_params: opts[:transform_params],
                             prev_data_trail: prev_data_trail,
@@ -1274,6 +1316,7 @@ defmodule AshPhoenix.Form do
                           actor: form.opts[:actor],
                           tenant: form.opts[:tenant],
                           errors: errors?,
+                          accessing_from: opts[:managed_relationship],
                           warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
                           transform_params: opts[:transform_params],
                           params: Map.new(pkey, &{to_string(&1), Map.get(data, &1)}),
@@ -1297,6 +1340,7 @@ defmodule AshPhoenix.Form do
                             actor: form.opts[:actor],
                             tenant: form.opts[:tenant],
                             errors: errors?,
+                            accessing_from: opts[:managed_relationship],
                             prev_data_trail: prev_data_trail,
                             params: Map.new(pkey, &{to_string(&1), Map.get(data, &1)}),
                             transform_params: opts[:transform_params],
