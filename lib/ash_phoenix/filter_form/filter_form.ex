@@ -796,7 +796,7 @@ defmodule AshPhoenix.FilterForm do
   """
   def params_for_query(%AshPhoenix.FilterForm.Predicate{} = predicate) do
     params =
-      Map.new(~w(id field value operator negated? path)a, fn field ->
+      Map.new(~w(field value operator negated? path)a, fn field ->
         if field == :path do
           {to_string(field), Enum.join(predicate.path, ".")}
         else
