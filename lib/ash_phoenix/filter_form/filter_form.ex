@@ -282,8 +282,11 @@ defmodule AshPhoenix.FilterForm do
   Updates the filter with the provided input and validates it.
 
   At present, no validation actually occurs, but this will eventually be added.
+
+  Passing `reset_on_change?: false` into `opts` will prevent predicates to reset
+  the `value` and `operator` fields to `nil` if the predicate `field` changes.
   """
-  def validate(form, params \\ %{}) do
+  def validate(form, params \\ %{}, opts \\ []) do
     params = sanitize_params(params)
 
     params =
@@ -300,7 +303,7 @@ defmodule AshPhoenix.FilterForm do
     %{
       form
       | params: params,
-        components: validate_components(form, params["components"]),
+        components: validate_components(form, params["components"], opts),
         operator: to_existing_atom(params["operator"] || :and),
         negated?: params["negated"] || false
     }
@@ -729,17 +732,19 @@ defmodule AshPhoenix.FilterForm do
     params["negated"] in [true, "true"]
   end
 
-  defp validate_components(form, component_params) do
+  defp validate_components(form, component_params, opts) do
     form_without_components = %{form | components: []}
 
     component_params
     |> Enum.sort_by(fn {key, _} ->
       String.to_integer(key)
     end)
-    |> Enum.map(&validate_component(form_without_components, &1, form.components))
+    |> Enum.map(&validate_component(form_without_components, &1, form.components, opts))
   end
 
-  defp validate_component(form, {key, params}, current_components) do
+  defp validate_component(form, {key, params}, current_components, opts) do
+    reset_on_change? = Keyword.get(opts, :reset_on_change?, true)
+
     id = params[:id] || params["id"]
 
     match_component =
@@ -753,7 +758,7 @@ defmodule AshPhoenix.FilterForm do
         %Predicate{field: field} ->
           new_predicate = new_predicate(params, form)
 
-          if new_predicate.field != field && not is_nil(new_predicate.value) do
+          if reset_on_change? && new_predicate.field != field && not is_nil(new_predicate.value) do
             %{
               new_predicate
               | value: nil,
