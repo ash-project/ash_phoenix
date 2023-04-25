@@ -794,30 +794,65 @@ defmodule AshPhoenix.FilterForm do
   @doc """
   Returns the minimal set of params (at the moment just strips ids) for use in a query string.
   """
-  def params_for_query(form) do
-    do_params_for_query(form.params)
-  end
+  def params_for_query(%AshPhoenix.FilterForm.Predicate{} = predicate) do
+    params =
+      Map.new(~w(id field value operator negated? path)a, fn field ->
+        if field == :path do
+          {to_string(field), Enum.join(predicate.path, ".")}
+        else
+          {to_string(field), Map.get(predicate, field)}
+        end
+      end)
 
-  defp do_params_for_query(params) do
-    if is_predicate?(params) do
-      Map.delete(params, "id")
-    else
-      params =
-        case params["components"] do
-          components when is_map(components) ->
-            new_components =
-              Map.new(components, fn {key, value} ->
-                {key, do_params_for_query(value)}
-              end)
+    case predicate.arguments do
+      %AshPhoenix.FilterForm.Arguments{} = arguments ->
+        argument_params = params_for_query(arguments)
 
-            Map.put(params, "components", new_components)
-
-          _ ->
-            Map.delete(params, "components")
+        if Enum.empty?(argument_params) do
+          params
+        else
+          Map.put(params, "arguments", argument_params)
         end
 
-      Map.delete(params, "id")
+      _ ->
+        params
     end
+  end
+
+  def params_for_query(%__MODULE__{} = form) do
+    params = %{
+      "negated" => form.negated?,
+      "operator" => to_string(form.operator)
+    }
+
+    if is_nil(form.components) || Enum.empty?(form.components) do
+      params
+    else
+      Map.put(
+        params,
+        "components",
+        form.components
+        |> Enum.with_index()
+        |> Map.new(fn {value, index} ->
+          {to_string(index), params_for_query(value)}
+        end)
+      )
+    end
+  end
+
+  def params_for_query(%AshPhoenix.FilterForm.Arguments{} = arguments) do
+    Map.new(arguments.arguments, fn argument ->
+      {to_string(argument.name),
+       Map.get(
+         arguments.input,
+         argument.name,
+         Map.get(
+           arguments.params,
+           argument.name,
+           Map.get(arguments.params, to_string(argument.name))
+         )
+       )}
+    end)
   end
 
   @doc "Returns the list of available predicates for the given resource, which may be functions or operators."
