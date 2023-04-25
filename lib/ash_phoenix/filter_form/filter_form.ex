@@ -282,6 +282,9 @@ defmodule AshPhoenix.FilterForm do
   Updates the filter with the provided input and validates it.
 
   At present, no validation actually occurs, but this will eventually be added.
+
+  Passing `reset_on_change?: false` into `opts` will prevent predicates to reset
+  the `value` and `operator` fields to `nil` if the predicate `field` changes.
   """
   def validate(form, params \\ %{}, opts \\ []) do
     params = sanitize_params(params)
