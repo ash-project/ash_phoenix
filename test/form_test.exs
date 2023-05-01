@@ -845,7 +845,7 @@ defmodule AshPhoenix.FormTest do
 
     test "it raises an appropriate error when the incorrect api is configured" do
       assert_raise Ash.Error.Invalid.ResourceNotAllowed,
-                   ~r/No such resource AshPhoenix.Test.Post/,
+                   ~r/Resource `AshPhoenix.Test.Post` is not accepted by AshPhoenix.Test.OtherApi/,
                    fn ->
                      Post
                      |> Form.for_create(:create, api: OtherApi)
