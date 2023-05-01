@@ -844,7 +844,7 @@ defmodule AshPhoenix.FormTest do
     end
 
     test "it raises an appropriate error when the incorrect api is configured" do
-      assert_raise Ash.Error.Invalid.NoSuchResource,
+      assert_raise Ash.Error.Invalid.ResourceNotAllowed,
                    ~r/No such resource AshPhoenix.Test.Post/,
                    fn ->
                      Post
