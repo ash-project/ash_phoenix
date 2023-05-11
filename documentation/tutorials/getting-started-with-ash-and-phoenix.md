@@ -128,6 +128,12 @@ config :my_ash_phoenix_app,
   ash_apis: [MyAshPhoenixApp.Blog]
 ```
 
+If you have already compiled your app, you may get errors recompiling it after adding this config. To solve for that, run the following command:
+
+```elixir
+mix deps.compile ash --force && MIX_ENV=test mix deps.compile ash --force
+```
+
 ### Create the API and Registry
 
 An Ash API can be thought of as a [Bounded Context](https://martinfowler.com/bliki/BoundedContext.html) in Domain Driven Design terms and can seen as analogous to a Phoenix context. Put simply, its a way of grouping related resources together. In our case our API will be called `MyAshPhoenixApp.Blog`.
