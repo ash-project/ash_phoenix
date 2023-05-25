@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.2.14](https://github.com/ash-project/ash_phoenix/compare/v1.2.13...v1.2.14) (2023-05-25)
+
+
+
+
+### Bug Fixes:
+
+* undo incorrect change and apply correct change for `accessing_from`
+
+* use proper `accessing_from` in nested read actions
+
 ## [v1.2.13](https://github.com/ash-project/ash_phoenix/compare/v1.2.12...v1.2.13) (2023-04-26)
 
 
