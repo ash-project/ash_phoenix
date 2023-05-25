@@ -1109,7 +1109,7 @@ defmodule AshPhoenix.Form do
                             actor: form.opts[:actor],
                             tenant: form.opts[:tenant],
                             params: params,
-                            accessing_from: opts[:managed_relationship],
+                            accessing_from: opts[:accessing_from],
                             transform_params: opts[:transform_params],
                             forms: opts[:forms] || [],
                             errors: errors?,
