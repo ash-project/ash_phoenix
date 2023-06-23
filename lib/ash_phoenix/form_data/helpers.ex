@@ -68,7 +68,7 @@ defmodule AshPhoenix.FormData.Helpers do
         match?
       else
         if form.warn_on_unhandled_errors? do
-          Logger.warn("""
+          Logger.warning("""
           Unhandled error in form submission for #{inspect(form.resource)}.#{form.action}
 
           This error was unhandled because it did not have a `path` key.
@@ -107,7 +107,7 @@ defmodule AshPhoenix.FormData.Helpers do
           true
         else
           if form.warn_on_unhandled_errors? do
-            Logger.warn("""
+            Logger.warning("""
             Unhandled error in form submission for #{inspect(form.resource)}.#{form.action}
 
             This error was unhandled because it did not implement the `AshPhoenix.FormData.Error` protocol.
@@ -127,7 +127,7 @@ defmodule AshPhoenix.FormData.Helpers do
 
       error ->
         if form.warn_on_unhandled_errors? do
-          Logger.warn("""
+          Logger.warning("""
           Unhandled error in form submission for #{form.resource}.#{form.action}
 
           This error was unhandled because it was not an exception that implemented the `AshPhoenix.FormData.Error`
