@@ -1212,8 +1212,8 @@ defmodule AshPhoenix.FilterForm do
       to_form(form, phoenix_form, :components, [])
     end
 
-    def input_value(_, _, field) do
-      raise "Invalid filter form field #{field}. Only :id, :negated, and :operator are supported"
+    def input_value(_, _, _field) do
+      nil
     end
 
     @impl true
