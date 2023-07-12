@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.2.15](https://github.com/ash-project/ash_phoenix/compare/v1.2.14...v1.2.15) (2023-07-12)
+
+
+
+
+### Bug Fixes:
+
+* don't raise on unknown inputs for filters
+
+* fix Logger deprecations for elixir 1.15 (#96)
+
 ## [v1.2.14](https://github.com/ash-project/ash_phoenix/compare/v1.2.13...v1.2.14) (2023-05-25)
 
 
