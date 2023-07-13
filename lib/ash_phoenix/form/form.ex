@@ -3677,6 +3677,13 @@ defmodule AshPhoenix.Form do
               end
             end
 
+          data =
+            if (opts[:type] || :single) == :single do
+              Enum.at(List.wrap(data), 0)
+            else
+              data
+            end
+
           if data do
             form_values =
               if (opts[:type] || :single) == :single do
@@ -3700,7 +3707,7 @@ defmodule AshPhoenix.Form do
               else
                 pkey =
                   unless Enum.empty?(data) do
-                    Ash.Resource.Info.primary_key(Enum.at(data, 0).__struct__)
+                    Ash.Resource.Info.primary_key(Enum.at(List.wrap(data), 0).__struct__)
                   end
 
                 data
