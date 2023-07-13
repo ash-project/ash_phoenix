@@ -551,7 +551,11 @@ defmodule AshPhoenix.Form.Auto do
           :single ->
             fn parent ->
               if parent do
-                Map.get(parent, attr.name)
+                case Map.get(parent, attr.name) do
+                  [value | _] -> value
+                  [] -> nil
+                  value -> value
+                end
               end
             end
         end
