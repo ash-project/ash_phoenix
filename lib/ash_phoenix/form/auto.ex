@@ -167,7 +167,7 @@ defmodule AshPhoenix.Form.Auto do
             Keyword.put(
               opts,
               :data,
-              relationship_fetcher(relationship, auto_opts[:relationship_fetcher])
+              relationship_fetcher(relationship, auto_opts[:relationship_fetcher], opts[:type])
             )
           else
             opts
@@ -481,19 +481,25 @@ defmodule AshPhoenix.Form.Auto do
     end
   end
 
-  defp relationship_fetcher(relationship, relationship_fetcher) do
+  defp relationship_fetcher(relationship, relationship_fetcher, type) do
     fn parent ->
       if relationship_fetcher do
         relationship_fetcher.(parent, relationship)
       else
         case Map.get(parent, relationship.name) do
           %Ash.NotLoaded{} ->
-            if relationship.cardinality == :many do
+            if type == :single do
+              nil
+            else
               []
             end
 
           value ->
-            value
+            if type == :single && is_list(value) do
+              Enum.at(value, 0)
+            else
+              value
+            end
         end
       end
     end
