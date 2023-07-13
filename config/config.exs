@@ -1,5 +1,6 @@
 import Config
 config :phoenix, :json_library, Jason
+config :ash, :validate_api_resource_inclusion?, false
 
 if Mix.env() == :dev do
   config :git_ops,
