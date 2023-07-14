@@ -244,7 +244,8 @@ defmodule AshPhoenix.Form do
     prepare_source: [
       type: {:or, [{:fun, 1}, {:in, [nil]}]},
       doc: """
-      A 1-argument function the receives the initial changeset and makes any relevant changes to it. This can be used to do things like:
+      A 1-argument function the receives the initial changeset (or query) and makes any relevant changes to it. 
+      This can be used to do things like:
 
       * Set default argument values before the validations are run using `Ash.Changeset.set_arguments/2` or `Ash.Changeset.set_argument/3`
       * Set changeset context
@@ -254,8 +255,8 @@ defmodule AshPhoenix.Form do
     prepare_params: [
       type: {:or, [{:fun, 2}, {:in, [nil]}]},
       doc: """
-      A 2-argument function that receives the params map and the :validate atom and should return prepared params before
-      they are validated.
+      A 2-argument function that receives the params map and the :validate atom and should return prepared params. 
+      Called before the form is validated.
       """
     ],
     transform_params: [
