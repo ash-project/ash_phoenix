@@ -177,7 +177,7 @@ end
 
 A resource is a central concept in Ash. In short, a resource is a domain model object in your system. A resource defines the data it holds and defines the actions that can operate on that data.
 
-It's convention to place all the resource in their own resources folder. So when we create `Post` we will place it in `lib/my_ash_phoenix_project/blog/resources/post.ex`. So the structure after making the resource should look like so:
+It's convention to place all the resource in their own resources folder. So when we create `Post` we will place it in `lib/my_ash_phoenix_app/blog/resources/post.ex`. So the structure after making the resource should look like so:
 
 ```
 lib/
