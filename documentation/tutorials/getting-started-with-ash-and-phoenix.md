@@ -431,12 +431,12 @@ defmodule MyAshPhoenixAppWeb.ExampleLiveView do
     <% end %>
     </div>
     <h2>Create Post</h2>
-    <.form let={f} for={@create_form} phx-submit="create_post">
+    <.form :let={f} for={@create_form} phx-submit="create_post">
       <%= text_input f, :title, placeholder: "input title" %>
       <%= submit "create" %>
     </.form>
     <h2>Update Post</h2>
-    <.form let={f} for={@update_form} phx-submit="update_post">
+    <.form :let={f} for={@update_form} phx-submit="update_post">
       <%= label f, :"post name" %>
       <%= select f, :post_id, @post_selector %>
       <%= text_input f, :content, value: "", placeholder: "input content" %>
