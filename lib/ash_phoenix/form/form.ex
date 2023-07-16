@@ -242,26 +242,28 @@ defmodule AshPhoenix.Form do
       """
     ],
     prepare_source: [
-      type: :any,
+      type: {:or, [{:fun, 1}, {:in, [nil]}]},
       doc: """
-      Takes a function over a changeset and runs it before calling the relevant changeset function. This can be used to do things like:
+      A 1-argument function the receives the initial changeset (or query) and makes any relevant changes to it. 
+      This can be used to do things like:
 
-      * set private argument values before the validations are run using `Ash.Changeset.set_arguments/2` or `Ash.Changeset.set_argument/3`
-      * set changeset context
-      * do any other pre-processing on the changeset
+      * Set default argument values before the validations are run using `Ash.Changeset.set_arguments/2` or `Ash.Changeset.set_argument/3`
+      * Set changeset context
+      * Do any other pre-processing on the changeset
       """
     ],
     prepare_params: [
       type: {:or, [{:fun, 2}, {:in, [nil]}]},
       doc: """
-      A function for pre-processing the form parameters before they are handled by the form.
+      A 2-argument function that receives the params map and the :validate atom and should return prepared params. 
+      Called before the form is validated.
       """
     ],
     transform_params: [
       type: {:or, [{:fun, 2}, {:fun, 3}, {:in, [nil]}]},
       doc: """
       A function for post-processing the form parameters before they are used for changeset validation/submission.
-      Use a 3 argument function to pattern match on the `AshPhoenix.Form` struct.
+      Use a 3-argument function to pattern match on the `AshPhoenix.Form` struct.
       """
     ],
     method: [
