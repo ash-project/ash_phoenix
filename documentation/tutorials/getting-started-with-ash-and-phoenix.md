@@ -177,7 +177,7 @@ end
 
 A resource is a central concept in Ash. In short, a resource is a domain model object in your system. A resource defines the data it holds and defines the actions that can operate on that data.
 
-It's convention to place all the resource in their own resources folder. So when we create `Post` we will place it in `lib/my_ash_phoenix_project/blog/resources/post.ex`. So the structure after making the resource should look like so:
+It's convention to place all the resource in their own resources folder. So when we create `Post` we will place it in `lib/my_ash_phoenix_app/blog/resources/post.ex`. So the structure after making the resource should look like so:
 
 ```
 lib/
@@ -431,12 +431,12 @@ defmodule MyAshPhoenixAppWeb.ExampleLiveView do
     <% end %>
     </div>
     <h2>Create Post</h2>
-    <.form let={f} for={@create_form} phx-submit="create_post">
+    <.form :let={f} for={@create_form} phx-submit="create_post">
       <%= text_input f, :title, placeholder: "input title" %>
       <%= submit "create" %>
     </.form>
     <h2>Update Post</h2>
-    <.form let={f} for={@update_form} phx-submit="update_post">
+    <.form :let={f} for={@update_form} phx-submit="update_post">
       <%= label f, :"post name" %>
       <%= select f, :post_id, @post_selector %>
       <%= text_input f, :content, value: "", placeholder: "input content" %>
