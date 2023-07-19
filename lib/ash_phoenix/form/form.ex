@@ -856,6 +856,15 @@ defmodule AshPhoenix.Form do
       type: :boolean,
       default: true,
       doc: "Set to false to hide errors after validation"
+    ],
+    target: [
+      type: {:list, :string},
+      doc: "The `_target` param provided by phoenix. Used to support the `only_touched?` option."
+    ],
+    only_touched?: [
+      type: :boolean,
+      default: false,
+      doc: "If set to true, only fields that have been marked as touched will be used"
     ]
   ]
 
@@ -876,7 +885,32 @@ defmodule AshPhoenix.Form do
     |> Phoenix.HTML.FormData.to_form(form.options)
   end
 
-  def validate(form, new_params, opts) do
+  def validate(%{name: name} = form, new_params, opts) do
+    form =
+      case opts[:target] do
+        [^name | target] ->
+          field = List.last(target)
+          path = :lists.droplast(target)
+
+          case path do
+            [] ->
+              touch(form, field)
+
+            path ->
+              update_form(form, path, &touch(&1, field))
+          end
+
+        _ ->
+          form
+      end
+
+    new_params =
+      if opts[:only_touched?] do
+        Map.take(new_params, form.touched_forms)
+      else
+        new_params
+      end
+
     opts = validate_opts_with_extra_keys(opts, @validate_opts)
 
     prepare_source = form.prepare_source || (& &1)

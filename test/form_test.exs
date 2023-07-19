@@ -193,7 +193,10 @@ defmodule AshPhoenix.FormTest do
 
   test "blank form values unset - helps support dead view forms" do
     form =
-      Form.for_create(PostWithDefault, :create, api: Api, exclude_fields_if_empty: [:text, :title])
+      Form.for_create(PostWithDefault, :create,
+        api: Api,
+        exclude_fields_if_empty: [:text, :title]
+      )
 
     {:ok, post} = Form.submit(form, params: %{"title" => "", "text" => "bar"})
     assert post.text == "bar"
