@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.2.16](https://github.com/ash-project/ash_phoenix/compare/v1.2.15...v1.2.16) (2023-07-26)
+
+
+
+
+### Bug Fixes:
+
+* handle single types against to many forms
+
+* more fixes for accidentally list form data
+
+### Improvements:
+
+* add support for `target` and `only_touched?` validate opts
+
 ## [v1.2.15](https://github.com/ash-project/ash_phoenix/compare/v1.2.14...v1.2.15) (2023-07-12)
 
 
