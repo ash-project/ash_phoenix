@@ -408,7 +408,7 @@ Now isn't that more convenient?
 
 ## Connecting your Resource to a Phoenix LiveView
 
-Now we know how to interact with our resource, let's connect it to a simple Phoenix LiveView. Here is the LiveView below:
+Now we know how to interact with our resource, let's connect it to a simple Phoenix LiveView. Here is the LiveView below. If you are using phoenix live_view <= 0.18, you will need to use `let={}` instead of `:let={}`.
 
 ```elixir
 # lib/my_ash_phoenix_app_web/example_live_view.ex
