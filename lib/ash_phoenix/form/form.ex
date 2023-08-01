@@ -244,7 +244,7 @@ defmodule AshPhoenix.Form do
     prepare_source: [
       type: {:or, [{:fun, 1}, {:in, [nil]}]},
       doc: """
-      A 1-argument function the receives the initial changeset (or query) and makes any relevant changes to it. 
+      A 1-argument function the receives the initial changeset (or query) and makes any relevant changes to it.
       This can be used to do things like:
 
       * Set default argument values before the validations are run using `Ash.Changeset.set_arguments/2` or `Ash.Changeset.set_argument/3`
@@ -255,7 +255,7 @@ defmodule AshPhoenix.Form do
     prepare_params: [
       type: {:or, [{:fun, 2}, {:in, [nil]}]},
       doc: """
-      A 2-argument function that receives the params map and the :validate atom and should return prepared params. 
+      A 2-argument function that receives the params map and the :validate atom and should return prepared params.
       Called before the form is validated.
       """
     ],
@@ -906,7 +906,7 @@ defmodule AshPhoenix.Form do
 
     new_params =
       if opts[:only_touched?] do
-        Map.take(new_params, form.touched_forms)
+        Map.take(new_params, Enum.to_list(form.touched_forms))
       else
         new_params
       end
