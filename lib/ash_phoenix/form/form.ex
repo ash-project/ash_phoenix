@@ -864,7 +864,11 @@ defmodule AshPhoenix.Form do
     only_touched?: [
       type: :boolean,
       default: false,
-      doc: "If set to true, only fields that have been marked as touched will be used"
+      doc: """
+      If set to true, only fields that have been marked as touched will be used
+
+      If you use this for validation you likely want to use it when submitting as well.
+      """
     ]
   ]
 
@@ -1482,6 +1486,13 @@ defmodule AshPhoenix.Form do
       type: {:fun, 1},
       doc:
         "A function to apply to the source (changeset or query) just before submitting the action. Must return the modified changeset."
+    ],
+    only_touched?: [
+      type: :boolean,
+      default: false,
+      doc: """
+      If set to true, only fields that have been marked as touched will be used.
+      """
     ]
   ]
 
@@ -1569,7 +1580,10 @@ defmodule AshPhoenix.Form do
           raise error
       end
 
-      changeset_params = opts[:override_params] || params(form)
+      changeset_params =
+        opts[:override_params] ||
+          params(form, only_touched?: Keyword.get(opts, :only_touched?, false))
+
       prepare_source = form.prepare_source || (& &1)
 
       {original_changeset_or_query, result} =
