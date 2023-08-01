@@ -897,6 +897,20 @@ defmodule AshPhoenix.Form do
               touch(form, field)
 
             path ->
+              path =
+                Enum.map(path, fn item ->
+                  cond do
+                    is_integer(item) ->
+                      item
+
+                    is_binary(item) ->
+                      String.to_existing_atom(item)
+
+                    true ->
+                      item
+                  end
+                end)
+
               update_form(form, path, &touch(&1, field))
           end
 
