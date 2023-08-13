@@ -10,6 +10,7 @@ defmodule AshPhoenix.Test.Post do
     uuid_primary_key(:id)
     attribute(:text, :string, allow_nil?: false)
     attribute(:union, AshPhoenix.Test.UnionValue)
+    attribute(:union_array, {:array, AshPhoenix.Test.UnionValue})
     attribute(:title, :string)
   end
 

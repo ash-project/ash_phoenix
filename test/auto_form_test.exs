@@ -2,7 +2,8 @@ defmodule AshPhoenix.AutoFormTest do
   use ExUnit.Case
 
   alias AshPhoenix.Form.Auto
-  alias AshPhoenix.Test.Post
+  alias AshPhoenix.Test.{Api, Post}
+  import Phoenix.HTML.Form, only: [form_for: 2]
   import AshPhoenix.Form, only: [update_opts: 2]
 
   test "it works for simple relationships" do
@@ -52,6 +53,80 @@ defmodule AshPhoenix.AutoFormTest do
 
     assert validated.source.arguments[:comment_ids] == [1]
   end
+
+  describe "single unions" do
+    test "a form can be added for a union" do
+        Post
+        |> AshPhoenix.Form.for_create(:create,
+          api: Api,
+          forms: [
+            auto?: true
+          ]
+        )
+        |> AshPhoenix.Form.add_form(:union, params: %{"type" => "foo"})
+        |> form_for("action")
+    end
+
+    test "a form can be removed from a union" do
+      form =
+        Post
+        |> AshPhoenix.Form.for_create(:create,
+          api: Api,
+          forms: [
+            auto?: true
+          ]
+        )
+        |> AshPhoenix.Form.add_form(:union, params: %{"type" => "foo"})
+        |> form_for("action")
+
+      AshPhoenix.Form.remove_form(form, [:union])
+    end
+
+    test "a form can be added for a non-embedded type" do
+      Post
+      |> AshPhoenix.Form.for_create(:create,
+        api: Api,
+        forms: [
+          auto?: true
+        ],
+        params: %{
+          "text" => "foobar"
+        }
+      )
+      |> AshPhoenix.Form.add_form(:union, params: %{"_union_type" => "bar", "value" => 10})
+      |> AshPhoenix.Form.submit!()
+    end
+  end
+
+  describe "list unions" do
+    test "a form can be added for a union" do
+      Post
+      |> AshPhoenix.Form.for_create(:create,
+        api: Api,
+        forms: [
+          auto?: true
+        ]
+      )
+      |> AshPhoenix.Form.add_form(:union_array, params: %{"type" => "foo"})
+      |> form_for("action")
+    end
+
+    test "a form can be removed from a union" do
+      form =
+      Post
+      |> AshPhoenix.Form.for_create(:create,
+        api: Api,
+        forms: [
+          auto?: true
+        ]
+      )
+      |> AshPhoenix.Form.add_form(:union_array, params: %{"type" => "foo"})
+      |> form_for("action")
+
+      AshPhoenix.Form.remove_form(form, [:union_array, 0])
+    end
+  end
+
 
   defp auto_forms(resource, action) do
     [forms: Auto.auto(resource, action)]

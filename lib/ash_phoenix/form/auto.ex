@@ -177,8 +177,12 @@ defmodule AshPhoenix.Form.Auto do
 
         transform_params =
           if fake_embedded? do
-            fn form, _params, _type ->
-              AshPhoenix.Form.value(form, :value)
+            fn form, params, type ->
+              if type == :nested do
+                AshPhoenix.Form.value(form, :value)
+              else
+                params
+              end
             end
           end
 
@@ -244,11 +248,11 @@ defmodule AshPhoenix.Form.Auto do
 
         Params:
 
-        #{inspect(params)}
+        #{inspect(params, pretty: true)}
 
         Available types:
 
-        #{inspect(constraints[:types])}
+        #{inspect(constraints[:types], pretty: true)}
         """
 
       {_key, config} ->
@@ -266,13 +270,16 @@ defmodule AshPhoenix.Form.Auto do
         raise """
         Got no "_union_type" parameter, and no union type had a tag & tag_value pair matching the params.
 
+        If you are adding a form, select a type using `params: %{"_union_type" => "type_name"}`, or if one
+        or more of your types is using a tag you can set that tag with `params: %{"tag" => "tag_value"}`.
+
         Params:
 
-        #{inspect(params)}
+        #{inspect(params, pretty: true)}
 
         Available types:
 
-        #{inspect(constraints[:types])}
+        #{inspect(constraints[:types], pretty: true)}
         """
 
       {_key, config} ->
@@ -822,6 +829,8 @@ defmodule AshPhoenix.Form.Auto do
     end)
     |> Keyword.new()
   end
+
+  defp union?({:array, type}), do: union?(type)
 
   defp union?(type) do
     if Ash.Type.NewType.new_type?(type) do

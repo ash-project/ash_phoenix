@@ -1182,7 +1182,7 @@ defmodule AshPhoenix.Form do
                     Map.update(forms, key, [new_form], &(&1 ++ [new_form]))
 
                   matching_form ->
-                    opts = update_opts(opts, matching_form.data, form_params)
+                    opts = update_opts(opts, matching_form.data, params)
 
                     validated =
                       validate(matching_form, params,
@@ -2887,6 +2887,13 @@ defmodule AshPhoenix.Form do
       case form.touched_forms |> Enum.join(",") do
         "" -> hidden
         fields -> Keyword.put(hidden, :_touched, fields)
+      end
+
+    hidden =
+      if form.params["_union_type"] do
+        Keyword.put(hidden, :_union_type, form.params["_union_type"])
+      else
+        hidden
       end
 
     if form.params["_index"] && form.params["_index"] != "" do
