@@ -87,7 +87,219 @@ defmodule AshPhoenix.Form.Auto do
 
   def auto(resource, action, opts \\ []) do
     opts = Spark.OptionsHelpers.validate!(opts, @auto_opts)
-    Keyword.new(related(resource, action, opts) ++ embedded(resource, action, opts))
+
+    Keyword.new(
+      related(resource, action, opts) ++
+        embedded(resource, action, opts) ++ unions(resource, action, opts)
+    )
+  end
+
+  def unions(resource, action, auto_opts) do
+    action =
+      if is_atom(action) do
+        Ash.Resource.Info.action(resource, action)
+      else
+        action
+      end
+
+    resource
+    |> accepted_attributes(action)
+    |> Enum.concat(action.arguments)
+    |> Enum.filter(&union?(&1.type))
+    |> Enum.reject(&match?({:array, {:array, _}}, &1.type))
+    |> Enum.map(fn attr ->
+      {type, constraints} =
+        if Ash.Type.NewType.new_type?(attr.type) do
+          {Ash.Type.NewType.subtype_of(attr.type),
+           Ash.Type.NewType.constraints(attr.type, attr.constraints)}
+        else
+          {attr.type, attr.constraints}
+        end
+
+      form_type =
+        case type do
+          {:array, _} ->
+            :list
+
+          _ ->
+            :single
+        end
+
+      constraints = unwrap_union(type, constraints)
+
+      updater = fn opts, data, params ->
+        {type, constraints} = determine_type(constraints, data, params)
+
+        {embed, constraints, fake_embedded?} =
+          if Ash.Type.embedded_type?(type) do
+            {type, constraints, false}
+          else
+            {AshPhoenix.Form.WrappedValue, [], true}
+          end
+
+        data =
+          case form_type do
+            :list ->
+              fn parent ->
+                if parent do
+                  Map.get(parent, attr.name) || []
+                else
+                  []
+                end
+                |> wrap_value(fake_embedded?)
+              end
+
+            :single ->
+              fn parent ->
+                if parent do
+                  case Map.get(parent, attr.name) do
+                    [value | _] -> value
+                    [] -> nil
+                    value -> value
+                  end
+                end
+                |> wrap_value(fake_embedded?)
+              end
+          end
+
+        prepare_source =
+          if fake_embedded? do
+            fn source ->
+              case source do
+                %Ash.Changeset{} ->
+                  Ash.Changeset.set_context(source, %{type: type, constraints: constraints})
+
+                %Ash.Query{} ->
+                  Ash.Query.set_context(source, %{type: type, constraints: constraints})
+              end
+            end
+          end
+
+        transform_params =
+          if fake_embedded? do
+            fn form, _params, _type ->
+              AshPhoenix.Form.value(form, :value)
+            end
+          end
+
+        create_action =
+          if constraints[:create_action] do
+            Ash.Resource.Info.action(embed, constraints[:create_action])
+          else
+            Ash.Resource.Info.primary_action(embed, :create)
+          end
+
+        update_action =
+          if constraints[:update_action] do
+            Ash.Resource.Info.action(embed, constraints[:update_action])
+          else
+            Ash.Resource.Info.primary_action(embed, :update)
+          end
+
+        Keyword.merge(opts,
+          type: form_type,
+          resource: embed,
+          create_action: create_action.name,
+          update_action: update_action.name,
+          prepare_source: prepare_source,
+          transform_params: transform_params,
+          embed?: true,
+          data: data,
+          forms: [],
+          updater: fn opts ->
+            Keyword.update!(opts, :forms, fn forms ->
+              forms ++
+                embedded(embed, create_action, auto_opts) ++
+                embedded(embed, update_action, auto_opts) ++
+                unions(embed, create_action, auto_opts) ++
+                unions(embed, update_action, auto_opts)
+            end)
+          end
+        )
+      end
+
+      {attr.name,
+       [
+         updater: updater
+       ]}
+    end)
+    |> Keyword.new()
+  end
+
+  defp wrap_value(value, true) do
+    %AshPhoenix.Form.WrappedValue{value: value}
+  end
+
+  defp wrap_value(value, _), do: value
+
+  defp determine_type(constraints, _data, %{"_union_type" => union_type} = params) do
+    constraints[:types]
+    |> Enum.find(fn {key, _value} ->
+      to_string(key) == union_type
+    end)
+    |> case do
+      nil ->
+        raise """
+        Got "_union_type" parameter of #{inspect(union_type)}, but no type with that name was found in the constraints.
+
+        Params:
+
+        #{inspect(params)}
+
+        Available types:
+
+        #{inspect(constraints[:types])}
+        """
+
+      {_key, config} ->
+        {config[:type], config[:constraints]}
+    end
+  end
+
+  defp determine_type(constraints, data, params) do
+    constraints[:types]
+    |> Enum.find(fn {key, config} ->
+      config[:tag] && (tags_equal(config, key, params) || tags_equal_data(config, key, data))
+    end)
+    |> case do
+      nil ->
+        raise """
+        Got no "_union_type" parameter, and no union type had a tag & tag_value pair matching the params.
+
+        Params:
+
+        #{inspect(params)}
+
+        Available types:
+
+        #{inspect(constraints[:types])}
+        """
+
+      {_key, config} ->
+        {config[:type], config[:constraints]}
+    end
+  end
+
+  defp tags_equal(config, key, params) do
+    case config[:tag_value] || key do
+      value when is_atom(value) ->
+        params[to_string(config[:tag])] == to_string(value) ||
+          params[to_string(config[:tag])] == value
+
+      value ->
+        params[to_string(config[:tag])] == value
+    end
+  end
+
+  defp tags_equal_data(config, key, data) do
+    case config[:tag_value] || key do
+      value when is_atom(value) ->
+        data[config[:tag]] == to_string(value) ||
+          data[config[:tag]] == value
+
+      value ->
+        data[config[:tag]] == value
+    end
   end
 
   def related(resource, action, auto_opts) do
@@ -481,6 +693,14 @@ defmodule AshPhoenix.Form.Auto do
     end
   end
 
+  defp unwrap_union({:array, type}, constraints) do
+    unwrap_union(type, constraints[:items] || [])
+  end
+
+  defp unwrap_union(_type, constraints) do
+    constraints
+  end
+
   defp relationship_fetcher(relationship, relationship_fetcher, type) do
     fn parent ->
       if relationship_fetcher do
@@ -593,12 +813,22 @@ defmodule AshPhoenix.Form.Auto do
            Keyword.update!(opts, :forms, fn forms ->
              forms ++
                embedded(embed, create_action, auto_opts) ++
-               embedded(embed, update_action, auto_opts)
+               embedded(embed, update_action, auto_opts) ++
+               unions(embed, create_action, auto_opts) ++
+               unions(embed, update_action, auto_opts)
            end)
          end
        ]}
     end)
     |> Keyword.new()
+  end
+
+  defp union?(type) do
+    if Ash.Type.NewType.new_type?(type) do
+      union?(Ash.Type.NewType.subtype_of(type))
+    else
+      type == Ash.Type.Union
+    end
   end
 
   defp unwrap_type({:array, type}), do: unwrap_type(type)

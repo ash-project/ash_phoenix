@@ -3,19 +3,18 @@ defmodule AshPhoenix.AutoFormTest do
 
   alias AshPhoenix.Form.Auto
   alias AshPhoenix.Test.Post
-  import AshPhoenix.Form, only: [update_opts: 1]
+  import AshPhoenix.Form, only: [update_opts: 2]
 
   test "it works for simple relationships" do
     forms =
       Post
       |> auto_forms(:create)
-      |> update_opts()
       |> Keyword.get(:forms)
 
-    assert forms[:comments][:update_action] == :update
-    assert forms[:comments][:create_action] == :create
-    assert forms[:linked_posts][:update_action] == :update
-    assert forms[:linked_posts][:create_action] == :create
+    assert update_opts(forms[:comments], %{})[:update_action] == :update
+    assert update_opts(forms[:comments], %{})[:create_action] == :create
+    assert update_opts(forms[:linked_posts], %{})[:update_action] == :update
+    assert update_opts(forms[:linked_posts], %{})[:create_action] == :create
   end
 
   test "it works for simple relationships when toggled" do
@@ -24,10 +23,10 @@ defmodule AshPhoenix.AutoFormTest do
       |> AshPhoenix.Form.for_create(:create, forms: [auto?: true])
       |> Map.get(:form_keys)
 
-    assert forms[:comments][:update_action] == :update
-    assert forms[:comments][:create_action] == :create
-    assert forms[:linked_posts][:update_action] == :update
-    assert forms[:linked_posts][:create_action] == :create
+    assert update_opts(forms[:comments], %{})[:update_action] == :update
+    assert update_opts(forms[:comments], %{})[:create_action] == :create
+    assert update_opts(forms[:linked_posts], %{})[:update_action] == :update
+    assert update_opts(forms[:linked_posts], %{})[:create_action] == :create
   end
 
   test "when using a non-map value it operates on maps, then transforms the params accordingly" do
