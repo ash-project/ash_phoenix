@@ -146,7 +146,7 @@ defmodule AshPhoenix.Form.Auto do
                 else
                   []
                 end
-                |> wrap_value(fake_embedded?)
+                |> Enum.map(&wrap_value(&1, fake_embedded?))
               end
 
             :single ->
@@ -197,7 +197,6 @@ defmodule AshPhoenix.Form.Auto do
           end
 
         Keyword.merge(opts,
-          type: form_type,
           resource: embed,
           create_action: create_action.name,
           update_action: update_action.name,
@@ -220,6 +219,7 @@ defmodule AshPhoenix.Form.Auto do
 
       {attr.name,
        [
+         type: form_type,
          updater: updater
        ]}
     end)
