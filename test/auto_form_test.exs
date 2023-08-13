@@ -56,15 +56,15 @@ defmodule AshPhoenix.AutoFormTest do
 
   describe "single unions" do
     test "a form can be added for a union" do
-        Post
-        |> AshPhoenix.Form.for_create(:create,
-          api: Api,
-          forms: [
-            auto?: true
-          ]
-        )
-        |> AshPhoenix.Form.add_form(:union, params: %{"type" => "foo"})
-        |> form_for("action")
+      Post
+      |> AshPhoenix.Form.for_create(:create,
+        api: Api,
+        forms: [
+          auto?: true
+        ]
+      )
+      |> AshPhoenix.Form.add_form(:union, params: %{"type" => "foo"})
+      |> form_for("action")
     end
 
     test "a form can be removed from a union" do
@@ -113,20 +113,72 @@ defmodule AshPhoenix.AutoFormTest do
 
     test "a form can be removed from a union" do
       form =
-      Post
-      |> AshPhoenix.Form.for_create(:create,
-        api: Api,
-        forms: [
-          auto?: true
-        ]
-      )
-      |> AshPhoenix.Form.add_form(:union_array, params: %{"type" => "foo"})
-      |> form_for("action")
+        Post
+        |> AshPhoenix.Form.for_create(:create,
+          api: Api,
+          forms: [
+            auto?: true
+          ]
+        )
+        |> AshPhoenix.Form.add_form(:union_array, params: %{"type" => "foo"})
+        |> form_for("action")
 
       AshPhoenix.Form.remove_form(form, [:union_array, 0])
     end
-  end
 
+    test "validating a form with valid values works" do
+      form =
+        Post
+        |> AshPhoenix.Form.for_create(:create,
+          api: Api,
+          forms: [
+            auto?: true
+          ]
+        )
+        |> AshPhoenix.Form.add_form(:union_array, params: %{"type" => "foo"})
+        |> form_for("action")
+
+      assert %{union_array: [%Ash.Union{value: %{value: "abc"}}]} =
+               form
+               |> AshPhoenix.Form.validate(%{
+                 "text" => "text",
+                 "union_array" => %{
+                   "0" => %{
+                     "type" => "foo",
+                     "value" => "abc"
+                   }
+                 }
+               })
+               |> AshPhoenix.Form.submit!()
+    end
+
+    test "validating a form with an invalid value works" do
+      form =
+        Post
+        |> AshPhoenix.Form.for_create(:create,
+          api: Api,
+          forms: [
+            auto?: true
+          ]
+        )
+        |> AshPhoenix.Form.add_form(:union_array, params: %{"type" => "foo"})
+        |> form_for("action")
+
+      assert_raise Ash.Error.Invalid, ~r/must match the pattern/, fn ->
+        form
+        |> AshPhoenix.Form.validate(%{
+          "text" => "text",
+          "union_array" => %{
+            "0" => %{
+              "type" => "foo",
+              "value" => "def"
+            }
+          }
+        })
+        |> AshPhoenix.Form.submit!()
+      end
+    end
+  end
 
   defp auto_forms(resource, action) do
     [forms: Auto.auto(resource, action)]

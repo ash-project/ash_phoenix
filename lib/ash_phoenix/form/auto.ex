@@ -127,6 +127,29 @@ defmodule AshPhoenix.Form.Auto do
 
       constraints = unwrap_union(type, constraints)
 
+      data =
+        case form_type do
+          :list ->
+            fn parent ->
+              if parent do
+                Map.get(parent, attr.name) || []
+              else
+                []
+              end
+            end
+
+          :single ->
+            fn parent ->
+              if parent do
+                case Map.get(parent, attr.name) do
+                  [value | _] -> value
+                  [] -> nil
+                  value -> value
+                end
+              end
+            end
+        end
+
       updater = fn opts, data, params ->
         {type, constraints} = determine_type(constraints, data, params)
 
@@ -135,31 +158,6 @@ defmodule AshPhoenix.Form.Auto do
             {type, constraints, false}
           else
             {AshPhoenix.Form.WrappedValue, [], true}
-          end
-
-        data =
-          case form_type do
-            :list ->
-              fn parent ->
-                if parent do
-                  Map.get(parent, attr.name) || []
-                else
-                  []
-                end
-                |> Enum.map(&wrap_value(&1, fake_embedded?))
-              end
-
-            :single ->
-              fn parent ->
-                if parent do
-                  case Map.get(parent, attr.name) do
-                    [value | _] -> value
-                    [] -> nil
-                    value -> value
-                  end
-                end
-                |> wrap_value(fake_embedded?)
-              end
           end
 
         prepare_source =
@@ -207,7 +205,6 @@ defmodule AshPhoenix.Form.Auto do
           prepare_source: prepare_source,
           transform_params: transform_params,
           embed?: true,
-          data: data,
           forms: [],
           updater: fn opts ->
             Keyword.update!(opts, :forms, fn forms ->
@@ -223,18 +220,13 @@ defmodule AshPhoenix.Form.Auto do
 
       {attr.name,
        [
+         data: data,
          type: form_type,
          updater: updater
        ]}
     end)
     |> Keyword.new()
   end
-
-  defp wrap_value(value, true) do
-    %AshPhoenix.Form.WrappedValue{value: value}
-  end
-
-  defp wrap_value(value, _), do: value
 
   defp determine_type(constraints, _data, %{"_union_type" => union_type} = params) do
     constraints[:types]
@@ -288,24 +280,32 @@ defmodule AshPhoenix.Form.Auto do
   end
 
   defp tags_equal(config, key, params) do
-    case config[:tag_value] || key do
-      value when is_atom(value) ->
-        params[to_string(config[:tag])] == to_string(value) ||
-          params[to_string(config[:tag])] == value
+    if is_map(params) do
+      case config[:tag_value] || key do
+        value when is_atom(value) ->
+          params[to_string(config[:tag])] == to_string(value) ||
+            params[to_string(config[:tag])] == value
 
-      value ->
-        params[to_string(config[:tag])] == value
+        value ->
+          params[to_string(config[:tag])] == value
+      end
+    else
+      false
     end
   end
 
   defp tags_equal_data(config, key, data) do
-    case config[:tag_value] || key do
-      value when is_atom(value) ->
-        data[config[:tag]] == to_string(value) ||
-          data[config[:tag]] == value
+    if is_struct(data) do
+      case config[:tag_value] || key do
+        value when is_atom(value) ->
+          data[config[:tag]] == to_string(value) ||
+            data[config[:tag]] == value
 
-      value ->
-        data[config[:tag]] == value
+        value ->
+          data[config[:tag]] == value
+      end
+    else
+      false
     end
   end
 

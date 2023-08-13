@@ -375,8 +375,18 @@ defmodule AshPhoenix.Form do
   def for_action(resource_or_data, action, opts) do
     {resource, data} =
       case resource_or_data do
-        module when is_atom(resource_or_data) -> {module, module.__struct__()}
-        %resource{} = data -> {resource, data}
+        module when is_atom(resource_or_data) ->
+          {module, module.__struct__()}
+
+        %resource{} = data ->
+          if Ash.Resource.Info.resource?(resource) do
+            {resource, data}
+          else
+            {AshPhoenix.Form.WrappedValue, %AshPhoenix.Form.WrappedValue{value: data}}
+          end
+
+        value ->
+          {AshPhoenix.Form.WrappedValue, %AshPhoenix.Form.WrappedValue{value: value}}
       end
 
     type =
@@ -1121,7 +1131,7 @@ defmodule AshPhoenix.Form do
               |> Enum.reduce(forms, fn {params, index}, forms ->
                 case Enum.find(form.forms[key] || [], &matcher.(&1, params, form, key, index)) do
                   nil ->
-                    opts = update_opts(opts, nil, form_params)
+                    opts = update_opts(opts, nil, params)
 
                     new_form =
                       cond do
@@ -3201,6 +3211,7 @@ defmodule AshPhoenix.Form do
               tenant: form.opts[:tenant],
               accessing_from: config[:managed_relationship],
               transform_params: config[:transform_params],
+              prepare_source: config[:prepare_source],
               warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
               forms: config[:forms] || [],
               data: opts[:data],

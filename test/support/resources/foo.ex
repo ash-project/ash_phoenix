@@ -7,6 +7,8 @@ defmodule AshPhoenix.Test.Foo do
       default "foo"
     end
 
-    attribute :value, :string
+    attribute :value, :string do
+      constraints match: ~r/abc/
+    end
   end
 end

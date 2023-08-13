@@ -15,4 +15,103 @@ defmodule AshPhoenix.Form.WrappedValue do
       primary? true
     end
   end
+
+  changes do
+    change fn changeset, _ ->
+      if Ash.Changeset.changing_attribute?(changeset, :value) do
+        value = Ash.Changeset.get_attribute(changeset, :value)
+
+        with {:ok, casted} <-
+               Ash.Type.Helpers.cast_input(
+                 changeset.context.type,
+                 value,
+                 changeset.context.constraints,
+                 changeset
+               ),
+             {:constrained, {:ok, casted}} when not is_nil(casted) <-
+               {:constrained,
+                Ash.Type.apply_constraints(
+                  changeset.context.type,
+                  casted,
+                  changeset.context.constraints
+                )} do
+          Ash.Changeset.force_change_attribute(changeset, :value, casted)
+        else
+          {:constrained, {:ok, nil}} ->
+            Ash.Changeset.force_change_attribute(changeset, :value, nil)
+
+          {:constrained, {:error, error}, argument} ->
+            add_invalid_errors(value, :attribute, changeset, :value, error)
+
+          {:error, error} ->
+            add_invalid_errors(value, :attributes, changeset, :value, error)
+        end
+      else
+        changeset
+      end
+    end
+  end
+
+  defp add_invalid_errors(value, type, changeset, attribute, message) do
+    messages =
+      if Keyword.keyword?(message) do
+        [message]
+      else
+        List.wrap(message)
+      end
+
+    Enum.reduce(messages, changeset, fn message, changeset ->
+      if is_exception(message) do
+        error =
+          message
+          |> Ash.Error.to_ash_error()
+
+        errors =
+          case error do
+            %class{errors: errors}
+            when class in [
+                   Ash.Error.Invalid,
+                   Ash.Error.Unknown,
+                   Ash.Error.Forbidden,
+                   Ash.Error.Framework
+                 ] ->
+              errors
+
+            error ->
+              [error]
+          end
+
+        Enum.reduce(errors, changeset, fn error, changeset ->
+          Ash.Changeset.add_error(changeset, Ash.Error.set_path(error, attribute))
+        end)
+      else
+        opts = Ash.Type.Helpers.error_to_exception_opts(message, %{name: attribute})
+
+        exception =
+          case type do
+            :attribute -> InvalidAttribute
+            :argument -> InvalidArgument
+          end
+
+        Enum.reduce(opts, changeset, fn opts, changeset ->
+          error =
+            exception.exception(
+              value: value,
+              field: Keyword.get(opts, :field),
+              message: Keyword.get(opts, :message),
+              vars: opts
+            )
+
+          error =
+            if opts[:path] do
+              Ash.Error.set_path(error, opts[:path])
+            else
+              error
+            end
+
+          Ash.Changeset.add_error(changeset, error)
+        end)
+      end
+    end)
+  end
 end
