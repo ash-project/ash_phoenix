@@ -41,10 +41,10 @@ defmodule AshPhoenix.Form.WrappedValue do
             Ash.Changeset.force_change_attribute(changeset, :value, nil)
 
           {:constrained, {:error, error}, argument} ->
-            add_invalid_errors(value, :attribute, changeset, :value, error)
+            add_invalid_errors(value, changeset, :value, error)
 
           {:error, error} ->
-            add_invalid_errors(value, :attribute, changeset, :value, error)
+            add_invalid_errors(value, changeset, :value, error)
         end
       else
         changeset
@@ -52,7 +52,7 @@ defmodule AshPhoenix.Form.WrappedValue do
     end
   end
 
-  defp add_invalid_errors(value, type, changeset, attribute, message) do
+  defp add_invalid_errors(value, changeset, attribute, message) do
     messages =
       if Keyword.keyword?(message) do
         [message]
