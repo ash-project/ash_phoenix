@@ -48,6 +48,9 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Index d
             module={<%= inspect Module.concat(@web_module, @resource_alias) %>Live.FormComponent}
             id={(@<%= @resource_singular %> && @<%= @resource_singular%>.<%= @pkey %>) || :new}
             title={@page_title}
+            <%= if @actor do %>
+              <%= @actor %>={@<%= @actor %>}
+            <% end %>
             action={@live_action}
             <%= @resource_singular %>={@<%= @resource_singular %>}
             patch={~p"<%= @route_prefix %>"}
@@ -57,6 +60,9 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Index d
         <.modal :if={@live_action == :new} id="<%= @resource_singular %>-modal" show on_cancel={JS.patch(~p"<%= @route_prefix %>")}>
           <.live_component
             module={<%= inspect Module.concat(@web_module, @resource_alias) %>Live.FormComponent}
+            <%= if @actor do %>
+              <%= @actor %>={@<%= @actor %>}
+            <% end %>
             id={:new}
             title={@page_title}
             action={@live_action}
@@ -69,6 +75,9 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Index d
           <.live_component
             module={<%= inspect Module.concat(@web_module, @resource_alias) %>Live.FormComponent}
             id={@<%= @resource_singular %>.<%= @pkey %>}
+            <%= if @actor do %>
+              <%= @actor %>={@<%= @actor %>}
+            <% end %>
             title={@page_title}
             action={@live_action}
             <%= @resource_singular %>={@<%= @resource_singular %>}
@@ -83,7 +92,18 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Index d
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, stream(socket, :<%= @resource_plural %>, <%= @api %>.read!(<%= @resource %>))}
+    <%= if @actor do %>
+      {:ok,
+        socket
+        <%= if @actor do %>
+          |> stream(:<%= @resource_plural %>, <%= @api %>.read!(<%= @resource %>, actor: socket.assigns[:<%= @actor %>]))
+        <% else %>
+          |> stream(:<%= @resource_plural %>, <%= @api %>.read!(<%= @resource %>))
+        <% end %>
+        |> assign_new(:<%= @actor %>, fn -> nil end)}
+    <% else %>
+      {:ok, stream(socket, :<%= @resource_plural %>, <%= @api %>.read!(<%= @resource %>))}
+    <% end %>
   end
 
   @impl true
@@ -112,7 +132,7 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Index d
   defp apply_action(socket, :index, _params) do
     socket
     |> assign(:page_title, "Listing <%= @resource_human_plural %>")
-    <%= if @update_action do %>
+    <%= if @update_action || @create_action do %>
       |> assign(:<%= @resource_singular %>, nil)
     <% end %>
   end

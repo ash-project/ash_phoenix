@@ -25,7 +25,7 @@ defmodule AshPhoenix.Gen.Live do
 
     {parsed, _, _} =
       OptionParser.parse(rest,
-        strict: [resource_plural: :string]
+        strict: [resource_plural: :string, actor: :string, no_actor: :boolean]
       )
 
     generate(
@@ -39,6 +39,34 @@ defmodule AshPhoenix.Gen.Live do
     Code.ensure_compiled!(api)
     Code.ensure_compiled!(resource)
 
+    opts =
+      if !opts[:actor] && opts[:interactive?] && !opts[:no_actor] do
+        if Mix.shell().yes?(
+             "Would you like to name your actor? For example: `current_user`. If you choose no, we will not add any actor logic."
+           ) do
+          actor =
+            Mix.shell().prompt("What would you like to name it? For example: `current_user`")
+            |> String.trim()
+
+          if actor == "" do
+            opts
+          else
+            Keyword.put(opts, :actor, actor)
+          end
+        else
+          opts
+        end
+      else
+        opts
+      end
+
+    opts =
+      if opts[:no_actor] do
+        Keyword.put(opts, :actor, nil)
+      else
+        opts
+      end
+
     if !Spark.Dsl.is?(api, Ash.Api) do
       raise "#{inspect(api)} is not a valid Ash Api module"
     end
@@ -51,7 +79,9 @@ defmodule AshPhoenix.Gen.Live do
       [
         api: inspect(api),
         resource: inspect(resource),
-        web_module: inspect(web_module())
+        web_module: inspect(web_module()),
+        actor: opts[:actor],
+        actor_opt: actor_opt(opts)
       ]
       |> add_resource_assigns(api, resource, opts)
 
@@ -122,7 +152,7 @@ defmodule AshPhoenix.Gen.Live do
       web_live
       |> Path.join(destination)
 
-    {formatter_function, options} =
+    {formatter_function, _options} =
       Mix.Tasks.Format.formatter_for_file(destination_path)
 
     contents =
@@ -263,19 +293,19 @@ defmodule AshPhoenix.Gen.Live do
         nil ->
           """
           #{short_name} = #{get_by_pkey}
-          #{inspect(api)}.destroy!(#{short_name})
+          #{inspect(api)}.destroy!(#{short_name}#{actor_opt(opts)})
           """
 
         interface ->
           """
           #{short_name} = #{get_by_pkey}
-          #{inspect(resource)}.#{interface.name}!(#{short_name})
+          #{inspect(resource)}.#{interface.name}!(#{short_name}#{actor_opt(opts)})
           """
       end
     end
   end
 
-  defp get_by_pkey(api, resource, pkey, _opts) do
+  defp get_by_pkey(api, resource, pkey, opts) do
     resource
     |> Ash.Resource.Info.interfaces()
     |> Enum.find(fn interface ->
@@ -283,10 +313,18 @@ defmodule AshPhoenix.Gen.Live do
     end)
     |> case do
       nil ->
-        "#{inspect(api)}.get!(#{inspect(resource)}, #{pkey}: #{pkey})}"
+        "#{inspect(api)}.get!(#{inspect(resource)}, #{pkey}#{actor_opt(opts)})}"
 
       interface ->
-        "#{inspect(resource)}.#{interface.name}!(#{pkey})"
+        "#{inspect(resource)}.#{interface.name}!(#{pkey}#{actor_opt(opts)})"
+    end
+  end
+
+  defp actor_opt(opts) do
+    if opts[:actor] do
+      ", actor: socket.assigns.#{opts[:actor]}"
+    else
+      ""
     end
   end
 

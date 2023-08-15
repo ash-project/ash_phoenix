@@ -44,25 +44,11 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.FormCom
   end
 
   @impl true
-  def update(%{<%= @resource_singular %>: <%= @resource_singular %>} = assigns, socket) do
-    form =
-      <%= cond do %>
-        <% @update_action && @create_action -> %>
-          if <%= @resource_singular %> do
-            AshPhoenix.Form.for_update(<%= @resource_singular %>, <%= inspect @update_action.name %>, api: <%= @api %>, as: <%= inspect @resource_singular %>)
-          else
-            AshPhoenix.Form.for_create(<%= @resource %>, <%= inspect @create_action.name %>, api: <%= @api %>, as: <%= inspect @resource_singular %>)
-          end
-        <% @update_action -> %>
-          AshPhoenix.Form.for_update(<%= @resource_singular %>, <%= inspect @update_action.name %>, api: <%= @api %>, as: <%= inspect @resource_singular %>)
-        <% @create_action -> %>
-          AshPhoenix.Form.for_create(<%= @resource_singular %>, <%= inspect @create_action.name %>, api: <%= @api %>, as: <%= inspect @resource_singular %>)
-      <% end %>
-
+  def update(assigns, socket) do
     {:ok,
      socket
      |> assign(assigns)
-     |> assign(form: to_form(form))}
+     |> assign_form()}
   end
 
   @impl true
@@ -95,4 +81,22 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.FormCom
   end
 
   defp notify_parent(msg), do: send(self(), {__MODULE__, msg})
+
+  defp assign_form(%{assigns: %{<%= @resource_singular %>: <%= @resource_singular %>}} = socket) do
+    form =
+      <%= cond do %>
+        <% @update_action && @create_action -> %>
+          if <%= @resource_singular %> do
+            AshPhoenix.Form.for_update(<%= @resource_singular %>, <%= inspect @update_action.name %>, api: <%= @api %>, as: <%= inspect @resource_singular %><%= @actor_opt %>)
+          else
+            AshPhoenix.Form.for_create(<%= @resource %>, <%= inspect @create_action.name %>, api: <%= @api %>, as: <%= inspect @resource_singular %><%= @actor_opt %>)
+          end
+        <% @update_action -> %>
+          AshPhoenix.Form.for_update(<%= @resource_singular %>, <%= inspect @update_action.name %>, api: <%= @api %>, as: <%= inspect @resource_singular %><%= @actor_opt %>)
+        <% @create_action -> %>
+          AshPhoenix.Form.for_create(<%= @resource_singular %>, <%= inspect @create_action.name %>, api: <%= @api %>, as: <%= inspect @resource_singular %><%= @actor_opt %>)
+      <% end %>
+
+    assign(socket, form: to_form(form))
+  end
 end
