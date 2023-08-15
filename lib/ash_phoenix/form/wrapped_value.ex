@@ -44,7 +44,7 @@ defmodule AshPhoenix.Form.WrappedValue do
             add_invalid_errors(value, :attribute, changeset, :value, error)
 
           {:error, error} ->
-            add_invalid_errors(value, :attributes, changeset, :value, error)
+            add_invalid_errors(value, :attribute, changeset, :value, error)
         end
       else
         changeset
@@ -87,15 +87,9 @@ defmodule AshPhoenix.Form.WrappedValue do
       else
         opts = Ash.Type.Helpers.error_to_exception_opts(message, %{name: attribute})
 
-        exception =
-          case type do
-            :attribute -> InvalidAttribute
-            :argument -> InvalidArgument
-          end
-
         Enum.reduce(opts, changeset, fn opts, changeset ->
           error =
-            exception.exception(
+            Ash.Error.Changes.InvalidAttribute.exception(
               value: value,
               field: Keyword.get(opts, :field),
               message: Keyword.get(opts, :message),

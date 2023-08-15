@@ -25,7 +25,7 @@ defmodule AshPhoenix.MixProject do
         "coveralls.github": :test
       ],
       dialyzer: [
-        plt_add_apps: [:ex_unit]
+        plt_add_apps: [:ex_unit, :mix]
       ],
       docs: docs(),
       package: package(),
