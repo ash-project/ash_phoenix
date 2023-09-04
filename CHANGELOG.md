@@ -5,6 +5,33 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.2.17](https://github.com/ash-project/ash_phoenix/compare/v1.2.16...v1.2.17) (2023-09-04)
+
+
+
+
+### Bug Fixes:
+
+* properly track form params for nested unions
+
+* produce type errors for wrapped union values
+
+* support only_touched? on submit as well
+
+* sanitize path for touched only
+
+* remove warning on Map.take
+
+### Improvements:
+
+* support providing an actor
+
+* initial stab at `mix ash.gen.live`
+
+* tests and better behavior for union forms
+
+* initial stab at support for forms against unions
+
 ## [v1.2.16](https://github.com/ash-project/ash_phoenix/compare/v1.2.15...v1.2.16) (2023-07-26)
 
 
