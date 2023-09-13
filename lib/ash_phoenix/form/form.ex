@@ -473,6 +473,27 @@ defmodule AshPhoenix.Form do
 
     prepare_source = opts[:prepare_source] || (& &1)
 
+    source =
+      resource
+      |> Ash.Changeset.new()
+      |> prepare_source.()
+      |> set_accessing_from(opts)
+
+    {source, opts} =
+      if opts[:api] || source.api do
+        Ash.Actions.Helpers.add_process_context(opts[:api], source, opts)
+      else
+        {source, opts}
+      end
+
+    source =
+      Ash.Changeset.for_create(
+        source,
+        action,
+        params,
+        changeset_opts
+      )
+
     %__MODULE__{
       resource: resource,
       action: action,
@@ -492,16 +513,7 @@ defmodule AshPhoenix.Form do
       prepare_params: opts[:prepare_params],
       prepare_source: opts[:prepare_source],
       opts: opts,
-      source:
-        resource
-        |> Ash.Changeset.new()
-        |> prepare_source.()
-        |> set_accessing_from(opts)
-        |> Ash.Changeset.for_create(
-          action,
-          params,
-          changeset_opts
-        )
+      source: source
     }
     |> set_changed?()
     |> set_validity()
@@ -561,6 +573,27 @@ defmodule AshPhoenix.Form do
         [data]
       )
 
+    source =
+      data
+      |> Ash.Changeset.new()
+      |> prepare_source.()
+      |> set_accessing_from(opts)
+
+    {source, opts} =
+      if opts[:api] || source.api do
+        Ash.Actions.Helpers.add_process_context(opts[:api], source, opts)
+      else
+        {source, opts}
+      end
+
+    source =
+      Ash.Changeset.for_update(
+        source,
+        action,
+        params,
+        changeset_opts
+      )
+
     %__MODULE__{
       resource: resource,
       data: data,
@@ -582,16 +615,7 @@ defmodule AshPhoenix.Form do
       opts: opts,
       id: id,
       name: name,
-      source:
-        data
-        |> Ash.Changeset.new()
-        |> prepare_source.()
-        |> set_accessing_from(opts)
-        |> Ash.Changeset.for_update(
-          action,
-          params,
-          changeset_opts
-        )
+      source: source
     }
     |> set_changed?()
     |> set_validity()
@@ -650,6 +674,27 @@ defmodule AshPhoenix.Form do
         [data]
       )
 
+    source =
+      data
+      |> Ash.Changeset.new()
+      |> prepare_source.()
+      |> set_accessing_from(opts)
+
+    {source, opts} =
+      if opts[:api] || source.api do
+        Ash.Actions.Helpers.add_process_context(opts[:api], source, opts)
+      else
+        {source, opts}
+      end
+
+    source =
+      Ash.Changeset.for_destroy(
+        source,
+        action,
+        params,
+        changeset_opts
+      )
+
     %__MODULE__{
       resource: resource,
       data: data,
@@ -671,16 +716,7 @@ defmodule AshPhoenix.Form do
       touched_forms: touched_forms(forms, params, opts),
       form_keys: Keyword.new(List.wrap(opts[:forms])),
       opts: opts,
-      source:
-        data
-        |> Ash.Changeset.new()
-        |> prepare_source.()
-        |> set_accessing_from(opts)
-        |> Ash.Changeset.for_destroy(
-          action,
-          params,
-          changeset_opts
-        )
+      source: source
     }
     |> set_changed?()
     |> set_validity()
@@ -745,6 +781,28 @@ defmodule AshPhoenix.Form do
         :prepare_source
       ])
 
+    source =
+      resource
+      |> Ash.Query.new()
+      |> prepare_source.()
+      |> set_accessing_from(opts)
+
+    {source, opts} =
+      if opts[:api] || source.api do
+        Ash.Actions.Helpers.add_process_context(opts[:api], source, opts)
+      else
+        {source, opts}
+      end
+
+    source =
+      Ash.Query.for_read(
+        source,
+        action,
+        params || %{},
+        query_opts
+      )
+      |> add_errors_for_unhandled_params(params)
+
     %__MODULE__{
       resource: resource,
       action: action,
@@ -765,17 +823,7 @@ defmodule AshPhoenix.Form do
       transform_params: opts[:transform_params],
       prepare_params: opts[:prepare_params],
       prepare_source: opts[:prepare_source],
-      source:
-        resource
-        |> Ash.Query.new()
-        |> prepare_source.()
-        |> set_accessing_from(opts)
-        |> Ash.Query.for_read(
-          action,
-          params || %{},
-          query_opts
-        )
-        |> add_errors_for_unhandled_params(params)
+      source: source
     }
     |> set_changed?()
     |> set_validity()
