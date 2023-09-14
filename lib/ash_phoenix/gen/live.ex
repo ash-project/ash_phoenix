@@ -313,7 +313,7 @@ defmodule AshPhoenix.Gen.Live do
     end)
     |> case do
       nil ->
-        "#{inspect(api)}.get!(#{inspect(resource)}, #{pkey}#{actor_opt(opts)})}"
+        "#{inspect(api)}.get!(#{inspect(resource)}, #{pkey}#{actor_opt(opts)})"
 
       interface ->
         "#{inspect(resource)}.#{interface.name}!(#{pkey}#{actor_opt(opts)})"
