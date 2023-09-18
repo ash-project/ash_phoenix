@@ -1566,13 +1566,6 @@ defmodule AshPhoenix.Form do
       type: {:fun, 1},
       doc:
         "A function to apply to the source (changeset or query) just before submitting the action. Must return the modified changeset."
-    ],
-    only_touched?: [
-      type: :boolean,
-      default: false,
-      doc: """
-      If set to true, only fields that have been marked as touched will be used.
-      """
     ]
   ]
 
@@ -1661,8 +1654,7 @@ defmodule AshPhoenix.Form do
       end
 
       changeset_params =
-        opts[:override_params] ||
-          params(form, only_touched?: Keyword.get(opts, :only_touched?, false))
+        opts[:override_params] || params(form)
 
       prepare_source = form.prepare_source || (& &1)
 

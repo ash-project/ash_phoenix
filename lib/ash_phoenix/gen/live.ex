@@ -1,4 +1,6 @@
 defmodule AshPhoenix.Gen.Live do
+  @moduledoc false
+
   def generate_from_cli(argv) do
     if Mix.Project.umbrella?() do
       Mix.raise(
@@ -209,6 +211,7 @@ defmodule AshPhoenix.Gen.Live do
     |> Ash.Resource.Info.public_attributes()
   end
 
+  # sobelow_skip ["DOS.BinToAtom"]
   defp action(resource, opts, type) do
     action =
       case opts[:"#{type}_action"] do
@@ -361,18 +364,18 @@ defmodule AshPhoenix.Gen.Live do
     end
   end
 
-  defp web_path() do
+  defp web_path do
     web_module().module_info[:compile][:source]
     |> Path.relative_to(root_path())
     |> Path.rootname()
   end
 
-  defp root_path() do
+  defp root_path do
     Mix.Project.get().module_info[:compile][:source]
     |> Path.dirname()
   end
 
-  defp web_module() do
+  defp web_module do
     base = Mix.Phoenix.base()
 
     cond do
