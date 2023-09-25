@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.2.18](https://github.com/ash-project/ash_phoenix/compare/v1.2.17...v1.2.18) (2023-09-25)
+
+
+
+
+### Bug Fixes:
+
+* undo previous change for `only_touched?` on form submit
+
+* remove stray } from liveview generator (#101)
+
+* honor ash context opts
+
 ## [v1.2.17](https://github.com/ash-project/ash_phoenix/compare/v1.2.16...v1.2.17) (2023-09-04)
 
 
