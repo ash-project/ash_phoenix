@@ -121,18 +121,8 @@ Add this to your config:
 
 import Config
 
-# For backwards compatibility, the following configuration is required.
-# see https://ash-hq.org/docs/guides/ash/latest/get-started#temporary-config for more details
-config :ash, :use_all_identities_in_manage_relationship?, false
-
 config :my_ash_phoenix_app,
   ash_apis: [MyAshPhoenixApp.Blog]
-```
-
-If you have already compiled your app, you may get errors recompiling it after adding this config. To solve for that, run the following command:
-
-```elixir
-mix deps.compile ash --force && MIX_ENV=test mix deps.compile ash --force
 ```
 
 ### Create the API and Registry
