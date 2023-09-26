@@ -62,8 +62,7 @@ defmodule AshPhoenix.MixProject do
         path
         |> Path.basename(".md")
         |> String.split(~r/[-_]/)
-        |> Enum.map(&String.capitalize/1)
-        |> Enum.join(" ")
+        |> Enum.map_join(" ", &capitalize/1)
         |> case do
           "F A Q" ->
             "FAQ"
@@ -76,6 +75,15 @@ defmodule AshPhoenix.MixProject do
        [
          title: title
        ]}
+    end)
+  end
+
+  defp capitalize(string) do
+    string
+    |> String.split(" ")
+    |> Enum.map(fn string ->
+      [hd | tail] = String.graphemes(string)
+      String.capitalize(hd) <> Enum.join(tail)
     end)
   end
 
@@ -98,13 +106,19 @@ defmodule AshPhoenix.MixProject do
       groups_for_extras: groups_for_extras(),
       groups_for_modules: [
         "Phoenix Helpers": [
+          AshPhoenix.LiveView,
+          AshPhoenix.SubdomainPlug
+        ],
+        Forms: [
           AshPhoenix.Form,
           AshPhoenix.Form.Auto,
+          AshPhoenix.Form.WrappedValue,
+          AshPhoenix.FormData.Error
+        ],
+        FilterForm: [
           AshPhoenix.FilterForm,
           AshPhoenix.FilterForm.Predicate,
-          AshPhoenix.LiveView,
-          AshPhoenix.FormData.Error,
-          AshPhoenix.SubdomainPlug
+          AshPhoenix.FilterForm.Arguments
         ],
         Errors: [
           AshPhoenix.Form.InvalidPath,

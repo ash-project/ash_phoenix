@@ -4,6 +4,8 @@ The AshPhoenix plugin adds lots of helpers for working with Phoenix Liveview (an
 
 `{:ash_phoenix, "~> 1.2.18"}`
 
+Check out the [getting started with phoenix guide](/documentation/tutorials/getting-started-with-ash-and-phoenix.md) for setup.
+
 ## Whats in the box?
 
 - `AshPhoenix.Form` - A form data structure for using resource actions with phoenix forms
