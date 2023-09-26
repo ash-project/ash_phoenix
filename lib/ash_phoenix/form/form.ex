@@ -481,7 +481,7 @@ defmodule AshPhoenix.Form do
 
     {source, opts} =
       if opts[:api] || source.api do
-        Ash.Actions.Helpers.add_process_context(opts[:api], source, opts)
+        Ash.Actions.Helpers.add_process_context(opts[:api] || source.api, source, opts)
       else
         {source, opts}
       end
@@ -581,7 +581,7 @@ defmodule AshPhoenix.Form do
 
     {source, opts} =
       if opts[:api] || source.api do
-        Ash.Actions.Helpers.add_process_context(opts[:api], source, opts)
+        Ash.Actions.Helpers.add_process_context(opts[:api] || source.api, source, opts)
       else
         {source, opts}
       end
@@ -682,7 +682,7 @@ defmodule AshPhoenix.Form do
 
     {source, opts} =
       if opts[:api] || source.api do
-        Ash.Actions.Helpers.add_process_context(opts[:api], source, opts)
+        Ash.Actions.Helpers.add_process_context(opts[:api] || source.api, source, opts)
       else
         {source, opts}
       end
@@ -789,7 +789,7 @@ defmodule AshPhoenix.Form do
 
     {source, opts} =
       if opts[:api] || source.api do
-        Ash.Actions.Helpers.add_process_context(opts[:api], source, opts)
+        Ash.Actions.Helpers.add_process_context(opts[:api] || source.api, source, opts)
       else
         {source, opts}
       end
