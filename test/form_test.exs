@@ -156,6 +156,19 @@ defmodule AshPhoenix.FormTest do
     end
   end
 
+  describe "validations and form values" do
+    test "validation errors don't clear fields" do
+      form =
+        AshPhoenix.Test.User
+        |> AshPhoenix.Form.for_create(:register)
+        |> AshPhoenix.Form.validate(%{"password" => "f"})
+        |> AshPhoenix.Form.validate(%{"password" => "fo"})
+        |> AshPhoenix.Form.validate(%{"password" => "fo", "password_confirmation" => "foo"})
+
+      assert AshPhoenix.Form.value(form, :password) == "fo"
+    end
+  end
+
   describe "form_for fields" do
     test "it should show simple field values" do
       form =
