@@ -166,7 +166,7 @@ defmodule AshPhoenix.MixProject do
 
   defp aliases do
     [
-      docs: ["docs", "ash.replace_doc_links"],
+      docs: ["docs", "spark.replace_doc_links"],
       sobelow: "sobelow --skip -i Config.Secrets --ignore-files lib/ash_phoenix/gen/live.ex"
     ]
   end
