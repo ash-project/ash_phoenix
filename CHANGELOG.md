@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.2.19](https://github.com/ash-project/ash_phoenix/compare/v1.2.18...v1.2.19) (2023-09-27)
+
+
+
+
+### Bug Fixes:
+
+* check for values in changeset params
+
+* properly supply api for context opts
+
 ## [v1.2.18](https://github.com/ash-project/ash_phoenix/compare/v1.2.17...v1.2.18) (2023-09-25)
 
 
