@@ -372,7 +372,7 @@ defmodule AshPhoenix.Form do
   import AshPhoenix.FormData.Helpers
 
   @doc "Calls the corresponding `for_*` function depending on the action type"
-  def for_action(resource_or_data, action, opts) do
+  def for_action(resource_or_data, action, opts \\ []) do
     {resource, data} =
       case resource_or_data do
         module when is_atom(resource_or_data) ->
