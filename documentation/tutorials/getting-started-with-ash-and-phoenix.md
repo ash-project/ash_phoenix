@@ -125,14 +125,13 @@ config :my_ash_phoenix_app,
   ash_apis: [MyAshPhoenixApp.Blog]
 ```
 
-### Create the API and Registry
+### Create the API and add Resources
 
 An Ash API can be thought of as a [Bounded Context](https://martinfowler.com/bliki/BoundedContext.html) in Domain Driven Design terms and can seen as analogous to a Phoenix context. Put simply, its a way of grouping related resources together. In our case our API will be called `MyAshPhoenixApp.Blog`.
 
-An Ash API points to an Ash registry. The registry in our case will be `MyAshPhoenixApp.Blog.Registry`
-An Ash registry points to one or more resources. In our case we will only have a single resource `MyAshPhoenixApp.Blog.Post`. We'll be taking a deeper look into that in the next section.
+An Ash API points to Ash resources. An Ash API can point to one or more resources. In our case we will only have a single resource `MyAshPhoenixApp.Blog.Post`. We'll be taking a deeper look into that in the next section.
 
-For now take a look at the `Blog` API and the `Blog.Registry`:
+For now take a look at the `Blog` API and the associated resources:
 
 ```elixir
 # lib/my_ash_phoenix_app/blog/blog.ex
@@ -141,23 +140,7 @@ defmodule MyAshPhoenixApp.Blog do
   use Ash.Api
 
   resources do
-    registry MyAshPhoenixApp.Blog.Registry
-  end
-end
-```
-
-```elixir
-# lib/my_ash_phoenix_app/blog/registry.ex
-
-defmodule MyAshPhoenixApp.Blog.Registry do
-  use Ash.Registry,
-    extensions: [
-      # This extension adds helpful compile time validations
-      Ash.Registry.ResourceValidations
-    ]
-
-  entries do
-    entry MyAshPhoenixApp.Blog.Post
+    resource MyAshPhoenixApp.Blog.Post
   end
 end
 ```
