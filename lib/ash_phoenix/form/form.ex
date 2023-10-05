@@ -35,6 +35,7 @@ defmodule AshPhoenix.Form do
       api: MyApi,
       forms: [auto?: true]
       ])
+    |> to_form()
   ```
 
   2. Explicitly configure the behavior of it using the `forms` option. See `for_create/3` for more.
@@ -62,6 +63,7 @@ defmodule AshPhoenix.Form do
           ]
         ]
       ])
+    |> to_form()
   ```
 
   ## LiveView
