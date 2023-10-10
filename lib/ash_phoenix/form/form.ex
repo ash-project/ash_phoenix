@@ -3509,8 +3509,7 @@ defmodule AshPhoenix.Form do
       |> Enum.map(fn error ->
         %{error | path: trail ++ error.path}
       end)
-
-    further_errors = further_errors ++ Enum.reject(errors, &(&1.path == trail))
+      |> Enum.filter(&(&1.path == trail))
 
     new_forms =
       form.forms
@@ -3525,12 +3524,12 @@ defmodule AshPhoenix.Form do
               synthesize_action_errors(
                 form,
                 trail ++ [config[:for] || key, index],
-                further_errors
+                errors
               )
             end)
           else
             if forms do
-              synthesize_action_errors(forms, trail ++ [config[:for] || key], further_errors)
+              synthesize_action_errors(forms, trail ++ [config[:for] || key], errors)
             end
           end
 
