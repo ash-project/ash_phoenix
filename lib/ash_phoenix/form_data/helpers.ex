@@ -151,6 +151,7 @@ defmodule AshPhoenix.FormData.Helpers do
       {field, message, vars} ->
         [{field, {message || "", transform_vars(vars)}}]
     end)
+    |> Enum.uniq()
   end
 
   defp transform_vars(vars) do
