@@ -346,7 +346,7 @@ defmodule AshPhoenix.Gen.Live do
           You can press enter to abort, and then configure one on the resource, for example:
 
               resource do
-                plural_name "tweets"
+                plural_name :tweets
               end
           >
           """
