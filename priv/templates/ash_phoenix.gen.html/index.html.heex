@@ -1,0 +1,24 @@
+<.header>
+  <%= @resource %> Listing
+  <:actions>
+    <.link href={~p"/<%= @route_prefix %>/new"}>
+      <.button>New <%= @resource %></.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table id="<%= @schema_plural %>" rows={@<%= @schema_plural %>} row_click={&JS.navigate(~p"/<%= @route_prefix %>/#{&1}")}>
+  <:col :let={<%= @schema_singular %>} label="Name"><%%= <%= @schema_singular %>.name %></:col>
+  <:col :let={<%= @schema_singular %>} label="Price"><%%= <%= @schema_singular %>.price %></:col>
+  <:action :let={<%= @schema_singular %>}>
+    <div class="sr-only">
+      <.link navigate={~p"/<%= @route_prefix %>/#{<%= @schema_singular %>}"}>Show</.link>
+    </div>
+    <.link navigate={~p"/<%= @route_prefix %>/#{<%= @schema_singular %>}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={<%= @schema_singular %>}>
+    <.link href={~p"/<%= @route_prefix %>/#{<%= @schema_singular %>}"} method="delete" data-confirm="Are you sure?">
+      Delete
+    </.link>
+  </:action>
+</.table>
