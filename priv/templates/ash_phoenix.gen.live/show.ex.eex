@@ -21,7 +21,7 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Show do
   <%= if @update_action do %>
     <.modal :if={@live_action == :edit} id="<%= @resource_singular %>-modal" show on_cancel={JS.patch(~p"<%= @route_prefix %>/#{@<%= @resource_singular %>}")}>
       <.live_component
-        module={<%= @web_module %>.Live.FormComponent}
+        module={<%= inspect Module.concat(@web_module, @resource_alias) %>Live.FormComponent}
         id={@<%= @resource_singular %>.id}
         title={@page_title}
         action={@live_action}
