@@ -40,6 +40,9 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
     app_web_path = "lib/#{Macro.underscore(opts[:api])}_web"
     resource_html_dir = Macro.underscore(opts[:resource]) <> "_html"
 
+    # TODO: Create form
+    # Module.concat(["App.Shop.Product"]) |> Ash.Resource.Info.attributes()
+
     # Define files and their respective destination paths
     template_files = %{
       "index.html.heex" => "#{app_web_path}/controllers/#{resource_html_dir}/index.html.heex"
