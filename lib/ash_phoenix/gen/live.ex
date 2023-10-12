@@ -331,15 +331,10 @@ defmodule AshPhoenix.Gen.Live do
     end
   end
 
-  defp plural_name!(_resource, opts) do
-    # check here after the first check Ash.Resource.Info.resource_plural_name(resource)
+  defp plural_name!(resource, opts) do
     plural_name =
-      opts[:resource_plural]
-
-    plural_name =
-      if plural_name do
-        plural_name
-      else
+      opts[:resource_plural] ||
+        Ash.Resource.Info.plural_name(resource) ||
         Mix.shell().prompt(
           """
           Please provide a plural_name. For example the plural of tweet is tweets.
@@ -353,7 +348,6 @@ defmodule AshPhoenix.Gen.Live do
           |> String.trim()
         )
         |> String.trim()
-      end
 
     case plural_name do
       empty when empty in ["", nil] ->
