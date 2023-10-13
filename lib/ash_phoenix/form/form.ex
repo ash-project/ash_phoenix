@@ -34,7 +34,7 @@ defmodule AshPhoenix.Form do
     |> AshPhoenix.Form.for_update(:update,
       api: MyApi,
       forms: [auto?: true]
-      ])
+      )
     |> to_form()
   ```
 
