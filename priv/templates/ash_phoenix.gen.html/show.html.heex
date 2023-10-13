@@ -1,0 +1,16 @@
+<.header>
+  <%= @resource %> <%%= @<%= @singular %>.id %>
+  <:subtitle>This is a <%= @singular %>> record from your database.</:subtitle>
+  <:actions>
+    <.link href={~p"/<%= @plural %>/#{@<%= @singular %>>}/edit"}>
+    <.button>Edit <%= @singular %>></.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Name"><%%= @<%= @singular %>.name %></:item>
+  <:item title="Price"><%%= @<%= @singular %>.price %></:item>
+</.list>
+
+<.back navigate={~p"/<%= @plural %>"}>Back to <%= @plural %>></.back>

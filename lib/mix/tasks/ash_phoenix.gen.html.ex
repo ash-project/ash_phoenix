@@ -52,7 +52,8 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
     # Define files and their respective destination paths
     template_files = %{
       "index.html.heex" => "#{app_web_path}/controllers/#{resource_html_dir}/index.html.heex",
-        "controller.ex" => "#{app_web_path}/controllers/#{Macro.underscore(opts[:resource])}_controller.ex"
+      "show.html.heex" => "#{app_web_path}/controllers/#{resource_html_dir}/show.html.heex",
+      "controller.ex" => "#{app_web_path}/controllers/#{Macro.underscore(opts[:resource])}_controller.ex"
     }
 
     Enum.each(template_files, fn {source_file, dest_file} ->
