@@ -53,7 +53,7 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
       "index.html.heex" => "#{app_web_path}/controllers/#{resource_html_dir}/index.html.heex",
       "show.html.heex" => "#{app_web_path}/controllers/#{resource_html_dir}/show.html.heex",
       "controller.ex" => "#{app_web_path}/controllers/#{Macro.underscore(opts[:resource])}_controller.ex",
-      "view.ex" => "#{app_web_path}/controllers/#{Macro.underscore(opts[:resource])}_html.ex"
+      "html.ex" => "#{app_web_path}/controllers/#{Macro.underscore(opts[:resource])}_html.ex"
     }
 
     Enum.each(template_files, fn {source_file, dest_file} ->
