@@ -1,7 +1,7 @@
 defmodule Mix.Tasks.AshPhoenix.Gen.Html do
   use Mix.Task
 
-  @shortdoc "Generates a controller and HTML views for an Ash resource."
+  @shortdoc "Generates a controller and HTML views for an existing Ash resource."
 
   @moduledoc """
   This task renders .ex and .heex templates and copies them to specified directories.
