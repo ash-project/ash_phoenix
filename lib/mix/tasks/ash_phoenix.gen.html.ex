@@ -38,17 +38,19 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
       source_path = Application.app_dir(:ash_phoenix, "priv/templates/ash_phoenix.gen.html")
       resource_html_dir = Macro.underscore(opts[:resource]) <> "_html"
 
-      binding = Enum.map(keys, fn key -> {key, opts[key]} end)
-      binding = [{:route_prefix, Macro.underscore(opts[:plural])} | binding]
-      binding = [{:app_name, app_name()} | binding]
-      binding = [{:attributes, attributes(opts)} | binding]
-      assigns = Enum.into(binding, %{})
-
       template_files(resource_html_dir, opts)
-      |> generate_files(assigns, source_path)
+      |> generate_files(assigns(keys, opts), source_path)
 
       print_shell_instructions(opts[:resource], opts[:plural])
     end
+  end
+
+  defp assigns(keys, opts) do
+    binding = Enum.map(keys, fn key -> {key, opts[key]} end)
+    binding = [{:route_prefix, Macro.underscore(opts[:plural])} | binding]
+    binding = [{:app_name, app_name()} | binding]
+    binding = [{:attributes, attributes(opts)} | binding]
+    Enum.into(binding, %{})
   end
 
   defp template_files(resource_html_dir, opts) do
