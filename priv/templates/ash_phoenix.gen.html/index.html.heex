@@ -9,7 +9,7 @@
 
 <.table id="<%= @plural %>" rows={@<%= @plural %>} row_click={&JS.navigate(~p"/<%= @route_prefix %>/#{&1}")}>
   <%= for attribute <- @attributes do %>
-    <:col :let={<%= @singular %>} label="<%= attribute.name %>"><%%= <%= @singular %>.<%= attribute.name %> %></:col>
+  <:col :let={<%= @singular %>} label="<%= attribute.name %>"><%%= <%= @singular %>.<%= attribute.name %> %></:col>
   <% end %>
   <:action :let={<%= @singular %>}>
     <div class="sr-only">

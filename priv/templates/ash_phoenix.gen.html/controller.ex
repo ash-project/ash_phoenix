@@ -9,7 +9,7 @@ defmodule <%= @app_name %>Web.<%= @resource %>Controller do
   end
 
   def new(conn, _params) do
-    render(conn, :new, form: create_form())
+    render(conn, :new, <%= @singular %>: create_form())
   end
 
   def create(conn, %{"<%= @singular %>" => <%= @singular %>_params}) do

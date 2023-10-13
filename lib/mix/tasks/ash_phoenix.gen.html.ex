@@ -37,22 +37,19 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
     app_web_path = "lib/#{Macro.underscore(app_name())}_web"
     resource_html_dir = Macro.underscore(opts[:resource]) <> "_html"
 
-    attributes = Module.concat(["#{app_name()}.#{opts[:api]}.#{opts[:resource]}"]) |> Ash.Resource.Info.attributes()
-    |> Enum.map(fn attr ->
-      %{name: attr.name, type: attr.type}
-    end) |> Enum.reject(fn %{name: name, type: type} ->
-        name == :id and type == Ash.Type.UUID
-      end)
-
     binding = [{:route_prefix, Macro.underscore(opts[:plural])} | binding]
     binding = [{:app_name, app_name()} | binding]
-    binding = [{:attributes, attributes} | binding]
+    binding = [{:attributes, attributes(opts)} | binding]
     assigns = Enum.into(binding, %{})
 
     template_files = %{
       "index.html.heex" => "#{app_web_path}/controllers/#{resource_html_dir}/index.html.heex",
       "show.html.heex" => "#{app_web_path}/controllers/#{resource_html_dir}/show.html.heex",
-      "controller.ex" => "#{app_web_path}/controllers/#{Macro.underscore(opts[:resource])}_controller.ex",
+      "resource_form.html.heex" =>
+        "#{app_web_path}/controllers/#{resource_html_dir}/#{Macro.underscore(opts[:resource])}_form.html.heex",
+      "new.html.heex" => "#{app_web_path}/controllers/#{resource_html_dir}/new.html.heex",
+      "controller.ex" =>
+        "#{app_web_path}/controllers/#{Macro.underscore(opts[:resource])}_controller.ex",
       "html.ex" => "#{app_web_path}/controllers/#{Macro.underscore(opts[:resource])}_html.ex"
     }
 
@@ -82,4 +79,17 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
     """)
   end
 
+  defp attributes(opts) do
+    Module.concat(["#{app_name()}.#{opts[:api]}.#{opts[:resource]}"])
+      |> Ash.Resource.Info.attributes()
+      |> Enum.map(fn attr ->
+        %{name: attr.name, type: attr.type, writable?: attr.writable?, private?: attr.private?}
+      end)
+      |> Enum.reject(fn %{private?: private?} ->
+        private? == true
+      end)
+      |> Enum.reject(fn %{name: name, type: type} ->
+        name == :id and type == Ash.Type.UUID
+      end)
+  end
 end

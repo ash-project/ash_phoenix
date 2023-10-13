@@ -1,17 +1,5 @@
-<.header>
-  <%= @resource %> <%%= @<%= @singular %>.id %>
-  <:subtitle>This is a <%= @singular %> record from your database.</:subtitle>
-  <:actions>
-    <.link href={~p"/<%= @plural %>/#{@<%= @singular %>}/edit"}>
-    <.button>Edit <%= @singular %></.button>
-    </.link>
-  </:actions>
-</.header>
+defmodule <%= @app_name %>Web.<%= @resource %>HTML do
+  use <%= @app_name %>Web, :html
 
-<.list>
-<%= for attribute <- @attributes do %>
-  <:item title="<%= attribute.name %>"><%%= @<%= @singular %>.<%= attribute.name %> %></:item>
-<% end %>
-</.list>
-
-<.back navigate={~p"/<%= @plural %>"}>Back to <%= @plural %></.back>
+  embed_templates "<%= @singular %>_html/*"
+end
