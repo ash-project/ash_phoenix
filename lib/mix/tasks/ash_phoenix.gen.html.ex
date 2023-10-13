@@ -8,8 +8,8 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
 
   ## Arguments
 
-  --api                The API (e.g. "Shop").
-  --resource           The resource (e.g. "Product").
+  --api         The API (e.g. "Shop").
+  --resource    The resource (e.g. "Product").
   --singular    The singular schema name (e.g. "product").
   --plural      The plural schema name (e.g. "products").
 
@@ -32,13 +32,13 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
     {opts, _, _} = OptionParser.parse(args, switches: Enum.map(keys, &{&1, :string}))
     binding = Enum.map(keys, fn key -> {key, opts[key]} end)
 
-    binding = [{:route_prefix, Macro.underscore(opts[:resource])} | binding]
+    binding = [{:route_prefix, Macro.underscore(opts[:plural])} | binding]
     binding = [{:app_name, app_name()} | binding]
     assigns = Enum.into(binding, %{})
 
     # Path to the source templates
     source_path = Application.app_dir(:ash_phoenix, "priv/templates/ash_phoenix.gen.html")
-    app_web_path = "lib/#{Macro.underscore(opts[:api])}_web"
+    app_web_path = "lib/#{Macro.underscore(app_name())}_web"
     resource_html_dir = Macro.underscore(opts[:resource]) <> "_html"
 
     # TODO: Create form
@@ -53,7 +53,8 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
     template_files = %{
       "index.html.heex" => "#{app_web_path}/controllers/#{resource_html_dir}/index.html.heex",
       "show.html.heex" => "#{app_web_path}/controllers/#{resource_html_dir}/show.html.heex",
-      "controller.ex" => "#{app_web_path}/controllers/#{Macro.underscore(opts[:resource])}_controller.ex"
+      "controller.ex" => "#{app_web_path}/controllers/#{Macro.underscore(opts[:resource])}_controller.ex",
+      "view.ex" => "#{app_web_path}/controllers/#{Macro.underscore(opts[:resource])}_html.ex"
     }
 
     Enum.each(template_files, fn {source_file, dest_file} ->
