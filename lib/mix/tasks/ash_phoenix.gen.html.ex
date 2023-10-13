@@ -33,6 +33,7 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
     binding = Enum.map(keys, fn key -> {key, opts[key]} end)
 
     binding = [{:route_prefix, Macro.underscore(opts[:resource])} | binding]
+    binding = [{:app_name, app_name()} | binding]
     assigns = Enum.into(binding, %{})
 
     # Path to the source templates
@@ -43,9 +44,15 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
     # TODO: Create form
     # Module.concat(["App.Shop.Product"]) |> Ash.Resource.Info.attributes()
 
+    # attributes = Module.concat(["App.Shop.Product"]) |> Ash.Resource.Info.attributes()
+    # |> Enum.map(fn attr ->
+    #   %{name: attr.name, type: attr.type}
+    # end)
+
     # Define files and their respective destination paths
     template_files = %{
-      "index.html.heex" => "#{app_web_path}/controllers/#{resource_html_dir}/index.html.heex"
+      "index.html.heex" => "#{app_web_path}/controllers/#{resource_html_dir}/index.html.heex",
+        "controller.ex" => "#{app_web_path}/controllers/#{Macro.underscore(opts[:resource])}_controller.ex"
     }
 
     Enum.each(template_files, fn {source_file, dest_file} ->
@@ -55,8 +62,23 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
       )
     end)
 
-    IO.puts(
-      "A controller and HTML views for the Ash resource #{opts[:resource]} have been created."
-    )
+    print_shell_instructions(opts[:resource], opts[:plural])
   end
+
+  @doc false
+  defp app_name do
+    app_name_atom = Mix.Project.config()[:app]
+    Macro.camelize(Atom.to_string(app_name_atom))
+  end
+
+  @doc false
+  defp print_shell_instructions(resource, plural) do
+    Mix.shell().info("""
+
+      Add the resource to your browser scope in lib/#{Macro.underscore(resource)}_web/router.ex:
+
+        resources "/#{plural}", #{resource}Controller
+    """)
+  end
+
 end
