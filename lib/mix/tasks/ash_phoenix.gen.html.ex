@@ -10,12 +10,12 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
 
   --api                The API (e.g. "Shop").
   --resource           The resource (e.g. "Product").
-  --schema_singular    The singular schema name (e.g. "product").
-  --schema_plural      The plural schema name (e.g. "products").
+  --singular    The singular schema name (e.g. "product").
+  --plural      The plural schema name (e.g. "products").
 
   ## Example
 
-  mix ash_phoenix.gen.html --api="Shop" --resource="Product"  --schema_singular="product" --schema_plural="products"
+  mix ash_phoenix.gen.html --api="Shop" --resource="Product" --singular="product" --plural="products"
   """
 
   def run([]) do
@@ -28,7 +28,7 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
 
   def run(args) do
     # Parse
-    keys = [:api, :resource, :schema_singular, :schema_plural]
+    keys = [:api, :resource, :singular, :plural]
     {opts, _, _} = OptionParser.parse(args, switches: Enum.map(keys, &{&1, :string}))
     binding = Enum.map(keys, fn key -> {key, opts[key]} end)
 
