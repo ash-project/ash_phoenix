@@ -9,8 +9,9 @@
 </.header>
 
 <.list>
-  <:item title="Name"><%%= @<%= @singular %>.name %></:item>
-  <:item title="Price"><%%= @<%= @singular %>.price %></:item>
+<%= for attribute <- @attributes do %>
+  <:item title="<%= attribute.name %>"><%%= @<%= @singular %>.<%= attribute.name %> %></:item>
+<% end %>
 </.list>
 
 <.back navigate={~p"/<%= @plural %>"}>Back to <%= @plural %></.back>

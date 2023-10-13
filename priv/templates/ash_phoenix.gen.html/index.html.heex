@@ -8,8 +8,9 @@
 </.header>
 
 <.table id="<%= @plural %>" rows={@<%= @plural %>} row_click={&JS.navigate(~p"/<%= @route_prefix %>/#{&1}")}>
-  <:col :let={<%= @singular %>} label="Name"><%%= <%= @singular %>.name %></:col>
-  <:col :let={<%= @singular %>} label="Price"><%%= <%= @singular %>.price %></:col>
+  <%= for attribute <- @attributes do %>
+    <:col :let={<%= @singular %>} label="<%= attribute.name %>"><%%= <%= @singular %>.<%= attribute.name %> %></:col>
+  <% end %>
   <:action :let={<%= @singular %>}>
     <div class="sr-only">
       <.link navigate={~p"/<%= @route_prefix %>/#{<%= @singular %>}"}>Show</.link>

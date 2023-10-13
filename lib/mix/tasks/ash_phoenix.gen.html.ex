@@ -27,29 +27,33 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
   end
 
   def run(args) do
-    # Parse
     keys = [:api, :resource, :singular, :plural]
     {opts, _, _} = OptionParser.parse(args, switches: Enum.map(keys, &{&1, :string}))
     binding = Enum.map(keys, fn key -> {key, opts[key]} end)
 
-    binding = [{:route_prefix, Macro.underscore(opts[:plural])} | binding]
-    binding = [{:app_name, app_name()} | binding]
-    assigns = Enum.into(binding, %{})
-
-    # Path to the source templates
     source_path = Application.app_dir(:ash_phoenix, "priv/templates/ash_phoenix.gen.html")
     app_web_path = "lib/#{Macro.underscore(app_name())}_web"
     resource_html_dir = Macro.underscore(opts[:resource]) <> "_html"
 
-    # TODO: Create form
-    # Module.concat(["App.Shop.Product"]) |> Ash.Resource.Info.attributes()
-
-    # attributes = Module.concat(["App.Shop.Product"]) |> Ash.Resource.Info.attributes()
+    # attributes = Module.concat(["#{app_name()}.#{opts[:api]}.#{opts[:resource]}"]) |> Ash.Resource.Info.attributes()
     # |> Enum.map(fn attr ->
     #   %{name: attr.name, type: attr.type}
     # end)
 
-    # Define files and their respective destination paths
+    attributes = [
+      %{name: :id, type: Ash.Type.UUID},
+      %{name: :name, type: Ash.Type.String},
+      %{name: :price, type: Ash.Type.Float},
+      %{name: :description, type: Ash.Type.String}
+    ] |> Enum.reject(fn %{name: name, type: type} ->
+        name == :id and type == Ash.Type.UUID
+      end)
+
+    binding = [{:route_prefix, Macro.underscore(opts[:plural])} | binding]
+    binding = [{:app_name, app_name()} | binding]
+    binding = [{:attributes, attributes} | binding]
+    assigns = Enum.into(binding, %{})
+
     template_files = %{
       "index.html.heex" => "#{app_web_path}/controllers/#{resource_html_dir}/index.html.heex",
       "show.html.heex" => "#{app_web_path}/controllers/#{resource_html_dir}/show.html.heex",
