@@ -83,15 +83,16 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
 
   defp attributes(opts) do
     Module.concat(["#{app_name()}.#{opts[:api]}.#{opts[:resource]}"])
-      |> Ash.Resource.Info.attributes()
-      |> Enum.map(fn attr ->
-        %{name: attr.name, type: attr.type, writable?: attr.writable?, private?: attr.private?}
-      end)
-      |> Enum.reject(fn %{private?: private?} ->
-        private? == true
-      end)
-      |> Enum.reject(fn %{name: name, type: type} ->
-        name == :id and type == Ash.Type.UUID
-      end)
+    |> Ash.Resource.Info.attributes()
+    |> Enum.map(&attribute_map/1)
+    |> Enum.reject(&reject_attribute?/1)
   end
+
+  defp attribute_map(attr) do
+    %{name: attr.name, type: attr.type, writable?: attr.writable?, private?: attr.private?}
+  end
+
+  defp reject_attribute?(%{name: :id, type: Ash.Type.UUID}), do: true
+  defp reject_attribute?(%{private?: true}), do: true
+  defp reject_attribute?(_), do: false
 end
