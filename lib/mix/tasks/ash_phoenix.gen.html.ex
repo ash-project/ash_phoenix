@@ -48,6 +48,7 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
       "resource_form.html.heex" =>
         "#{app_web_path}/controllers/#{resource_html_dir}/#{Macro.underscore(opts[:resource])}_form.html.heex",
       "new.html.heex" => "#{app_web_path}/controllers/#{resource_html_dir}/new.html.heex",
+      "edit.html.heex" => "#{app_web_path}/controllers/#{resource_html_dir}/edit.html.heex",
       "controller.ex" =>
         "#{app_web_path}/controllers/#{Macro.underscore(opts[:resource])}_controller.ex",
       "html.ex" => "#{app_web_path}/controllers/#{Macro.underscore(opts[:resource])}_html.ex"
@@ -63,13 +64,11 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
     print_shell_instructions(opts[:resource], opts[:plural])
   end
 
-  @doc false
   defp app_name do
     app_name_atom = Mix.Project.config()[:app]
     Macro.camelize(Atom.to_string(app_name_atom))
   end
 
-  @doc false
   defp print_shell_instructions(resource, plural) do
     Mix.shell().info("""
 

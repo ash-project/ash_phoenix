@@ -1,0 +1,8 @@
+<.header>
+  Edit <%= @resource %> <%%= @<%= @singular %>.id %>
+  <:subtitle>Use this form to manage <%= @singular %> records in your database.</:subtitle>
+</.header>
+
+<.<%= @singular %>_form <%= @singular %>={@<%= @singular %>} form={@form} action={~p"/<%= @plural %>/#{@<%= @singular %>}"} />
+
+<.back navigate={~p"/<%= @plural %>"}>Back to <%= @plural %></.back>

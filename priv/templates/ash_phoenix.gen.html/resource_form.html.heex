@@ -1,5 +1,5 @@
-<.simple_form :let={f} for={@<%= @singular %>} action={@action}>
-  <.error :if={@<%= @singular %>.submitted_once?}>
+<.simple_form :let={f} for={@form} action={@action}>
+  <.error :if={@form.submitted_once?}>
     Oops, something went wrong! Please check the errors below.
   </.error>
   <%= for attribute <- @attributes do %>
