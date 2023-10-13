@@ -15,7 +15,7 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
 
   ## Example
 
-  mix copy_templates --api="Shop" --resource="Product"  --schema_singular="product" --schema_plural="products"
+  mix ash_phoenix.gen.html --api="Shop" --resource="Product"  --schema_singular="product" --schema_plural="products"
   """
 
   def run([]) do
@@ -36,7 +36,7 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
     assigns = Enum.into(binding, %{})
 
     # Path to the source templates
-    source_path = "priv/templates/ash_phoenix.gen.html/"
+    source_path = Application.app_dir(:ash_phoenix, "priv/templates/ash_phoenix.gen.html")
     app_web_path = "lib/#{Macro.underscore(opts[:api])}_web"
     resource_html_dir = Macro.underscore(opts[:resource]) <> "_html"
 
@@ -51,7 +51,7 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
     Enum.each(template_files, fn {source_file, dest_file} ->
       Mix.Generator.create_file(
         dest_file,
-        EEx.eval_file(source_path <> source_file, assigns: assigns)
+        EEx.eval_file("#{source_path}/#{source_file}", assigns: assigns)
       )
     end)
 
