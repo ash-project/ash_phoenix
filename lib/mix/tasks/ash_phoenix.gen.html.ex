@@ -27,6 +27,8 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
   end
 
   def run(args) do
+    Mix.Task.run("compile")
+
     keys = [:api, :resource, :singular, :plural]
     {opts, _, _} = OptionParser.parse(args, switches: Enum.map(keys, &{&1, :string}))
     binding = Enum.map(keys, fn key -> {key, opts[key]} end)
@@ -35,17 +37,10 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
     app_web_path = "lib/#{Macro.underscore(app_name())}_web"
     resource_html_dir = Macro.underscore(opts[:resource]) <> "_html"
 
-    # attributes = Module.concat(["#{app_name()}.#{opts[:api]}.#{opts[:resource]}"]) |> Ash.Resource.Info.attributes()
-    # |> Enum.map(fn attr ->
-    #   %{name: attr.name, type: attr.type}
-    # end)
-
-    attributes = [
-      %{name: :id, type: Ash.Type.UUID},
-      %{name: :name, type: Ash.Type.String},
-      %{name: :price, type: Ash.Type.Float},
-      %{name: :description, type: Ash.Type.String}
-    ] |> Enum.reject(fn %{name: name, type: type} ->
+    attributes = Module.concat(["#{app_name()}.#{opts[:api]}.#{opts[:resource]}"]) |> Ash.Resource.Info.attributes()
+    |> Enum.map(fn attr ->
+      %{name: attr.name, type: attr.type}
+    end) |> Enum.reject(fn %{name: name, type: type} ->
         name == :id and type == Ash.Type.UUID
       end)
 
