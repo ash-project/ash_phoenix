@@ -5,6 +5,23 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.2.20](https://github.com/ash-project/ash_phoenix/compare/v1.2.19...v1.2.20) (2023-10-13)
+
+
+
+
+### Bug Fixes:
+
+* Generator: Consider Resource.Info.plural_name as the help text promises (#110)
+
+* Fix module name for Show -> Update in generator (#109)
+
+* don't multiply error messages (#107)
+
+* ensure errors are unique in form
+
+* make opts optional on `for_action/3`
+
 ## [v1.2.19](https://github.com/ash-project/ash_phoenix/compare/v1.2.18...v1.2.19) (2023-09-27)
 
 

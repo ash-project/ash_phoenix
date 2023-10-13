@@ -2,7 +2,7 @@
 
 The AshPhoenix plugin adds lots of helpers for working with Phoenix Liveview (and regular views).
 
-`{:ash_phoenix, "~> 1.2.19"}`
+`{:ash_phoenix, "~> 1.2.20"}`
 
 Check out the [getting started with phoenix guide](/documentation/tutorials/getting-started-with-ash-and-phoenix.md) for setup.
 
