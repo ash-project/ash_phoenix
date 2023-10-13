@@ -4,9 +4,9 @@
   </.error>
   <%= for attribute <- @attributes do %>
     <%= if attribute.type in [Ash.Type.Integer, Ash.Type.Float] do %>
-    <.input field={f[:<%= attribute.name %>]} type="number" label="<%= attribute.name %>" />
-    <%= else %>
-    <.input field={f[:<%= attribute.name %>]} type="text" label="<%= attribute.name %>" />
+  <.input field={f[:<%= attribute.name %>]} type="number" label="<%= attribute.name %>" />
+    <% else %>
+  <.input field={f[:<%= attribute.name %>]} type="text" label="<%= attribute.name %>" />
     <% end %>
   <% end %>
   <:actions>

@@ -54,14 +54,17 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
       "html.ex" => "#{app_web_path}/controllers/#{Macro.underscore(opts[:resource])}_html.ex"
     }
 
+    generate_files(template_files, assigns, source_path)
+    print_shell_instructions(opts[:resource], opts[:plural])
+  end
+
+  defp generate_files(template_files, assigns, source_path) do
     Enum.each(template_files, fn {source_file, dest_file} ->
       Mix.Generator.create_file(
         dest_file,
         EEx.eval_file("#{source_path}/#{source_file}", assigns: assigns)
       )
     end)
-
-    print_shell_instructions(opts[:resource], opts[:plural])
   end
 
   defp app_name do
