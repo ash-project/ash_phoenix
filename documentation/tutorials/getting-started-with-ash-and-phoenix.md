@@ -385,9 +385,9 @@ Now isn't that more convenient?
 Now we know how to interact with our resource, let's connect it to a simple Phoenix LiveView. Here is the LiveView below. If you are using phoenix live_view <= 0.18, you will need to use `let={}` instead of `:let={}`.
 
 ```elixir
-# lib/my_ash_phoenix_app_web/example_live_view.ex
+# lib/my_ash_phoenix_app_web/posts_live.ex
 
-defmodule MyAshPhoenixAppWeb.ExampleLiveView do
+defmodule MyAshPhoenixAppWeb.PostsLive do
   use MyAshPhoenixAppWeb, :live_view
   import Phoenix.HTML.Form
   alias MyAshPhoenixApp.Blog.Post
@@ -471,7 +471,7 @@ Don't forget to add the LiveView to your router.
 # lib/my_ash_phoenix_app_web/router.ex
   scope "/", MyAshPhoenixAppWeb do
     # ...
-    live "/posts", ExampleLiveView
+    live "/posts", PostsLive
   end
 ```
 
