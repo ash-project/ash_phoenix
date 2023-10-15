@@ -468,7 +468,7 @@ end
 Don't forget to add the LiveView to your router.
 
 ```elixir
-# lib/my_ash_phoenix_web_app/
+# lib/my_ash_phoenix_web_app/router.ex
   scope "/", MyAshPhoenixAppWeb do
     # ...
     live "/posts", ExampleLiveView
