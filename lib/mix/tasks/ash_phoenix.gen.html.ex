@@ -8,14 +8,13 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
 
   ## Arguments
 
-  --api         The API (e.g. "Shop").
-  --resource    The resource (e.g. "Product").
-  --singular    The singular schema name (e.g. "product").
-  --plural      The plural schema name (e.g. "products").
+  api         The API (e.g. "Shop").
+  resource    The resource (e.g. "Product").
+  plural      The plural schema name (e.g. "products").
 
   ## Example
 
-  mix ash_phoenix.gen.html --api="Shop" --resource="Product" --singular="product" --plural="products"
+  mix ash_phoenix.gen.html Shop Product products
   """
 
   def run([]) do
@@ -26,22 +25,31 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
     """)
   end
 
-  def run(args) do
+  def run(args) when length(args) == 3 do
     Mix.Task.run("compile")
 
-    keys = [:api, :resource, :singular, :plural]
-    {opts, _, _} = OptionParser.parse(args, switches: Enum.map(keys, &{&1, :string}))
+    [api, resource, plural] = args
+    singular = String.downcase(resource)
 
-    unless Code.ensure_loaded?(resource_module(opts)) do
-      Mix.shell().info("The resource #{app_name()}.#{opts[:api]}.#{opts[:resource]} does not exist.")
-    else
+    opts = %{
+      api: api,
+      resource: resource,
+      singular: singular,
+      plural: plural
+    }
+
+    if Code.ensure_loaded?(resource_module(opts)) do
       source_path = Application.app_dir(:ash_phoenix, "priv/templates/ash_phoenix.gen.html")
       resource_html_dir = Macro.underscore(opts[:resource]) <> "_html"
 
       template_files(resource_html_dir, opts)
-      |> generate_files(assigns(keys, opts), source_path)
+      |> generate_files(assigns([:api, :resource, :singular, :plural], opts), source_path)
 
       print_shell_instructions(opts[:resource], opts[:plural])
+    else
+      Mix.shell().info(
+        "The resource #{app_name()}.#{opts[:api]}.#{opts[:resource]} does not exist."
+      )
     end
   end
 
