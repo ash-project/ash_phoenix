@@ -1,0 +1,8 @@
+<.header>
+  New <%= @resource %>
+  <:subtitle>Use this form to manage <%= @singular %> records in your database.</:subtitle>
+</.header>
+
+<.<%= @singular %>_form form={@form} action={~p"/<%= @plural %>/"} />
+
+<.back navigate={~p"/products"}>Back to <%= @plural %></.back>
