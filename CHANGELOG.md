@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.2.21](https://github.com/ash-project/ash_phoenix/compare/v1.2.20...v1.2.21) (2023-10-24)
+
+
+
+
+### Improvements:
+
+* ash_phoenix.gen.html generator (#112)
+
 ## [v1.2.20](https://github.com/ash-project/ash_phoenix/compare/v1.2.19...v1.2.20) (2023-10-13)
 
 
