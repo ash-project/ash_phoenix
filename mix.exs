@@ -124,6 +124,10 @@ defmodule AshPhoenix.MixProject do
           AshPhoenix.LiveView,
           AshPhoenix.SubdomainPlug
         ],
+        Generators: [
+          Mix.Tasks.AshPhoenix.Gen.Html,
+          Mix.Tasks.AshPhoenix.Gen.Live
+        ],
         Forms: [
           AshPhoenix.Form,
           AshPhoenix.Form.Auto,

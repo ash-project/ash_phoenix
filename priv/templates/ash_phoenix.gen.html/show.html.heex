@@ -10,7 +10,7 @@
 
 <.list>
 <%= for attribute <- @attributes do %>
-  <:item title="<%= attribute.name %>"><%%= @<%= @singular %>.<%= attribute.name %> %></:item>
+  <:item title="<%= Phoenix.Naming.hunamize(attribute.name) %>"><%%= @<%= @singular %>.<%= attribute.name %> %></:item>
 <% end %>
 </.list>
 

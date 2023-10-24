@@ -2,13 +2,25 @@
   <.error :if={@form.submitted_once?}>
     Oops, something went wrong! Please check the errors below.
   </.error>
-  <%= for attribute <- @attributes do %>
+  <%%= if @form.type == :update do %>
+  <%= for attribute <- @update_attributes do %>
     <%= if attribute.type in [Ash.Type.Integer] do %>
-  <.input field={f[:<%= attribute.name %>]} type="number" label="<%= attribute.name %>" />
+  <.input field={f[:<%= attribute.name %>]} type="number" label="<%= Phoenix.Naming.humanize(attribute.name) %>" />
     <% else %>
-  <.input field={f[:<%= attribute.name %>]} type="text" label="<%= attribute.name %>" />
+  <.input field={f[:<%= attribute.name %>]} type="text" label="<%= Phoenix.Naming.hunamize(attribute.name) %>" />
     <% end %>
   <% end %>
+  <%% end %>
+
+  <%%= if @form.type == :create do %>
+  <%= for attribute <- @update_attributes do %>
+    <%= if attribute.type in [Ash.Type.Integer] do %>
+  <.input field={f[:<%= attribute.name %>]} type="number" label="<%= Phoenix.Naming.humanize(attribute.name) %>" />
+    <% else %>
+  <.input field={f[:<%= attribute.name %>]} type="text" label="<%= Phoenix.Naming.humanize(attribute.name) %>" />
+    <% end %>
+  <% end %>
+  <%% end %>
   <:actions>
     <.button>Save Product</.button>
   </:actions>

@@ -2385,9 +2385,8 @@ defmodule AshPhoenix.Form do
   defp get_non_attribute_non_argument_param(changeset, form, field) do
     if Ash.Resource.Info.attribute(changeset.resource, field) ||
          Enum.any?(changeset.action.arguments, &(&1.name == field)) do
-      with :error <- Map.fetch(changeset.params, field),
-           :error <- Map.fetch(changeset.params, to_string(field)) do
-        :error
+      with :error <- Map.fetch(changeset.params, field) do
+        Map.fetch(changeset.params, to_string(field))
       end
     else
       Map.fetch(AshPhoenix.Form.params(form), Atom.to_string(field))

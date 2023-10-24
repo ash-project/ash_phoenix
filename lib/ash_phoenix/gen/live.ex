@@ -2,38 +2,12 @@ defmodule AshPhoenix.Gen.Live do
   @moduledoc false
 
   def generate_from_cli(argv) do
-    if Mix.Project.umbrella?() do
-      Mix.raise(
-        "mix phx.gen.live must be invoked from within your *_web application root directory"
-      )
-    end
-
-    {api, resource, rest} =
-      case argv do
-        [api, resource | rest] ->
-          {api, resource, rest}
-
-        argv ->
-          raise "Not enough arguments. Expected 2, got #{Enum.count(argv)}"
-      end
-
-    if String.starts_with?(api, "-") do
-      raise "Expected first argument to be an api module, not an option"
-    end
-
-    if String.starts_with?(resource, "-") do
-      raise "Expected second argument to be a resource module, not an option"
-    end
-
-    {parsed, _, _} =
-      OptionParser.parse(rest,
-        strict: [resource_plural: :string, actor: :string, no_actor: :boolean]
-      )
+    {api, resource, opts, _rest} = AshPhoenix.Gen.parse_opts(argv)
 
     generate(
-      Module.concat([api]),
-      Module.concat([resource]),
-      Keyword.put(parsed, :interactive?, true)
+      api,
+      resource,
+      Keyword.put(opts, :interactive?, true)
     )
   end
 
@@ -47,11 +21,11 @@ defmodule AshPhoenix.Gen.Live do
              "Would you like to name your actor? For example: `current_user`. If you choose no, we will not add any actor logic."
            ) do
           actor =
-            Mix.shell().prompt("What would you like to name it? For example: `current_user`")
+            Mix.shell().prompt("What would you like to name it? Default: `current_user`")
             |> String.trim()
 
           if actor == "" do
-            opts
+            Keyword.put(opts, :actor, "current_user")
           else
             Keyword.put(opts, :actor, actor)
           end
@@ -172,7 +146,7 @@ defmodule AshPhoenix.Gen.Live do
       |> Ash.Resource.Info.short_name()
       |> to_string()
 
-    plural_name = plural_name!(resource, opts)
+    plural_name = opts[:resource_plural]
 
     pkey =
       case Ash.Resource.Info.primary_key(resource) do
@@ -328,33 +302,6 @@ defmodule AshPhoenix.Gen.Live do
       ", actor: socket.assigns.#{opts[:actor]}"
     else
       ""
-    end
-  end
-
-  defp plural_name!(resource, opts) do
-    plural_name =
-      opts[:resource_plural] ||
-        Ash.Resource.Info.plural_name(resource) ||
-        Mix.shell().prompt(
-          """
-          Please provide a plural_name. For example the plural of tweet is tweets.
-          You can press enter to abort, and then configure one on the resource, for example:
-
-              resource do
-                plural_name :tweets
-              end
-          >
-          """
-          |> String.trim()
-        )
-        |> String.trim()
-
-    case plural_name do
-      empty when empty in ["", nil] ->
-        raise("Must configure `plural_name` on resource or provide --resource-plural")
-
-      plural_name ->
-        to_string(plural_name)
     end
   end
 

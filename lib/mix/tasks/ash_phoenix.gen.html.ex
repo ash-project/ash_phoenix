@@ -6,18 +6,14 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
   @moduledoc """
   This task renders .ex and .heex templates and copies them to specified directories.
 
-  ## Arguments
+  #{AshPhoenix.Gen.docs()}
 
-  api         The API (e.g. "Shop").
-  resource    The resource (e.g. "Product").
-  plural      The plural schema name (e.g. "products").
-
-  ## Example
-
-  mix ash_phoenix.gen.html Shop Product products
+  mix ash_phoenix.gen.html MyApp.Shop MyApp.Shop.Product --plural-name products
   """
 
   def run([]) do
+    not_umbrella!()
+
     Mix.shell().info("""
     #{Mix.Task.shortdoc(__MODULE__)}
 
@@ -25,55 +21,70 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
     """)
   end
 
-  def run(args) when length(args) == 3 do
+  def run(args) do
+    not_umbrella!()
     Mix.Task.run("compile")
 
-    [api, resource, plural] = args
-    singular = String.downcase(resource)
+    {api, resource, opts, _} = AshPhoenix.Gen.parse_opts(args)
+
+    singular = to_string(Ash.Resource.Info.short_name(resource))
 
     opts = %{
-      api: api,
-      resource: resource,
+      resource: List.last(Module.split(resource)),
+      full_resource: resource,
+      full_api: api,
       singular: singular,
-      plural: plural
+      plural: opts[:resource_plural]
     }
 
-    if Code.ensure_loaded?(resource_module(opts)) do
+    if Code.ensure_loaded?(resource) do
       source_path = Application.app_dir(:ash_phoenix, "priv/templates/ash_phoenix.gen.html")
-      resource_html_dir = Macro.underscore(opts[:resource]) <> "_html"
+      resource_html_dir = to_string(opts[:singular]) <> "_html"
 
       template_files(resource_html_dir, opts)
-      |> generate_files(assigns([:api, :resource, :singular, :plural], opts), source_path)
+      |> generate_files(
+        assigns([:api, :full_resource, :full_api, :resource, :singular, :plural], resource, opts),
+        source_path
+      )
 
-      print_shell_instructions(opts[:resource], opts[:plural])
+      print_shell_instructions(opts)
     else
       Mix.shell().info(
-        "The resource #{app_name()}.#{opts[:api]}.#{opts[:resource]} does not exist."
+        "The resource #{inspect(opts[:api])}.#{inspect(opts[:resource])} does not exist."
       )
     end
   end
 
-  defp assigns(keys, opts) do
+  defp not_umbrella! do
+    if Mix.Project.umbrella?() do
+      Mix.raise(
+        "mix phx.gen.html must be invoked from within your *_web application root directory"
+      )
+    end
+  end
+
+  defp assigns(keys, resource, opts) do
     binding = Enum.map(keys, fn key -> {key, opts[key]} end)
-    binding = [{:route_prefix, Macro.underscore(opts[:plural])} | binding]
+    binding = [{:route_prefix, to_string(opts[:plural])} | binding]
     binding = [{:app_name, app_name()} | binding]
-    binding = [{:attributes, attributes(opts)} | binding]
+    binding = [{:attributes, attributes(resource)} | binding]
+    binding = [{:update_attributes, update_attributes(resource)} | binding]
+    binding = [{:create_attributes, create_attributes(resource)} | binding]
     Enum.into(binding, %{})
   end
 
   defp template_files(resource_html_dir, opts) do
-    app_web_path = "lib/#{Macro.underscore(app_name())}_web"
+    app_web_path = "lib/#{app_name_underscore()}_web"
 
     %{
       "index.html.heex" => "#{app_web_path}/controllers/#{resource_html_dir}/index.html.heex",
       "show.html.heex" => "#{app_web_path}/controllers/#{resource_html_dir}/show.html.heex",
       "resource_form.html.heex" =>
-        "#{app_web_path}/controllers/#{resource_html_dir}/#{Macro.underscore(opts[:resource])}_form.html.heex",
+        "#{app_web_path}/controllers/#{resource_html_dir}/#{opts[:singular]}_form.html.heex",
       "new.html.heex" => "#{app_web_path}/controllers/#{resource_html_dir}/new.html.heex",
       "edit.html.heex" => "#{app_web_path}/controllers/#{resource_html_dir}/edit.html.heex",
-      "controller.ex" =>
-        "#{app_web_path}/controllers/#{Macro.underscore(opts[:resource])}_controller.ex",
-      "html.ex" => "#{app_web_path}/controllers/#{Macro.underscore(opts[:resource])}_html.ex"
+      "controller.ex" => "#{app_web_path}/controllers/#{opts[:singular]}_controller.ex",
+      "html.ex" => "#{app_web_path}/controllers/#{opts[:singular]}_html.ex"
     }
   end
 
@@ -86,36 +97,63 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
     end)
   end
 
+  defp app_name_underscore do
+    Mix.Project.config()[:app]
+  end
+
   defp app_name do
     app_name_atom = Mix.Project.config()[:app]
     Macro.camelize(Atom.to_string(app_name_atom))
   end
 
-  defp print_shell_instructions(resource, plural) do
+  defp print_shell_instructions(opts) do
     Mix.shell().info("""
 
-      Add the resource to your browser scope in lib/#{Macro.underscore(resource)}_web/router.ex:
+      Add the resource to your browser scope in lib/#{opts[:singular]}_web/router.ex:
 
-        resources "/#{plural}", #{resource}Controller
+        resources "/#{opts[:plural]}", #{opts[:resource]}Controller
     """)
   end
 
-  defp resource_module(opts) do
-    Module.concat(["#{app_name()}.#{opts[:api]}.#{opts[:resource]}"])
+  defp attributes(resource) do
+    resource
+    |> Ash.Resource.Info.public_attributes()
+    |> Enum.reject(&(&1.type == Ash.Type.UUID))
+    |> Enum.map(&attribute_map/1)
   end
 
-  defp attributes(opts) do
-    resource_module(opts)
-    |> Ash.Resource.Info.attributes()
+  defp create_attributes(resource) do
+    create_action = Ash.Resource.Info.primary_action!(resource, :create)
+
+    attrs =
+      create_action.accept
+      |> Enum.map(&Ash.Resource.Info.attribute(resource, &1))
+      |> Enum.filter(& &1.writable?)
+
+    create_action.arguments
+    |> Enum.concat(attrs)
     |> Enum.map(&attribute_map/1)
-    |> Enum.reject(&reject_attribute?/1)
+  end
+
+  defp update_attributes(resource) do
+    update_action = Ash.Resource.Info.primary_action!(resource, :update)
+
+    attrs =
+      update_action.accept
+      |> Enum.map(&Ash.Resource.Info.attribute(resource, &1))
+      |> Enum.filter(& &1.writable?)
+
+    update_action.arguments
+    |> Enum.concat(attrs)
+    |> Enum.map(&attribute_map/1)
   end
 
   defp attribute_map(attr) do
-    %{name: attr.name, type: attr.type, writable?: attr.writable?, private?: attr.private?}
+    %{
+      name: attr.name,
+      type: attr.type,
+      writable?: Map.get(attr, :writable?, true),
+      private?: attr.private?
+    }
   end
-
-  defp reject_attribute?(%{name: :id, type: Ash.Type.UUID}), do: true
-  defp reject_attribute?(%{private?: true}), do: true
-  defp reject_attribute?(_), do: false
 end
