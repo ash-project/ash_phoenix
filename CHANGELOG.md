@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.2.23](https://github.com/ash-project/ash_phoenix/compare/v1.2.22...v1.2.23) (2023-10-24)
+
+
+
+
+### Bug Fixes:
+
+* remove typo in template
+
 ## [v1.2.22](https://github.com/ash-project/ash_phoenix/compare/v1.2.21...v1.2.22) (2023-10-24)
 
 
