@@ -7,7 +7,7 @@
     <%= if attribute.type in [Ash.Type.Integer] do %>
   <.input field={f[:<%= attribute.name %>]} type="number" label="<%= Phoenix.Naming.humanize(attribute.name) %>" />
     <% else %>
-  <.input field={f[:<%= attribute.name %>]} type="text" label="<%= Phoenix.Naming.hunamize(attribute.name) %>" />
+  <.input field={f[:<%= attribute.name %>]} type="text" label="<%= Phoenix.Naming.humanize(attribute.name) %>" />
     <% end %>
   <% end %>
   <%% end %>
