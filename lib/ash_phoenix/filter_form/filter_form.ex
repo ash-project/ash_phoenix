@@ -75,19 +75,19 @@ defmodule AshPhoenix.FilterForm do
         <div class="flex flex-row gap-2 items-center">Filter</div>
         <div class="flex flex-row gap-2 items-center">
           <.input type="select" field={@component[:operator]} options={["and", "or"]} />
-          <.button phx-click="add_filter_group" phx-value-component-id={@component.id} type="button">
+          <.button phx-click="add_filter_group" phx-value-component-id={@component.source.id} type="button">
             Add Group
           </.button>
           <.button
             phx-click="add_filter_predicate"
-            phx-value-component-id={@component.id}
+            phx-value-component-id={@component.source.id}
             type="button"
           >
             Add Predicate
           </.button>
           <.button
             phx-click="remove_filter_component"
-            phx-value-component-id={@component.id}
+            phx-value-component-id={@component.source.id}
             type="button"
           >
             Remove Group
@@ -119,7 +119,7 @@ defmodule AshPhoenix.FilterForm do
       <.input field={@component[:value]} />
       <.button
         phx-click="remove_filter_component"
-        phx-value-component-id={@component.id}
+        phx-value-component-id={@component.source.id}
         type="button"
       >
         Remove
