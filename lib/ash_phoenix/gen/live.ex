@@ -377,7 +377,6 @@ defmodule AshPhoenix.Gen.Live do
                 <.input
                 field={@form[#{inspect(field.name)}]}
                 type="select"
-                multiple
                 label="#{label(field.name)}"
                 options={Ash.Resource.Info.attribute(#{inspect(resource)}, #{inspect(field.name)}).constraints[:one_of]}
                 />
