@@ -16,6 +16,12 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Show do
     <% end %>
   </.header>
 
+  <.list>
+    <%= for attribute <- @attrs do %>
+      <:item title="<%= Phoenix.Naming.humanize(attribute.name) %>"><%%= @<%= @resource_singular %>.<%= attribute.name %> %></:item>
+    <% end %>
+  </.list>
+
   <.back navigate={~p"<%= @route_prefix %>"}>Back to <%= @resource_plural %></.back>
 
   <%= if @update_action do %>
