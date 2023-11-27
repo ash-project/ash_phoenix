@@ -4,7 +4,7 @@ defmodule AshPhoenix.FormTest do
   import ExUnit.CaptureLog
 
   alias AshPhoenix.Form
-  alias AshPhoenix.Test.{Api, Comment, OtherApi, Post, PostWithDefault}
+  alias AshPhoenix.Test.{Api, Author, Comment, OtherApi, Post, PostWithDefault}
   alias Phoenix.HTML.FormData
 
   describe "validate_opts" do
@@ -771,6 +771,45 @@ defmodule AshPhoenix.FormTest do
 
       assert [nested_form] = inputs_for(form, :post)
       assert nested_form.errors == [{:text, {"is required", []}}]
+    end
+
+    test "errors with a path are propagated down to the appropirate nested form" do
+      author = %Author{
+        email: "me@example.com"
+      }
+
+      form =
+        author
+        |> Form.for_update(:update_with_embedded_argument, api: Api, forms: [auto?: true])
+        |> Form.add_form(:embedded_argument, params: %{})
+        |> Form.validate(%{"embedded_argument" => %{"value" => "you@example.com"}})
+        |> form_for("action")
+        [nested_form] = inputs_for(form, :embedded_argument)
+
+
+        # This is the top level error with a path to the nest form.
+        assert [
+          %Ash.Error.Changes.InvalidArgument{
+            field: :value,
+            message: "must match email",
+            value: "you@example.com",
+            path: [:embedded_argument],
+            class: :invalid
+          }
+        ] = form.source.source.errors
+        assert form.errors == []
+
+        # This is the error on the nested form.
+        assert [
+          %Ash.Error.Changes.InvalidArgument{
+            field: :value,
+            message: "must match email",
+            value: "you@example.com",
+            path: [],
+            class: :invalid
+          }
+        ] = nested_form.source.source.errors
+        assert nested_form.errors == [{:value, {"must match email", []}}]
     end
   end
 
