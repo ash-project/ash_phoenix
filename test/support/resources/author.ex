@@ -19,7 +19,7 @@ defmodule AshPhoenix.Test.Author do
       accept []
       argument :embedded_argument, AshPhoenix.Test.EmbeddedArgument, allow_nil?: false
 
-      validate { AshPhoenix.Test.ValidateEmbeddedArgument, [] }
+      validate {AshPhoenix.Test.ValidateEmbeddedArgument, []}
     end
   end
 

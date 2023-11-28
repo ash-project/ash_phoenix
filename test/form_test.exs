@@ -794,32 +794,34 @@ defmodule AshPhoenix.FormTest do
         |> Form.add_form(:embedded_argument, params: %{})
         |> Form.validate(%{"embedded_argument" => %{"value" => "you@example.com"}})
         |> form_for("action")
-        [nested_form] = inputs_for(form, :embedded_argument)
 
+      [nested_form] = inputs_for(form, :embedded_argument)
 
-        # This is the top level error with a path to the nest form.
-        assert [
-          %Ash.Error.Changes.InvalidArgument{
-            field: :value,
-            message: "must match email",
-            value: "you@example.com",
-            path: [:embedded_argument],
-            class: :invalid
-          }
-        ] = form.source.source.errors
-        assert form.errors == []
+      # This is the top level error with a path to the nest form.
+      assert [
+               %Ash.Error.Changes.InvalidArgument{
+                 field: :value,
+                 message: "must match email",
+                 value: "you@example.com",
+                 path: [:embedded_argument],
+                 class: :invalid
+               }
+             ] = form.source.source.errors
 
-        # This is the error on the nested form.
-        assert [
-          %Ash.Error.Changes.InvalidArgument{
-            field: :value,
-            message: "must match email",
-            value: "you@example.com",
-            path: [],
-            class: :invalid
-          }
-        ] = nested_form.source.source.errors
-        assert nested_form.errors == [{:value, {"must match email", []}}]
+      assert form.errors == []
+
+      # This is the error on the nested form.
+      assert [
+               %Ash.Error.Changes.InvalidArgument{
+                 field: :value,
+                 message: "must match email",
+                 value: "you@example.com",
+                 path: [],
+                 class: :invalid
+               }
+             ] = nested_form.source.source.errors
+
+      assert nested_form.errors == [{:value, {"must match email", []}}]
     end
   end
 

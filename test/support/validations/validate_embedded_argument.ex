@@ -32,13 +32,12 @@ defmodule AshPhoenix.Test.ValidateEmbeddedArgument do
       :ok
     else
       {:error,
-        Ash.Error.Changes.InvalidArgument.exception(
-          field: @embedded_attribute,
-          message: "must match email",
-          value: value,
-          path: [@embedded_argument]
-        )
-      }
+       Ash.Error.Changes.InvalidArgument.exception(
+         field: @embedded_attribute,
+         message: "must match email",
+         value: value,
+         path: [@embedded_argument]
+       )}
     end
   end
 end
