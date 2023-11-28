@@ -174,7 +174,6 @@ defmodule AshPhoenix.FormTest do
         |> Form.for_create(:create_author_required, api: Api, forms: [auto?: true])
         |> Form.validate(%{"list_of_ints" => %{"0" => %{"map" => "of stuff"}}})
 
-      # TODO: this might be wrong
       assert AshPhoenix.Form.value(form, :list_of_ints) == %{"0" => %{"map" => "of stuff"}}
     end
   end
@@ -795,33 +794,11 @@ defmodule AshPhoenix.FormTest do
         |> Form.validate(%{"embedded_argument" => %{"value" => "you@example.com"}})
         |> form_for("action")
 
-      [nested_form] = inputs_for(form, :embedded_argument)
+      assert AshPhoenix.Form.errors(form, for_path: [:embedded_argument]) == [
+               value: "must match email"
+             ]
 
-      # This is the top level error with a path to the nest form.
-      assert [
-               %Ash.Error.Changes.InvalidArgument{
-                 field: :value,
-                 message: "must match email",
-                 value: "you@example.com",
-                 path: [:embedded_argument],
-                 class: :invalid
-               }
-             ] = form.source.source.errors
-
-      assert form.errors == []
-
-      # This is the error on the nested form.
-      assert [
-               %Ash.Error.Changes.InvalidArgument{
-                 field: :value,
-                 message: "must match email",
-                 value: "you@example.com",
-                 path: [],
-                 class: :invalid
-               }
-             ] = nested_form.source.source.errors
-
-      assert nested_form.errors == [{:value, {"must match email", []}}]
+      assert AshPhoenix.Form.errors(form) == []
     end
   end
 

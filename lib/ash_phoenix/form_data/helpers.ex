@@ -50,7 +50,24 @@ defmodule AshPhoenix.FormData.Helpers do
     end)
   end
 
+  defp unwrap_errors(errors) do
+    Enum.flat_map(errors, &unwrap_error/1)
+  end
+
+  defp unwrap_error(%class{errors: errors})
+       when class in [
+              Ash.Error.Invalid,
+              Ash.Error.Forbidden,
+              Ash.Error.Unknown,
+              Ash.Error.Framework
+            ],
+       do: unwrap_errors(errors)
+
+  defp unwrap_error(error), do: [error]
+
   def transform_errors(form, errors, path_filter \\ nil, form_keys \\ []) do
+    errors = unwrap_errors(errors)
+
     additional_path_filters =
       form_keys
       |> Enum.filter(fn {_key, config} -> config[:type] == :list end)
@@ -110,7 +127,7 @@ defmodule AshPhoenix.FormData.Helpers do
             Logger.warning("""
             Unhandled error in form submission for #{inspect(form.resource)}.#{form.action}
 
-            This error was unhandled because it did not implement the `AshPhoenix.FormData.Error` protocol.
+            This error was unhandled because #{inspect(error.__struct__)} does not implement the `AshPhoenix.FormData.Error` protocol.
 
             #{Exception.format(:error, error)}
             """)

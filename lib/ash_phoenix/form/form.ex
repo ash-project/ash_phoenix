@@ -1634,8 +1634,6 @@ defmodule AshPhoenix.Form do
     before_submit = opts[:before_submit] || (& &1)
 
     if form.valid? || opts[:force?] do
-      form = clear_errors(form)
-
       unless form.api do
         raise """
         No Api configured, but one is required to submit the form.
@@ -1732,7 +1730,7 @@ defmodule AshPhoenix.Form do
           if opts[:raise?] do
             raise Ash.Error.to_error_class(query.errors, query: query)
           else
-            query = %{(query || original_changeset_or_query) | errors: []}
+            query = query || original_changeset_or_query
 
             errors =
               error
@@ -1754,7 +1752,7 @@ defmodule AshPhoenix.Form do
           if opts[:raise?] do
             raise Ash.Error.to_error_class(changeset.errors, changeset: changeset)
           else
-            changeset = %{(changeset || original_changeset_or_query) | errors: []}
+            changeset = changeset || original_changeset_or_query
 
             errors =
               error
@@ -2137,20 +2135,16 @@ defmodule AshPhoenix.Form do
         gather_errors(form, opts[:format])
 
       [] ->
-        errors =
-          if form.errors do
-            if form.just_submitted? do
-              form.submit_errors
-            else
-              transform_errors(form, form.source.errors, [], form.form_keys)
-            end
-          else
-            []
-          end
+        if form.errors do
+          errors =
+            transform_errors(form, form.source.errors, [], form.form_keys)
 
-        errors
-        |> List.wrap()
-        |> format_errors(opts[:format])
+          errors
+          |> List.wrap()
+          |> format_errors(opts[:format])
+        else
+          []
+        end
 
       path ->
         form
@@ -2199,12 +2193,42 @@ defmodule AshPhoenix.Form do
         forms when is_list(forms) ->
           forms
           |> Enum.with_index()
-          |> Enum.reduce(acc, fn {form, i}, acc ->
-            gather_errors(form, format, acc, trail ++ [key, i])
+          |> Enum.reduce(acc, fn {nested_form, i}, acc ->
+            nested_errors =
+              form.source.errors
+              |> Enum.filter(&List.starts_with?(&1.path || [], [key, i]))
+              |> Enum.map(fn form ->
+                %{form | path: Enum.drop(form.path, 1)}
+              end)
+
+            nested_form = %{
+              nested_form
+              | source: %{
+                  nested_form.source
+                  | errors: Enum.uniq(nested_errors ++ (nested_form.source.errors || []))
+                }
+            }
+
+            gather_errors(nested_form, format, acc, trail ++ [key, i])
           end)
 
-        form ->
-          gather_errors(form, format, acc, trail ++ [key])
+        nested_form ->
+          nested_errors =
+            form.source.errors
+            |> Enum.filter(&List.starts_with?(&1.path || [], [key]))
+            |> Enum.map(fn form ->
+              %{form | path: Enum.drop(form.path, 1)}
+            end)
+
+          nested_form = %{
+            nested_form
+            | source: %{
+                nested_form.source
+                | errors: Enum.uniq(nested_errors ++ (nested_form.source.errors || []))
+              }
+          }
+
+          gather_errors(nested_form, format, acc, trail ++ [key])
       end
     end)
   end
@@ -3575,26 +3599,6 @@ defmodule AshPhoenix.Form do
 
   defp expand_error(other), do: List.wrap(other)
 
-  defp clear_errors(nil), do: nil
-
-  defp clear_errors(forms) when is_list(forms) do
-    Enum.map(forms, &clear_errors/1)
-  end
-
-  defp clear_errors(form) do
-    %{
-      form
-      | forms:
-          Map.new(form.forms, fn {k, v} ->
-            {k, clear_errors(v)}
-          end),
-        source: %{
-          form.source
-          | errors: []
-        }
-    }
-  end
-
   @doc """
   A utility for parsing paths of nested forms in query encoded format.
 
@@ -4619,6 +4623,13 @@ defmodule AshPhoenix.Form do
     end
 
     @impl true
+    @spec input_type(AshPhoenix.Form.t(), any(), atom() | binary()) ::
+            :checkbox
+            | :date_select
+            | :datetime_select
+            | :number_input
+            | :text_input
+            | :time_select
     def input_type(%{resource: resource, action: action}, _, field) do
       attribute = Ash.Resource.Info.attribute(resource, field)
 
