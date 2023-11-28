@@ -799,6 +799,21 @@ defmodule AshPhoenix.FormTest do
              ]
 
       assert AshPhoenix.Form.errors(form) == []
+
+      # Check that errors will appear on a nested form using the Phoenix Core Compoents inputs_for
+      # https://github.com/phoenixframework/phoenix_live_view/blob/main/lib/phoenix_component.ex#L2410
+      %Phoenix.HTML.FormField{field: field_name, form: parent_form} = form[:embedded_argument]
+      inputs_for_form =
+        parent_form.impl.to_form(
+          parent_form.source,
+          parent_form,
+          field_name,
+          parent_form.options
+        )
+        |> List.first()
+
+      # This is the expected format for a phoenix core component
+      assert inputs_for_form.errors == [{:value, {"must match email", []}}]
     end
   end
 
