@@ -167,6 +167,16 @@ defmodule AshPhoenix.FormTest do
 
       assert AshPhoenix.Form.value(form, :password) == "fo"
     end
+
+    test "lists with invalid values return those invalid values when getting them" do
+      form =
+        Post
+        |> Form.for_create(:create_author_required, api: Api, forms: [auto?: true])
+        |> Form.validate(%{"list_of_ints" => %{"0" => %{"map" => "of stuff"}}})
+
+      # TODO: this might be wrong
+      assert AshPhoenix.Form.value(form, :list_of_ints) == %{"0" => %{"map" => "of stuff"}}
+    end
   end
 
   describe "form_for fields" do

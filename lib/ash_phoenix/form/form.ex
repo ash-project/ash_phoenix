@@ -2346,7 +2346,8 @@ defmodule AshPhoenix.Form do
   end
 
   defp do_value(%{source: %Ash.Changeset{} = changeset} = form, field) do
-    with :error <- get_changing_value(changeset, field),
+    with :error <- get_invalid_value(changeset, field),
+         :error <- get_changing_value(changeset, field),
          :error <- Ash.Changeset.fetch_argument(changeset, field),
          :error <- get_non_attribute_non_argument_param(changeset, form, field),
          :error <- Map.fetch(changeset.data, field) do
@@ -2375,6 +2376,26 @@ defmodule AshPhoenix.Form do
               Map.get(data, field)
             end
         end
+    end
+  end
+
+  defp get_invalid_value(changeset, field) when is_atom(field) do
+    if field in changeset.invalid_keys do
+      with :error <- Map.fetch(changeset.params, field) do
+        Map.fetch(changeset.params, to_string(field))
+      end
+    else
+      :error
+    end
+  end
+
+  defp get_invalid_value(changeset, field) when is_binary(field) do
+    if Enum.any?(changeset.invalid_keys, &(to_string(&1) == field)) do
+      with :error <- Map.fetch(changeset.params, field) do
+        Map.fetch(changeset.params, to_string(field))
+      end
+    else
+      :error
     end
   end
 

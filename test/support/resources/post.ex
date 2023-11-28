@@ -11,6 +11,7 @@ defmodule AshPhoenix.Test.Post do
     attribute(:text, :string, allow_nil?: false)
     attribute(:union, AshPhoenix.Test.UnionValue)
     attribute(:union_array, {:array, AshPhoenix.Test.UnionValue})
+    attribute(:list_of_ints, {:array, :integer})
     attribute(:title, :string)
   end
 
