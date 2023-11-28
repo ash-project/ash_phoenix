@@ -13,6 +13,14 @@ defmodule AshPhoenix.Test.Author do
 
   actions do
     defaults([:create, :read, :update])
+
+    update :update_with_embedded_argument do
+      # This an empty change, just so test how we handle errors on embedded arguments
+      accept []
+      argument :embedded_argument, AshPhoenix.Test.EmbeddedArgument, allow_nil?: false
+
+      validate { AshPhoenix.Test.ValidateEmbeddedArgument, [] }
+    end
   end
 
   relationships do
