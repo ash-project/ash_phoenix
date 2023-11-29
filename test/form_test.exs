@@ -803,6 +803,7 @@ defmodule AshPhoenix.FormTest do
       # Check that errors will appear on a nested form using the Phoenix Core Compoents inputs_for
       # https://github.com/phoenixframework/phoenix_live_view/blob/main/lib/phoenix_component.ex#L2410
       %Phoenix.HTML.FormField{field: field_name, form: parent_form} = form[:embedded_argument]
+
       inputs_for_form =
         parent_form.impl.to_form(
           parent_form.source,
