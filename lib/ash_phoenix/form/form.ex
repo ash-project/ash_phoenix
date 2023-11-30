@@ -3559,7 +3559,7 @@ defmodule AshPhoenix.Form do
 
     %{
       form
-      | submit_errors: IO.inspect(transform_errors(form, errors, path, form.form_keys)),
+      | submit_errors: transform_errors(form, errors, path, form.form_keys),
         forms: new_forms
     }
   end
