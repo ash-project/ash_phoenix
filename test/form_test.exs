@@ -800,7 +800,7 @@ defmodule AshPhoenix.FormTest do
 
       assert AshPhoenix.Form.errors(form) == []
 
-      # Check that errors will appear on a nested form using the Phoenix Core Compoents inputs_for
+      # Check that errors will appear on a nested form using the Phoenix Core Components inputs_for
       # https://github.com/phoenixframework/phoenix_live_view/blob/main/lib/phoenix_component.ex#L2410
       %Phoenix.HTML.FormField{field: field_name, form: parent_form} = form[:embedded_argument]
 

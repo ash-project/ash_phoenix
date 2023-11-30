@@ -50,7 +50,8 @@ defmodule AshPhoenix.FormData.Helpers do
     end)
   end
 
-  defp unwrap_errors(errors) do
+  @doc false
+  def unwrap_errors(errors) do
     Enum.flat_map(errors, &unwrap_error/1)
   end
 

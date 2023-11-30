@@ -519,6 +519,7 @@ defmodule AshPhoenix.Form do
     }
     |> set_changed?()
     |> set_validity()
+    |> carry_over_errors()
   end
 
   @doc """
@@ -621,6 +622,7 @@ defmodule AshPhoenix.Form do
     }
     |> set_changed?()
     |> set_validity()
+    |> carry_over_errors()
   end
 
   @doc """
@@ -722,6 +724,7 @@ defmodule AshPhoenix.Form do
     }
     |> set_changed?()
     |> set_validity()
+    |> carry_over_errors()
   end
 
   @doc """
@@ -829,6 +832,7 @@ defmodule AshPhoenix.Form do
     }
     |> set_changed?()
     |> set_validity()
+    |> carry_over_errors()
   end
 
   defp set_accessing_from(changeset_or_query, opts) do
@@ -1113,6 +1117,7 @@ defmodule AshPhoenix.Form do
       }
       |> set_validity()
       |> set_changed?()
+      |> carry_over_errors()
       |> update_all_forms(fn form ->
         %{form | just_submitted?: false}
       end)
@@ -1742,6 +1747,7 @@ defmodule AshPhoenix.Form do
                %{form | source: query},
                errors
              )
+             |> carry_over_errors()
              |> update_all_forms(fn form ->
                %{form | just_submitted?: true, submitted_once?: true}
              end)
@@ -1764,6 +1770,7 @@ defmodule AshPhoenix.Form do
                %{form | source: changeset},
                errors
              )
+             |> carry_over_errors()
              |> update_all_forms(fn form ->
                %{form | just_submitted?: true, submitted_once?: true}
              end)}
@@ -1785,9 +1792,51 @@ defmodule AshPhoenix.Form do
         {:error,
          form
          |> update_all_forms(fn form -> %{form | submitted_once?: true, just_submitted?: true} end)
-         |> synthesize_action_errors()}
+         |> synthesize_action_errors()
+         |> carry_over_errors()}
       end
     end
+  end
+
+  defp carry_over_errors(form, additional_errors \\ nil) do
+    {these_errors, further_path_errors} =
+      form.source.errors
+      |> AshPhoenix.FormData.Helpers.unwrap_errors()
+      |> Enum.concat(additional_errors || [])
+      |> Enum.split_with(&(&1.path == []))
+
+    # not the first iteration
+    form =
+      if additional_errors != nil do
+        %{form | source: %{form.source | errors: these_errors}}
+      else
+        form
+      end
+
+    Map.update!(form, :forms, fn nested_forms ->
+      Map.new(nested_forms, fn
+        {key, data} when is_list(data) ->
+          {key,
+           data
+           |> Enum.with_index()
+           |> Enum.map(fn {form, index} ->
+             further =
+               further_path_errors
+               |> Enum.filter(&List.starts_with?(&1.path, [key, index]))
+               |> Enum.map(&%{&1 | path: Enum.drop(&1.path, 2)})
+
+             carry_over_errors(form, further)
+           end)}
+
+        {key, form} ->
+          further =
+            further_path_errors
+            |> Enum.filter(&List.starts_with?(&1.path, [key]))
+            |> Enum.map(&%{&1 | path: Enum.drop(&1.path, 1)})
+
+          {key, carry_over_errors(form, further)}
+      end)
+    end)
   end
 
   defp with_changeset(changeset, func) do
@@ -2194,40 +2243,10 @@ defmodule AshPhoenix.Form do
           forms
           |> Enum.with_index()
           |> Enum.reduce(acc, fn {nested_form, i}, acc ->
-            nested_errors =
-              form.source.errors
-              |> Enum.filter(&List.starts_with?(&1.path || [], [key, i]))
-              |> Enum.map(fn form ->
-                %{form | path: Enum.drop(form.path, 1)}
-              end)
-
-            nested_form = %{
-              nested_form
-              | source: %{
-                  nested_form.source
-                  | errors: Enum.uniq(nested_errors ++ (nested_form.source.errors || []))
-                }
-            }
-
             gather_errors(nested_form, format, acc, trail ++ [key, i])
           end)
 
         nested_form ->
-          nested_errors =
-            form.source.errors
-            |> Enum.filter(&List.starts_with?(&1.path || [], [key]))
-            |> Enum.map(fn form ->
-              %{form | path: Enum.drop(form.path, 1)}
-            end)
-
-          nested_form = %{
-            nested_form
-            | source: %{
-                nested_form.source
-                | errors: Enum.uniq(nested_errors ++ (nested_form.source.errors || []))
-              }
-          }
-
           gather_errors(nested_form, format, acc, trail ++ [key])
       end
     end)
@@ -3540,7 +3559,7 @@ defmodule AshPhoenix.Form do
 
     %{
       form
-      | submit_errors: transform_errors(form, errors, path, form.form_keys),
+      | submit_errors: IO.inspect(transform_errors(form, errors, path, form.form_keys)),
         forms: new_forms
     }
   end
