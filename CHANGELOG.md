@@ -5,6 +5,25 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.2.24](https://github.com/ash-project/ash_phoenix/compare/v1.2.23...v1.2.24) (2023-12-12)
+
+
+
+
+### Bug Fixes:
+
+* add show fields in gen.live (#118)
+
+* remove multiple attribute from select for one_of fields (#115)
+
+### Improvements:
+
+* carry over nested errors on creation, validation and submission
+
+* properly return nested errors with `for_path: :all`
+
+* properly get invalid values provided to forms
+
 ## [v1.2.23](https://github.com/ash-project/ash_phoenix/compare/v1.2.22...v1.2.23) (2023-10-24)
 
 
