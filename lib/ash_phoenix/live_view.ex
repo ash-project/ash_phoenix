@@ -299,6 +299,10 @@ defmodule AshPhoenix.LiveView do
 
   def page_link_params(%Ash.Page.Offset{more?: false}, "next"), do: :invalid
 
+  def page_link_params(%Ash.Page.Offset{more?: true} = offset, "next") do
+    [limit: offset.limit, offset: (offset.offset || 0) + offset.limit]
+  end
+
   def page_link_params(%Ash.Page.Keyset{more?: false, after: nil, before: before}, "prev")
       when not is_nil(before) do
     :invalid
@@ -307,19 +311,6 @@ defmodule AshPhoenix.LiveView do
   def page_link_params(%Ash.Page.Keyset{more?: false, after: after_keyset, before: nil}, "next")
       when not is_nil(after_keyset) do
     :invalid
-  end
-
-  def page_link_params(%Ash.Page.Offset{} = offset, "next") do
-    cond do
-      offset.count && offset.offset + offset.limit >= offset.count ->
-        :invalid
-
-      Enum.count(offset.results) < offset.limit ->
-        :invalid
-
-      true ->
-        [limit: offset.limit, offset: (offset.offset || 0) + offset.limit]
-    end
   end
 
   def page_link_params(%Ash.Page.Offset{offset: 0}, "prev") do
