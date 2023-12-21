@@ -4,5 +4,6 @@ defmodule AshPhoenix.Test.EmbeddedArgument do
 
   attributes do
     attribute :value, :string
+    attribute :nested_embeds, {:array, AshPhoenix.Test.NestedEmbed}, default: []
   end
 end

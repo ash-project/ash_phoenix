@@ -816,6 +816,64 @@ defmodule AshPhoenix.FormTest do
       # This is the expected format for a phoenix core component
       assert inputs_for_form.errors == [{:value, {"must match email", []}}]
     end
+
+    test "deeply nested errors don't multiply" do
+      author = %Author{
+        email: "me@example.com"
+      }
+
+      form =
+        author
+        |> Form.for_update(:update_with_embedded_argument, api: Api, forms: [auto?: true])
+        |> Form.add_form(:embedded_argument, params: %{})
+        |> Form.add_form([:embedded_argument, :nested_embeds], params: %{})
+        |> Form.validate(%{
+          "embedded_argument" => %{
+            "value" => "you@example.com",
+            nested_embeds: %{"0" => %{"limit" => "non-integer", "four_chars" => "not-4-chars"}}
+          }
+        })
+        |> form_for("action")
+
+      %Phoenix.HTML.FormField{field: field_name, form: parent_form} = form[:embedded_argument]
+
+      inputs_for_arg_form =
+        parent_form.impl.to_form(
+          parent_form.source,
+          parent_form,
+          field_name,
+          parent_form.options
+        )
+        |> List.first()
+
+      %Phoenix.HTML.FormField{field: field_name, form: parent_form} =
+        inputs_for_arg_form[:nested_embeds]
+
+      inputs_for_nested_form =
+        parent_form.impl.to_form(
+          parent_form.source,
+          parent_form,
+          field_name,
+          parent_form.options
+        )
+        |> List.first()
+
+      # Note: I'm not 100% which of the 3 errors messages are preferred. The opts are get_text bindings for error translation
+      # In the Phoenix core components the error translation is done `Gettext.dpgettext(MyApp.Gettext, domain, msgctxt, msgid, bindings)` with our tuple being `{msgid, bindings}`
+      assert Keyword.get_values(inputs_for_nested_form.errors, :limit) == [
+               {"is invalid", [field: "limit", message: "is invalid", index: 0]}
+             ]
+
+      assert Keyword.get_values(inputs_for_nested_form.errors, :four_chars) == [
+               {"must have length of exactly %{exact}",
+                [
+                  field: "four_chars",
+                  message: "must have length of exactly %{exact}",
+                  exact: 4,
+                  index: 0
+                ]}
+             ]
+    end
   end
 
   describe "data" do
