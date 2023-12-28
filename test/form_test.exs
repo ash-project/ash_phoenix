@@ -861,16 +861,13 @@ defmodule AshPhoenix.FormTest do
       # Note: I'm not 100% which of the 3 errors messages are preferred. The opts are get_text bindings for error translation
       # In the Phoenix core components the error translation is done `Gettext.dpgettext(MyApp.Gettext, domain, msgctxt, msgid, bindings)` with our tuple being `{msgid, bindings}`
       assert Keyword.get_values(inputs_for_nested_form.errors, :limit) == [
-               {"is invalid", [field: "limit", message: "is invalid", index: 0]}
+               {"is invalid", []}
              ]
 
       assert Keyword.get_values(inputs_for_nested_form.errors, :four_chars) == [
                {"must have length of exactly %{exact}",
                 [
-                  field: "four_chars",
-                  message: "must have length of exactly %{exact}",
-                  exact: 4,
-                  index: 0
+                  exact: 4
                 ]}
              ]
     end
