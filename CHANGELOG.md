@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.2.25](https://github.com/ash-project/ash_phoenix/compare/v1.2.24...v1.2.25) (2024-01-02)
+
+
+
+
+### Bug Fixes:
+
+* remove system added error vars to ensure deduplication works properly
+
+* ensure next page is detected for offset pages w/ more?: true
+
 ## [v1.2.24](https://github.com/ash-project/ash_phoenix/compare/v1.2.23...v1.2.24) (2023-12-12)
 
 
