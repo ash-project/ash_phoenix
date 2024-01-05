@@ -442,6 +442,8 @@ defmodule AshPhoenix.Form do
       |> validate_opts_with_extra_keys(@for_opts)
       |> forms_for_type(:create)
 
+    require_action!(resource, action, :create)
+
     changeset_opts =
       Keyword.drop(opts, [
         :forms,
@@ -539,6 +541,8 @@ defmodule AshPhoenix.Form do
       |> update_opts(data, opts[:params] || %{})
       |> validate_opts_with_extra_keys(@for_opts)
       |> forms_for_type(:update)
+
+    require_action!(resource, action, :update)
 
     changeset_opts =
       Keyword.drop(opts, [
@@ -642,6 +646,8 @@ defmodule AshPhoenix.Form do
       |> update_opts(data, opts[:params] || %{})
       |> validate_opts_with_extra_keys(@for_opts)
       |> forms_for_type(:destroy)
+
+    require_action!(resource, action, :update)
 
     changeset_opts =
       Keyword.drop(opts, [
@@ -753,6 +759,8 @@ defmodule AshPhoenix.Form do
       |> validate_opts_with_extra_keys(@for_opts)
       |> forms_for_type(:read)
 
+    require_action!(resource, action, :read)
+
     name = opts[:as] || "form"
     id = opts[:id] || opts[:as] || "form"
 
@@ -833,6 +841,20 @@ defmodule AshPhoenix.Form do
     |> set_changed?()
     |> set_validity()
     |> carry_over_errors()
+  end
+
+  defp require_action!(resource, action, type) do
+    case Ash.Resource.Info.action(resource, action) do
+      nil ->
+        raise ArgumentError, "No such action #{inspect(action)} for resource #{inspect(resource)}"
+
+      %{type: ^type} ->
+        :ok
+
+      %{type: actual_type} ->
+        raise ArgumentError,
+              "Expected action of type #{inspect(type)}, but #{inspect(action)} is of type #{inspect(actual_type)}"
+    end
   end
 
   defp set_accessing_from(changeset_or_query, opts) do
