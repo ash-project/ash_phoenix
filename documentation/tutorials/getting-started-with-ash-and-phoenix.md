@@ -355,7 +355,7 @@ As stated above, this is verbose so Ash has a built in shortcut - The `code_inte
 > define :make, action: :create
 > ```
 >
-> That's perfectly valid and could be called via `Blog.make/2`.
+> That's perfectly valid and could be called via `Blog.Post.make/2`.
 
 Now we can call our resource like so:
 
