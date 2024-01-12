@@ -775,7 +775,7 @@ defmodule AshPhoenix.Form.Auto do
           :list ->
             fn parent ->
               if parent do
-                Map.get(parent, attr.name) || []
+                List.wrap(Map.get(parent, attr.name))
               else
                 []
               end
