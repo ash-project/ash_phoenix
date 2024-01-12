@@ -54,56 +54,20 @@ defmodule AshPhoenix.MixProject do
     ]
   end
 
-  defp extras() do
-    "documentation/**/*.md"
-    |> Path.wildcard()
-    |> Enum.map(fn path ->
-      title =
-        path
-        |> Path.basename(".md")
-        |> String.split(~r/[-_]/)
-        |> Enum.map_join(" ", &capitalize/1)
-        |> case do
-          "F A Q" ->
-            "FAQ"
-
-          other ->
-            other
-        end
-
-      {String.to_atom(path),
-       [
-         title: title
-       ]}
-    end)
-  end
-
-  defp capitalize(string) do
-    string
-    |> String.split(" ")
-    |> Enum.map(fn string ->
-      [hd | tail] = String.graphemes(string)
-      String.capitalize(hd) <> Enum.join(tail)
-    end)
-  end
-
-  defp groups_for_extras do
-    [
-      Tutorials: [
-        ~r'documentation/tutorials'
-      ],
-      "How To": ~r'documentation/how_to',
-      Topics: ~r'documentation/topics'
-    ]
-  end
-
   defp docs do
     [
       main: "working-with-phoenix",
       source_ref: "v#{@version}",
       logo: "logos/small-logo.png",
-      extras: extras(),
-      groups_for_extras: groups_for_extras(),
+      extras: [
+        "documentation/tutorials/getting-started-with-ash-and-phoenix.md",
+        "documentation/topics/working-with-phoenix.md"
+      ],
+      groups_for_extras: [
+        Tutorials: ~r'documentation/tutorials',
+        "How To": ~r'documentation/how_to',
+        Topics: ~r'documentation/topics'
+      ],
       before_closing_head_tag: fn type ->
         if type == :html do
           """
