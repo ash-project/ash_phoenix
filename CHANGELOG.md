@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.2.26](https://github.com/ash-project/ash_phoenix/compare/v1.2.25...v1.2.26) (2024-01-12)
+
+
+
+
+### Bug Fixes:
+
+* List.wrap data in list case
+
+* validate action type when constructing forms
+
 ## [v1.2.25](https://github.com/ash-project/ash_phoenix/compare/v1.2.24...v1.2.25) (2024-01-02)
 
 
