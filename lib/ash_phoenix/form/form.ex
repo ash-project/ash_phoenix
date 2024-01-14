@@ -3674,7 +3674,7 @@ defmodule AshPhoenix.Form do
   defp do_decode_path(_, _, [], _), do: []
 
   defp do_decode_path([], original_path, _, _) do
-    raise "Invalid Path: #{original_path}"
+    raise InvalidPath, path: original_path
   end
 
   defp do_decode_path(forms, original_path, [key | rest], sparse?) when is_list(forms) do
@@ -3691,7 +3691,7 @@ defmodule AshPhoenix.Form do
 
         case matching_form do
           nil ->
-            raise "Invalid Path: #{original_path}"
+            raise InvalidPath, path: original_path
 
           form ->
             case Enum.at(rest, 0) do
@@ -3711,7 +3711,7 @@ defmodule AshPhoenix.Form do
         end
 
       _ ->
-        raise "Invalid Path: #{original_path}"
+        raise InvalidPath, path: original_path
     end
   end
 
@@ -3724,7 +3724,7 @@ defmodule AshPhoenix.Form do
     end)
     |> case do
       nil ->
-        raise "Invalid Path: #{original_path}"
+        raise InvalidPath, path: original_path
 
       {key, config} ->
         if Keyword.get(config, :type, :single) == :single do

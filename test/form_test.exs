@@ -178,6 +178,52 @@ defmodule AshPhoenix.FormTest do
     end
   end
 
+  describe "has_form?" do
+    test "checks for the existence of a list of forms" do
+      form =
+        Post
+        |> Form.for_create(:create,
+          api: Api,
+          forms: [
+            comments: [
+              type: :list,
+              resource: Comment,
+              create_action: :create
+            ]
+          ]
+        )
+        |> Form.add_form([:comments])
+
+      # assert Form.has_form?(form, [:comments])
+      assert Form.has_form?(form, [:comments, 0])
+      assert Form.has_form?(form, "form[comments][0]")
+
+      refute Form.has_form?(form, [:comments, 1])
+      refute Form.has_form?(form, "form[comments][1]")
+    end
+
+    test "checks for the existence of a single form" do
+      form =
+        Comment
+        |> Form.for_create(:create,
+          forms: [
+            post: [
+              type: :single,
+              resource: Post,
+              create_action: :create
+            ]
+          ]
+        )
+        |> Form.add_form([:post])
+
+      assert Form.has_form?(form, [:post])
+      assert Form.has_form?(form, "form[post]")
+
+      refute Form.has_form?(form, [:unknown])
+      refute Form.has_form?(form, "form[unknown]")
+    end
+  end
+
   describe "form_for fields" do
     test "it should show simple field values" do
       form =
