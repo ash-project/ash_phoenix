@@ -196,6 +196,10 @@ defmodule AshPhoenix.FormTest do
 
       # assert Form.has_form?(form, [:comments])
       assert Form.has_form?(form, [:comments, 0])
+      assert Form.has_form?(form, "form[comments][0]")
+
+      refute Form.has_form?(form, [:comments, 1])
+      refute Form.has_form?(form, "form[comments][1]")
     end
 
     test "checks for the existence of a single form" do
@@ -213,10 +217,12 @@ defmodule AshPhoenix.FormTest do
         |> Form.add_form([:post])
 
       assert Form.has_form?(form, [:post])
+      assert Form.has_form?(form, "form[post]")
+
       refute Form.has_form?(form, [:unknown])
+      refute Form.has_form?(form, "form[unknown]")
     end
   end
-
 
   describe "form_for fields" do
     test "it should show simple field values" do
