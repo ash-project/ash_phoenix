@@ -1124,18 +1124,18 @@ defmodule AshPhoenix.Form do
               changeset_params,
               source_opts
             )
-            |> add_errors_for_unhandled_params(new_params)
+            |> add_errors_for_unhandled_params(changeset_params)
         end
 
       %{
         form
         | source: new_source,
           forms: forms,
-          params: new_params,
+          params: changeset_params,
           added?: form.added?,
           errors: !!opts[:errors],
           submit_errors: nil,
-          touched_forms: touched_forms(forms, new_params, touched_forms: form.touched_forms)
+          touched_forms: touched_forms(forms, changeset_params, touched_forms: form.touched_forms)
       }
       |> set_validity()
       |> set_changed?()
