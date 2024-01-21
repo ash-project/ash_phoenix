@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.3.0](https://github.com/ash-project/ash_phoenix/compare/v1.2.26...v1.3.0) (2024-01-21)
+
+
+
+
+### Features:
+
+* update to latest phoenix_html
+
+### Bug Fixes:
+
+* new_params replaced with updated changeset_params (#129)
+
+* `do_decode_path` for string paths (#127)
+
 ## [v1.2.26](https://github.com/ash-project/ash_phoenix/compare/v1.2.25...v1.2.26) (2024-01-12)
 
 
