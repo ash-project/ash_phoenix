@@ -82,13 +82,10 @@ defmodule AshPhoenix.FilterForm.Predicate do
     end
 
     @impl true
-    def input_type(_, _, _), do: :text_input
-
-    @impl true
     def to_form(form, phoenix_form, :arguments, _opts) do
       if form.arguments do
         [
-          Phoenix.HTML.Form.form_for(form.arguments, "arguments",
+          Phoenix.HTML.FormData.to_form(form.arguments,
             transform_errors: form.transform_errors,
             id: form.id <> "_arguments",
             as: phoenix_form.name <> "[arguments]"
@@ -104,6 +101,7 @@ defmodule AshPhoenix.FilterForm.Predicate do
     end
 
     @impl true
+    def input_value(form, phoenix_form, :arguments), do: to_form(form, phoenix_form, :arguments, [])
     def input_value(%{id: id}, _, :id), do: id
     def input_value(%{field: field}, _, :field), do: field
     def input_value(%{value: value}, _, :value), do: value

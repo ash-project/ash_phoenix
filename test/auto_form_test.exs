@@ -3,8 +3,9 @@ defmodule AshPhoenix.AutoFormTest do
 
   alias AshPhoenix.Form.Auto
   alias AshPhoenix.Test.{Api, Post}
-  import Phoenix.HTML.Form, only: [form_for: 2]
   import AshPhoenix.Form, only: [update_opts: 2]
+
+  defp form_for(a, _b), do: Phoenix.HTML.FormData.to_form(a, [])
 
   test "it works for simple relationships" do
     forms =

@@ -1201,9 +1201,6 @@ defmodule AshPhoenix.FilterForm do
     end
 
     @impl true
-    def input_type(_, _, _), do: :text_input
-
-    @impl true
     def input_value(%{id: id}, _, :id), do: id
     def input_value(%{negated?: negated?}, _, :negated), do: negated?
     def input_value(%{operator: operator}, _, :operator), do: operator

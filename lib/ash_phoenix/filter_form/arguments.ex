@@ -113,12 +113,9 @@ defmodule AshPhoenix.FilterForm.Arguments do
     end
 
     @impl true
-    def input_type(_, _, _), do: :text_input
-
-    @impl true
     def to_form(form, phoenix_form, :arguments, _opts) do
       [
-        Phoenix.HTML.Form.form_for(form.source.arguments, "arguments",
+        Phoenix.HTML.FormData.to_form(form.source.arguments,
           transform_errors: form.transform_errors,
           as: phoenix_form.name <> "[arguments]"
         )
@@ -130,6 +127,10 @@ defmodule AshPhoenix.FilterForm.Arguments do
     end
 
     @impl true
+    def input_value(arguments, phoenix_form, :arguments) do
+      to_form(arguments, phoenix_form, :arguments, [])
+    end
+
     def input_value(arguments, _, name) do
       if Enum.find(arguments.arguments, &(&1.name == name)) do
         Map.get(

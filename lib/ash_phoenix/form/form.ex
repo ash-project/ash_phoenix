@@ -4664,32 +4664,12 @@ defmodule AshPhoenix.Form do
     end
 
     @impl true
-    @spec input_type(AshPhoenix.Form.t(), any(), atom() | binary()) ::
-            :checkbox
-            | :date_select
-            | :datetime_select
-            | :number_input
-            | :text_input
-            | :time_select
-    def input_type(%{resource: resource, action: action}, _, field) do
-      attribute = Ash.Resource.Info.attribute(resource, field)
-
-      if attribute do
-        type_to_form_type(attribute.type)
+    def input_value(form, phoenix_form, field) do
+      if is_atom(field) and form.form_keys[field] do
+        List.wrap(to_form(form, phoenix_form, field, []))
       else
-        argument = get_argument(action, field)
-
-        if argument do
-          type_to_form_type(argument.type)
-        else
-          :text_input
-        end
+        AshPhoenix.Form.value(form, field)
       end
-    end
-
-    @impl true
-    def input_value(form, _form, field) do
-      AshPhoenix.Form.value(form, field)
     end
 
     @impl true

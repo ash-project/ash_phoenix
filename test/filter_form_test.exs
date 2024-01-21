@@ -1,11 +1,19 @@
 defmodule AshPhoenix.FilterFormTest do
   use ExUnit.Case
-  import Phoenix.HTML.Form, only: [form_for: 2, inputs_for: 2, input_value: 2]
 
   alias AshPhoenix.FilterForm
   alias AshPhoenix.Test.Post
+  import Phoenix.HTML.Form, only: [input_value: 2]
 
   require Ash.Query
+
+  defp form_for(thing, _) do
+    Phoenix.HTML.FormData.to_form(thing, [])
+  end
+
+  defp inputs_for(form, key) do
+    form[key].value
+  end
 
   describe "groups" do
     test "a group can be added" do
