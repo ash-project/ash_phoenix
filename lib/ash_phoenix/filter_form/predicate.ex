@@ -101,7 +101,9 @@ defmodule AshPhoenix.FilterForm.Predicate do
     end
 
     @impl true
-    def input_value(form, phoenix_form, :arguments), do: to_form(form, phoenix_form, :arguments, [])
+    def input_value(form, phoenix_form, :arguments),
+      do: to_form(form, phoenix_form, :arguments, [])
+
     def input_value(%{id: id}, _, :id), do: id
     def input_value(%{field: field}, _, :field), do: field
     def input_value(%{value: value}, _, :value), do: value
