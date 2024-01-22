@@ -1757,12 +1757,12 @@ defmodule AshPhoenix.Form do
           if opts[:raise?] do
             raise Ash.Error.to_error_class(query.errors, query: query)
           else
-            query = query || original_changeset_or_query
-
             errors =
               error
               |> List.wrap()
               |> Enum.flat_map(&expand_error/1)
+
+            query = query || %{original_changeset_or_query | errors: errors}
 
             {:error,
              set_action_errors(
@@ -1780,12 +1780,12 @@ defmodule AshPhoenix.Form do
           if opts[:raise?] do
             raise Ash.Error.to_error_class(changeset.errors, changeset: changeset)
           else
-            changeset = changeset || original_changeset_or_query
-
             errors =
               error
               |> List.wrap()
               |> Enum.flat_map(&expand_error/1)
+
+            changeset = changeset || %{original_changeset_or_query | errors: errors}
 
             {:error,
              set_action_errors(
@@ -2760,6 +2760,51 @@ defmodule AshPhoenix.Form do
       """
     ]
   ]
+
+  @doc """
+  Adds an error to the source underlying the form.
+
+  This can be used for adding errors from different sources to a form. Keep in mind, if they don't match
+  a field on the form (typically extracted via the `field` key in the error), they won't be displayed by default.
+
+  # Options
+
+  - `:path` - The path to add the error to. If the error(s) already have a path, don't specify a path yourself.
+  """
+  def add_error(form, path, opts \\ [])
+
+  def add_error(%Phoenix.HTML.Form{} = form, path, opts) do
+    form.source
+    |> add_error(path, opts)
+    |> Phoenix.HTML.FormData.to_form(form.options)
+  end
+
+  def add_error(form, error, opts) do
+    error = Ash.Error.to_error_class(error)
+
+    error =
+      if opts[:path] do
+        Ash.Error.set_path(error, opts[:path])
+      else
+        error
+      end
+
+    new_source =
+      case form.source do
+        %Ash.Query{} ->
+          Ash.Query.add_error(form.source, error)
+
+        %Ash.Changeset{} ->
+          Ash.Changeset.add_error(form.source, error)
+
+        %Ash.ActionInput{} ->
+          Ash.ActionInput.add_error(form.source, error)
+      end
+
+    %{form | source: new_source}
+    |> set_validity()
+    |> carry_over_errors()
+  end
 
   @doc """
   Adds a new form at the provided path.
