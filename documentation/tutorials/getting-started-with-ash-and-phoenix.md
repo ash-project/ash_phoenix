@@ -389,7 +389,6 @@ Now we know how to interact with our resource, let's connect it to a simple Phoe
 
 defmodule MyAshPhoenixAppWeb.PostsLive do
   use MyAshPhoenixAppWeb, :live_view
-  import Phoenix.HTML.Form
   alias MyAshPhoenixApp.Blog.Post
 
   def render(assigns) do
@@ -406,15 +405,15 @@ defmodule MyAshPhoenixAppWeb.PostsLive do
     </div>
     <h2>Create Post</h2>
     <.form :let={f} for={@create_form} phx-submit="create_post">
-      <%= text_input f, :title, placeholder: "input title" %>
-      <%= submit "create" %>
+      <.input type="text" field={f[:title]} placeholder="input title" />
+      <.button type="submit">create</.button>
     </.form>
     <h2>Update Post</h2>
     <.form :let={f} for={@update_form} phx-submit="update_post">
-      <%= label f, :"post name" %>
-      <%= select f, :post_id, @post_selector %>
-      <%= text_input f, :content, value: "", placeholder: "input content" %>
-      <%= submit "update" %>
+      <.label>Post Name</.label>
+      <.input type="select" field={f[:post_id]} options={@post_selector} />
+      <.input type="text" field={f[:content]} placeholder="input content" />
+      <.button type="submit">Update</.button>
     </.form>
     """
   end
