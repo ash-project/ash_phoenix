@@ -647,7 +647,7 @@ defmodule AshPhoenix.Form do
       |> validate_opts_with_extra_keys(@for_opts)
       |> forms_for_type(:destroy)
 
-    require_action!(resource, action, :update)
+    require_action!(resource, action, :destroy)
 
     changeset_opts =
       Keyword.drop(opts, [
