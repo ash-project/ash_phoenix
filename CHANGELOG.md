@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.3.1](https://github.com/ash-project/ash_phoenix/compare/v1.3.0...v1.3.1) (2024-02-04)
+
+
+
+
+### Bug Fixes:
+
+* validate destroy forms properly
+
+### Improvements:
+
+* add `add_error/3`
+
 ## [v1.3.0](https://github.com/ash-project/ash_phoenix/compare/v1.2.26...v1.3.0) (2024-01-21)
 
 
