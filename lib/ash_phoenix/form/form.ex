@@ -629,6 +629,56 @@ defmodule AshPhoenix.Form do
     |> carry_over_errors()
   end
 
+  @spec can_submit?(t()) :: boolean()
+  @spec can_submit?(Phoenix.HTML.Form.t(), Keyword.t()) :: Phoenix.HTML.Form.t()
+
+  def can_submit?(%Phoenix.HTML.Form{} = form) do
+    can_submit?(form.source)
+  end
+
+  def can_submit?(form) do
+    unless form.source.api do
+      raise """
+      No Api configured, but one is required to check authorization to submit a form.
+
+      For example:
+
+          Form.for_create(Resource, :action, api: MyApp.MyApi)
+      """
+    end
+
+    form.source.api.can?(form.source, form.source.context[:private][:actor])
+  end
+
+  def ensure_can_submit!(form) do
+    unless form.source.api do
+      raise """
+      No Api configured, but one is required to check authorization to submit a form.
+
+      For example:
+
+          Form.for_create(Resource, :action, api: MyApp.MyApi)
+      """
+    end
+
+    case form.source.api.can(form.source, form.source.context[:private][:actor]) do
+      {:ok, false, %{stacktrace: %{stacktrace: stacktrace}} = exception} ->
+        reraise exception, stacktrace
+
+      {:error, %{stacktrace: %{stacktrace: stacktrace}} = exception} ->
+        reraise exception, stacktrace
+
+      {:ok, false, exception} ->
+        raise exception
+
+      {:error, exception} ->
+        raise exception
+
+      {:ok, true} ->
+        form
+    end
+  end
+
   @doc """
   Creates a form corresponding to a destroy action on a record.
 
