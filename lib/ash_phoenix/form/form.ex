@@ -630,7 +630,7 @@ defmodule AshPhoenix.Form do
   end
 
   @spec can_submit?(t()) :: boolean()
-  @spec can_submit?(Phoenix.HTML.Form.t(), Keyword.t()) :: Phoenix.HTML.Form.t()
+  @spec can_submit?(Phoenix.HTML.Form.t()) :: boolean
 
   def can_submit?(%Phoenix.HTML.Form{} = form) do
     can_submit?(form.source)
@@ -648,6 +648,12 @@ defmodule AshPhoenix.Form do
     end
 
     form.source.api.can?(form.source, form.source.context[:private][:actor])
+  end
+
+  @spec ensure_can_submit!(t()) :: t()
+  @spec ensure_can_submit!(Phoenix.HTML.Form.t()) :: Phoenix.HTML.Form.t()
+  def ensure_can_submit!(%Phoenix.HTML.Form{} = form) do
+    %{form | source: ensure_can_submit!(form.source)}
   end
 
   def ensure_can_submit!(form) do
