@@ -637,7 +637,7 @@ defmodule AshPhoenix.Form do
   end
 
   def can_submit?(form) do
-    unless form.source.api do
+    unless form.api do
       raise """
       No Api configured, but one is required to check authorization to submit a form.
 
@@ -647,7 +647,7 @@ defmodule AshPhoenix.Form do
       """
     end
 
-    form.source.api.can?(form.source, form.source.context[:private][:actor])
+    form.api.can?(form.source, form.source.context[:private][:actor])
   end
 
   @spec ensure_can_submit!(t()) :: t()
@@ -657,7 +657,7 @@ defmodule AshPhoenix.Form do
   end
 
   def ensure_can_submit!(form) do
-    unless form.source.api do
+    unless form.api do
       raise """
       No Api configured, but one is required to check authorization to submit a form.
 
@@ -667,7 +667,9 @@ defmodule AshPhoenix.Form do
       """
     end
 
-    case form.source.api.can(form.source, form.source.context[:private][:actor]) do
+    case form.api.can(form.source, form.source.context[:private][:actor],
+           return_forbidden_error?: true
+         ) do
       {:ok, false, %{stacktrace: %{stacktrace: stacktrace}} = exception} ->
         reraise exception, stacktrace
 
