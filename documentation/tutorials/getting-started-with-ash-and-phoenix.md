@@ -158,7 +158,6 @@ lib/
 ├─ my_ash_phoenix_app/
 │  ├─ blog/
 │  │  ├─ blog.ex
-│  │  ├─ registry.ex
 │  │  ├─ resources/
 │  │  │  ├─ post.ex
 ```
