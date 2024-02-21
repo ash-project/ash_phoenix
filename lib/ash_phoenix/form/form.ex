@@ -460,6 +460,7 @@ defmodule AshPhoenix.Form do
 
     name = opts[:as] || "form"
     id = opts[:id] || opts[:as] || "form"
+    api = opts[:api] || Ash.Resource.Info.api(resource)
 
     {forms, params} =
       handle_forms(
@@ -484,8 +485,8 @@ defmodule AshPhoenix.Form do
       |> set_accessing_from(opts)
 
     {source, opts} =
-      if opts[:api] || source.api do
-        Ash.Actions.Helpers.add_process_context(opts[:api] || source.api, source, opts)
+      if api || source.api do
+        Ash.Actions.Helpers.add_process_context(api || source.api, source, opts)
       else
         {source, opts}
       end
@@ -502,7 +503,7 @@ defmodule AshPhoenix.Form do
       resource: resource,
       action: action,
       type: :create,
-      api: opts[:api],
+      api: api,
       params: params,
       errors: opts[:errors],
       transform_errors: opts[:transform_errors],
@@ -560,6 +561,7 @@ defmodule AshPhoenix.Form do
 
     name = opts[:as] || "form"
     id = opts[:id] || opts[:as] || "form"
+    api = opts[:api] || Ash.Resource.Info.api(resource)
 
     prepare_source = opts[:prepare_source] || (& &1)
 
@@ -587,8 +589,8 @@ defmodule AshPhoenix.Form do
       |> set_accessing_from(opts)
 
     {source, opts} =
-      if opts[:api] || source.api do
-        Ash.Actions.Helpers.add_process_context(opts[:api] || source.api, source, opts)
+      if api || source.api do
+        Ash.Actions.Helpers.add_process_context(api || source.api, source, opts)
       else
         {source, opts}
       end
@@ -606,7 +608,7 @@ defmodule AshPhoenix.Form do
       data: data,
       action: action,
       type: :update,
-      api: opts[:api],
+      api: api,
       params: params,
       errors: opts[:errors],
       transform_errors: opts[:transform_errors],
@@ -723,6 +725,7 @@ defmodule AshPhoenix.Form do
 
     name = opts[:as] || "form"
     id = opts[:id] || opts[:as] || "form"
+    api = opts[:api] || Ash.Resource.Info.api(resource)
     prepare_source = opts[:prepare_source] || (& &1)
 
     {forms, params} =
@@ -749,8 +752,8 @@ defmodule AshPhoenix.Form do
       |> set_accessing_from(opts)
 
     {source, opts} =
-      if opts[:api] || source.api do
-        Ash.Actions.Helpers.add_process_context(opts[:api] || source.api, source, opts)
+      if api || source.api do
+        Ash.Actions.Helpers.add_process_context(api || source.api, source, opts)
       else
         {source, opts}
       end
@@ -779,7 +782,7 @@ defmodule AshPhoenix.Form do
       transform_params: opts[:transform_params],
       prepare_params: opts[:prepare_params],
       prepare_source: opts[:prepare_source],
-      api: opts[:api],
+      api: api,
       method: opts[:method] || form_for_method(:destroy),
       touched_forms: touched_forms(forms, params, opts),
       form_keys: Keyword.new(List.wrap(opts[:forms])),
@@ -821,6 +824,7 @@ defmodule AshPhoenix.Form do
 
     name = opts[:as] || "form"
     id = opts[:id] || opts[:as] || "form"
+    api = opts[:api] || Ash.Resource.Info.api(resource)
 
     {forms, params} =
       handle_forms(
@@ -859,8 +863,8 @@ defmodule AshPhoenix.Form do
       |> set_accessing_from(opts)
 
     {source, opts} =
-      if opts[:api] || source.api do
-        Ash.Actions.Helpers.add_process_context(opts[:api] || source.api, source, opts)
+      if api || source.api do
+        Ash.Actions.Helpers.add_process_context(api || source.api, source, opts)
       else
         {source, opts}
       end
@@ -887,7 +891,7 @@ defmodule AshPhoenix.Form do
       forms: forms,
       form_keys: Keyword.new(List.wrap(opts[:forms])),
       id: id,
-      api: opts[:api],
+      api: api,
       method: opts[:method] || form_for_method(:create),
       opts: opts,
       touched_forms: touched_forms(forms, params, opts),
@@ -1723,10 +1727,13 @@ defmodule AshPhoenix.Form do
         raise """
         No Api configured, but one is required to submit the form.
 
-        For example:
-
+        At form building:
 
             Form.for_create(Resource, :action, api: MyApp.MyApi)
+
+        Or set up in the resource definition directly:
+
+            use Ash.Resource, api: MyApp.MyApi
         """
       end
 

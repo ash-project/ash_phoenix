@@ -3,7 +3,7 @@ defmodule AshPhoenix.FormTest do
   import ExUnit.CaptureLog
 
   alias AshPhoenix.Form
-  alias AshPhoenix.Test.{Api, Author, Comment, OtherApi, Post, PostWithDefault}
+  alias AshPhoenix.Test.{Api, Artist, Author, Comment, OtherApi, Post, PostWithDefault}
   alias Phoenix.HTML.FormData
 
   defp form_for(form, _) do
@@ -1008,6 +1008,37 @@ defmodule AshPhoenix.FormTest do
                Post
                |> Form.for_create(:create, api: Api)
                |> Form.validate(%{text: "text"})
+               |> Form.submit()
+    end
+
+    test "it fallback to resource defined Api if unset" do
+      assert {:ok, %{name: "name"}} =
+               Artist
+               |> Form.for_action(:create)
+               |> Form.validate(%{name: "name"})
+               |> Form.submit()
+
+      assert {:ok, [%{name: "name"}]} =
+               Artist
+               |> Form.for_action(:read)
+               |> Form.validate(%{name: "name changed"})
+               |> Form.submit()
+
+      artist =
+        Artist
+        |> Ash.Changeset.new(%{name: "name"})
+        |> Api.create!()
+
+      assert {:ok, %{name: "name changed"}} =
+               artist
+               |> Form.for_action(:update)
+               |> Form.validate(%{name: "name changed"})
+               |> Form.submit()
+
+      assert :ok =
+               artist
+               |> Form.for_action(:destroy)
+               |> Form.validate(%{name: "name changed"})
                |> Form.submit()
     end
 
