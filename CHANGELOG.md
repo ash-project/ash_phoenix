@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.3.2](https://github.com/ash-project/ash_phoenix/compare/v1.3.1...v1.3.2) (2024-03-06)
+
+
+
+
+### Bug Fixes:
+
+* the API is defined on the form, not on the form.source (#131)
+
+### Improvements:
+
+* #133 use resource defined Api (#134)
+
+* add `can_submit?/1` and `ensure_can_siubmit!/1`
+
 ## [v1.3.1](https://github.com/ash-project/ash_phoenix/compare/v1.3.0...v1.3.1) (2024-02-04)
 
 
