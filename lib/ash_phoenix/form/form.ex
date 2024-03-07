@@ -2476,7 +2476,8 @@ defmodule AshPhoenix.Form do
   end
 
   defp do_value(%{source: %Ash.Changeset{} = changeset} = form, field) do
-    with :error <- get_invalid_value(changeset, field),
+    with :error <- get_nested(form, field),
+         :error <- get_invalid_value(changeset, field),
          :error <- get_changing_value(changeset, field),
          :error <- Ash.Changeset.fetch_argument(changeset, field),
          :error <- get_non_attribute_non_argument_param(changeset, form, field),
@@ -2491,22 +2492,23 @@ defmodule AshPhoenix.Form do
     end
   end
 
-  defp do_value(%{source: %Ash.Query{} = query, data: data}, field) do
-    case Ash.Query.fetch_argument(query, field) do
+  defp do_value(%{source: %Ash.Query{} = query, data: data} = form, field) do
+    with :error <- get_nested(form, field),
+         :error <- Ash.Query.fetch_argument(query, field),
+         :error <- Map.fetch(query.params, to_string(field)),
+         :error <- Map.fetch(data || %{}, field) do
+      nil
+    else
+      {:ok, %Ash.NotLoaded{}} ->
+        nil
+
       {:ok, value} ->
         value
-
-      :error ->
-        case Map.fetch(query.params, to_string(field)) do
-          {:ok, value} ->
-            value
-
-          :error ->
-            if data do
-              Map.get(data, field)
-            end
-        end
     end
+  end
+
+  defp get_nested(form, field) do
+    Map.fetch(form.forms, field)
   end
 
   defp get_invalid_value(changeset, field) when is_atom(field) do
