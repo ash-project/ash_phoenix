@@ -2455,16 +2455,31 @@ defmodule AshPhoenix.Form do
       %Ash.Changeset{} = _source ->
         %{
           common_dropped
-          | source: %{
-              common_dropped.source
-              | attributes: Map.drop(common_dropped.source.attributes, string_and_atom)
-            }
+          | source:
+              %{
+                common_dropped.source
+                | attributes: Map.drop(common_dropped.source.attributes, string_and_atom)
+              }
+              |> clear_casted_keys(string_and_atom)
         }
 
       _ ->
         common_dropped
     end
   end
+
+  defp clear_casted_keys(
+         %{casted_arguments: casted_arguments, casted_attributes: casted_attributes} = changeset,
+         keys
+       ) do
+    %{
+      changeset
+      | casted_arguments: Map.drop(casted_arguments, keys),
+        casted_attributes: Map.drop(casted_attributes, keys)
+    }
+  end
+
+  defp clear_casted_keys(changeset, _keys), do: changeset
 
   @doc """
   Gets the value for a given field in the form.
@@ -2479,6 +2494,7 @@ defmodule AshPhoenix.Form do
     with :error <- get_nested(form, field),
          :error <- get_invalid_value(changeset, field),
          :error <- get_changing_value(changeset, field),
+         :error <- get_casted_value(changeset, field),
          :error <- Ash.Changeset.fetch_argument(changeset, field),
          :error <- get_non_attribute_non_argument_param(changeset, form, field),
          :error <- Map.fetch(changeset.data, field) do
@@ -2511,9 +2527,37 @@ defmodule AshPhoenix.Form do
     Map.fetch(form.forms, field)
   end
 
+  # `casted_arguments` and `casted_attributes` added in Ash 2.20+
+  defp get_casted_value(
+         %{casted_arguments: casted_arguments, casted_attributes: casted_attributes},
+         field
+       )
+       when is_atom(field) do
+    with :error <- Map.fetch(casted_arguments, field),
+         :error <- Map.fetch(casted_attributes, field),
+         string_field = to_string(field),
+         :error <- Map.fetch(casted_arguments, string_field) do
+      Map.fetch(casted_attributes, string_field)
+    end
+  end
+
+  defp get_casted_value(
+         %{casted_arguments: casted_arguments, casted_attributes: casted_attributes},
+         field
+       )
+       when is_binary(field) do
+    with :error <- Map.fetch(casted_arguments, field),
+         :error <- Map.fetch(casted_attributes, field) do
+      Map.fetch(casted_attributes, field)
+    end
+  end
+
+  defp get_casted_value(_, _), do: :error
+
   defp get_invalid_value(changeset, field) when is_atom(field) do
     if field in changeset.invalid_keys do
-      with :error <- Map.fetch(changeset.params, field) do
+      with :error <- get_casted_value(changeset, field),
+           :error <- Map.fetch(changeset.params, field) do
         Map.fetch(changeset.params, to_string(field))
       end
     else

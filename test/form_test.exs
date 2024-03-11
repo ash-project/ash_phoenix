@@ -175,13 +175,23 @@ defmodule AshPhoenix.FormTest do
       assert AshPhoenix.Form.value(form, :password) == "fo"
     end
 
+    test "form values are retrieved casted for un-changing arguments" do
+      form =
+        AshPhoenix.Test.User
+        |> AshPhoenix.Form.for_create(:register)
+        |> AshPhoenix.Form.validate(%{"password" => "f"})
+        |> AshPhoenix.Form.validate(%{"password" => :f})
+
+      assert AshPhoenix.Form.value(form, :password) == "f"
+    end
+
     test "lists with invalid values return those invalid values when getting them" do
       form =
         Post
         |> Form.for_create(:create_author_required, api: Api, forms: [auto?: true])
         |> Form.validate(%{"list_of_ints" => %{"0" => %{"map" => "of stuff"}}})
 
-      assert AshPhoenix.Form.value(form, :list_of_ints) == %{"0" => %{"map" => "of stuff"}}
+      assert AshPhoenix.Form.value(form, :list_of_ints) == [%{"map" => "of stuff"}]
     end
   end
 
