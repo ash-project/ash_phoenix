@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.3.4](https://github.com/ash-project/ash_phoenix/compare/v1.3.3...v1.3.4) (2024-03-11)
+
+
+
+
+### Bug Fixes:
+
+* get casted values from form (requires Ash 2.20+)
+
 ## [v1.3.3](https://github.com/ash-project/ash_phoenix/compare/v1.3.2...v1.3.3) (2024-03-11)
 
 
