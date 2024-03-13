@@ -2626,7 +2626,7 @@ defmodule AshPhoenix.Form do
   This can be useful if you want to get the parameters and manipulate them/build a custom changeset
   afterwards.
   """
-  @spec params(t()) :: map
+  @spec params(t() | Phoenix.HTML.Form.t()) :: map
   def params(form, opts \\ []) do
     form = to_form!(form)
     # These options aren't documented because they are still experimental
