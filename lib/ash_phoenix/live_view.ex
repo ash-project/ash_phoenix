@@ -440,7 +440,7 @@ defmodule AshPhoenix.LiveView do
       requested_before_last_refetch? ->
         socket
 
-      config[:refetch_window] && diff < config[:refetch_window] ->
+      config.opts[:refetch_window] && diff < config.opts[:refetch_window] ->
         Process.send_after(
           self(),
           {:refetch, assign, [requested_at: System.monotonic_time(:millisecond)]},
