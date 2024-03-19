@@ -614,6 +614,9 @@ defmodule AshPhoenix.Form.Auto do
       [] ->
         opts
 
+      [{:join, _action_name, _fields} = join_action] ->
+        add_join_form(opts, relationship, [join_action])
+
       [{source_dest_or_join, action_name} | rest] ->
         resource = rel_to_resource(source_dest_or_join, relationship)
 
