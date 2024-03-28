@@ -61,7 +61,8 @@ defmodule AshPhoenix.MixProject do
       logo: "logos/small-logo.png",
       extras: [
         "documentation/tutorials/getting-started-with-ash-and-phoenix.md",
-        "documentation/topics/working-with-phoenix.md"
+        "documentation/topics/working-with-phoenix.md",
+        "documentation/how_to/upgrade.md"
       ],
       groups_for_extras: [
         Tutorials: ~r'documentation/tutorials',
