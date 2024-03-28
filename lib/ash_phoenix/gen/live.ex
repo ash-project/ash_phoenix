@@ -270,7 +270,7 @@ defmodule AshPhoenix.Gen.Live do
         nil ->
           """
           #{short_name} = #{get_by_pkey}
-          #{inspect(domain)}.destroy!(#{short_name}#{actor_opt(opts)})
+          Ash.destroy!(#{short_name}#{actor_opt(opts)})
           """
 
         interface ->
@@ -290,7 +290,7 @@ defmodule AshPhoenix.Gen.Live do
     end)
     |> case do
       nil ->
-        "#{inspect(domain)}.get!(#{inspect(resource)}, #{pkey}#{actor_opt(opts)})"
+        "Ash.get!(#{inspect(resource)}, #{pkey}#{actor_opt(opts)})"
 
       interface ->
         "#{inspect(resource)}.#{interface.name}!(#{pkey}#{actor_opt(opts)})"

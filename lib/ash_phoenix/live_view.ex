@@ -93,7 +93,7 @@ defmodule AshPhoenix.LiveView do
   To support this, accept a second parameter to your callback function, which will be the options to use in `page_opts`
 
   ## Options:
-  #{NimbleOptions.docs(@opts)}
+  #{Spark.Options.docs(@opts)}
 
   A great way to get readable millisecond values is to use the functions in erlang's `:timer` module,
   like `:timer.hours/1`, `:timer.minutes/1`, and `:timer.seconds/1`
@@ -137,7 +137,7 @@ defmodule AshPhoenix.LiveView do
 
   @spec keep_live(socket, assign, callback, liveness_options) :: socket
   def keep_live(socket, assign, callback, opts \\ []) do
-    opts = NimbleOptions.validate!(opts, @opts)
+    opts = S.validate!(opts, @opts)
 
     if opts[:load_until_connected?] && match?(%Phoenix.LiveView.Socket{}, socket) &&
          !Phoenix.LiveView.connected?(socket) do

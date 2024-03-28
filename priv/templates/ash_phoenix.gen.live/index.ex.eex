@@ -96,13 +96,13 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Index d
       {:ok,
         socket
         <%= if @actor do %>
-          |> stream(:<%= @resource_plural %>, <%= @domain %>.read!(<%= @resource %>, actor: socket.assigns[:<%= @actor %>]))
+          |> stream(:<%= @resource_plural %>, Ash.read!(<%= @resource %>, actor: socket.assigns[:<%= @actor %>]))
         <% else %>
-          |> stream(:<%= @resource_plural %>, <%= @domain %>.read!(<%= @resource %>))
+          |> stream(:<%= @resource_plural %>, Ash.read!(<%= @resource %>))
         <% end %>
         |> assign_new(:<%= @actor %>, fn -> nil end)}
     <% else %>
-      {:ok, stream(socket, :<%= @resource_plural %>, <%= @domain %>.read!(<%= @resource %>))}
+      {:ok, stream(socket, :<%= @resource_plural %>, Ash.read!(<%= @resource %>))}
     <% end %>
   end
 
