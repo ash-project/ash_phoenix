@@ -59,7 +59,7 @@ defmodule AshPhoenix.Gen.Live do
         actor: opts[:actor],
         actor_opt: actor_opt(opts)
       ]
-      |> add_resource_assigns(domain, resource, opts)
+      |> add_resource_assigns(resource, opts)
 
     web_live = Path.join([web_path(), "live", "#{assigns[:resource_singular]}_live"])
 
@@ -140,7 +140,7 @@ defmodule AshPhoenix.Gen.Live do
     Mix.Generator.create_file(destination_path, contents, generate_opts)
   end
 
-  defp add_resource_assigns(assigns, domain, resource, opts) do
+  defp add_resource_assigns(assigns, resource, opts) do
     short_name =
       resource
       |> Ash.Resource.Info.short_name()
@@ -157,7 +157,7 @@ defmodule AshPhoenix.Gen.Live do
           raise "Resources without a primary key or with a composite primary key are not currently supported."
       end
 
-    get_by_pkey = get_by_pkey(domain, resource, pkey, opts)
+    get_by_pkey = get_by_pkey(resource, pkey, opts)
 
     create_action = action(resource, opts, :create)
     update_action = action(resource, opts, :update)
@@ -172,7 +172,7 @@ defmodule AshPhoenix.Gen.Live do
       update_action: update_action,
       create_inputs: inputs(resource, create_action),
       update_inputs: inputs(resource, update_action),
-      destroy: destroy(domain, short_name, get_by_pkey, resource, opts),
+      destroy: destroy(short_name, get_by_pkey, resource, opts),
       pkey: pkey,
       get_by_pkey: get_by_pkey,
       attrs: attrs(resource),
@@ -257,7 +257,7 @@ defmodule AshPhoenix.Gen.Live do
     end
   end
 
-  defp destroy(domain, short_name, get_by_pkey, resource, opts) do
+  defp destroy(short_name, get_by_pkey, resource, opts) do
     action = action(resource, opts, :destroy)
 
     if action do
@@ -282,7 +282,7 @@ defmodule AshPhoenix.Gen.Live do
     end
   end
 
-  defp get_by_pkey(domain, resource, pkey, opts) do
+  defp get_by_pkey(resource, pkey, opts) do
     resource
     |> Ash.Resource.Info.interfaces()
     |> Enum.find(fn interface ->
