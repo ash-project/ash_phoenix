@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.0.0-rc.0](https://github.com/ash-project/ash_phoenix/compare/v1.3.4...v2.0.0-rc.0) (2024-03-28)
+### Breaking Changes:
+
+* upgrade to Ash 3.0
+
+
+
+### Bug Fixes:
+
+* handle destroy that only affects join resource in auto forms
+
+* properly fetch refetch_window from config (#141)
+
+* fix params/1 typespec (#140)
+
 ## [v1.3.4](https://github.com/ash-project/ash_phoenix/compare/v1.3.3...v1.3.4) (2024-03-11)
 
 
