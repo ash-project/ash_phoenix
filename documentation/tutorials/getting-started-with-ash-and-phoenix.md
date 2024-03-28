@@ -112,7 +112,7 @@ end
 
 ### Edit Config
 
-We need to specify the Ash APIs that our application uses and some config for backwards compatibility that will be removed in the next major release.
+We need to specify the Ash domains that our application uses and some config for backwards compatibility that will be removed in the next major release.
 
 Add this to your config:
 
@@ -122,22 +122,22 @@ Add this to your config:
 import Config
 
 config :my_ash_phoenix_app,
-  ash_apis: [MyAshPhoenixApp.Blog]
+  ash_domains: [MyAshPhoenixApp.Blog]
 ```
 
-### Create the API and add Resources
+### Create the Domain and add Resources
 
-An Ash API can be thought of as a [Bounded Context](https://martinfowler.com/bliki/BoundedContext.html) in Domain Driven Design terms and can seen as analogous to a Phoenix context. Put simply, its a way of grouping related resources together. In our case our API will be called `MyAshPhoenixApp.Blog`.
+An Ash domain can be thought of as a [Bounded Context](https://martinfowler.com/bliki/BoundedContext.html) in Domain Driven Design terms and can seen as analogous to a Phoenix context. Put simply, its a way of grouping related resources together. In our case our domain will be called `MyAshPhoenixApp.Blog`.
 
-An Ash API points to Ash resources. An Ash API can point to one or more resources. In our case we will only have a single resource `MyAshPhoenixApp.Blog.Post`. We'll be taking a deeper look into that in the next section.
+An Ash domain points to Ash resources. An Ash domain can point to one or more resources. In our case we will only have a single resource `MyAshPhoenixApp.Blog.Post`. We'll be taking a deeper look into that in the next section.
 
-For now take a look at the `Blog` API and the associated resources:
+For now take a look at the `Blog` domain and the associated resources:
 
 ```elixir
 # lib/my_ash_phoenix_app/blog/blog.ex
 
 defmodule MyAshPhoenixApp.Blog do
-  use Ash.Api
+  use Ash.Domain
 
   resources do
     resource MyAshPhoenixApp.Blog.Post
@@ -297,7 +297,7 @@ $ mix ash_postgres.migrate
 
 The `:read` action takes a query instead of a changeset.
 
-Below is the most verbose way of calling your resource. All other ways of interaction are some kind of shorthand of these. This means at some point a changeset is being created and passed to the API, even if it's encapsulated within another function.
+Below is the most verbose way of calling your resource. All other ways of interaction are some kind of shorthand of these. This means at some point a changeset is being created and passed to the domain, even if it's encapsulated within another function.
 
 ```elixir
 # create post
@@ -332,7 +332,7 @@ As stated above, this is verbose so Ash has a built in shortcut - The `code_inte
 
 ```elixir
  code_interface do
-    # defines the API this resource should be called from
+    # defines the domain this resource should be called from
     define_for MyAshPhoenixApp.Blog
     # defining function Post.create/2 it calls the :create action
     define :create, action: :create

@@ -1,6 +1,9 @@
 defmodule AshPhoenix.Test.User do
   @moduledoc false
-  use Ash.Resource, data_layer: Ash.DataLayer.Ets
+
+  use Ash.Resource,
+    domain: AshPhoenix.Test.Domain,
+    data_layer: Ash.DataLayer.Ets
 
   ets do
     private?(true)
@@ -8,10 +11,12 @@ defmodule AshPhoenix.Test.User do
 
   attributes do
     uuid_primary_key(:id)
-    attribute(:email, :string, allow_nil?: false)
+    attribute(:email, :string, allow_nil?: false, public?: true)
   end
 
   actions do
+    default_accept :*
+
     defaults([:create, :read, :update])
 
     create :register do

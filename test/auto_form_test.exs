@@ -2,7 +2,7 @@ defmodule AshPhoenix.AutoFormTest do
   use ExUnit.Case
 
   alias AshPhoenix.Form.Auto
-  alias AshPhoenix.Test.{Api, Post}
+  alias AshPhoenix.Test.{Domain, Post}
   import AshPhoenix.Form, only: [update_opts: 2]
 
   defp form_for(a, _b), do: Phoenix.HTML.FormData.to_form(a, [])
@@ -59,7 +59,7 @@ defmodule AshPhoenix.AutoFormTest do
     test "a form can be added for a union" do
       Post
       |> AshPhoenix.Form.for_create(:create,
-        api: Api,
+        domain: Domain,
         forms: [
           auto?: true
         ]
@@ -72,7 +72,7 @@ defmodule AshPhoenix.AutoFormTest do
       form =
         Post
         |> AshPhoenix.Form.for_create(:create,
-          api: Api,
+          domain: Domain,
           forms: [
             auto?: true
           ]
@@ -86,7 +86,7 @@ defmodule AshPhoenix.AutoFormTest do
     test "a form can be added for a non-embedded type" do
       Post
       |> AshPhoenix.Form.for_create(:create,
-        api: Api,
+        domain: Domain,
         forms: [
           auto?: true
         ],
@@ -103,7 +103,7 @@ defmodule AshPhoenix.AutoFormTest do
     test "a form can be added for a union" do
       Post
       |> AshPhoenix.Form.for_create(:create,
-        api: Api,
+        domain: Domain,
         forms: [
           auto?: true
         ]
@@ -116,7 +116,7 @@ defmodule AshPhoenix.AutoFormTest do
       form =
         Post
         |> AshPhoenix.Form.for_create(:create,
-          api: Api,
+          domain: Domain,
           forms: [
             auto?: true
           ]
@@ -131,7 +131,7 @@ defmodule AshPhoenix.AutoFormTest do
       form =
         Post
         |> AshPhoenix.Form.for_create(:create,
-          api: Api,
+          domain: Domain,
           forms: [
             auto?: true
           ]
@@ -157,7 +157,7 @@ defmodule AshPhoenix.AutoFormTest do
       form =
         Post
         |> AshPhoenix.Form.for_create(:create,
-          api: Api,
+          domain: Domain,
           forms: [
             auto?: true
           ]

@@ -8,7 +8,8 @@ defmodule AshPhoenix.Test.UnionValue do
           type: AshPhoenix.Test.Foo,
           constraints: [],
           tag: :type,
-          tag_value: "foo"
+          tag_value: "foo",
+          cast_tag?: true
         ],
         bar: [
           type: :integer,

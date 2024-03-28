@@ -5,7 +5,7 @@ defmodule AshPhoenix.Gen do
     """
     ## Positional Arguments
 
-    - `api` - The API (e.g. "Shop").
+    - `domain` - The domain (e.g. "Shop").
     - `resource` - The resource (e.g. "Product").
 
     ## Options
@@ -15,17 +15,17 @@ defmodule AshPhoenix.Gen do
   end
 
   def parse_opts(argv) do
-    {api, resource, rest} =
+    {domain, resource, rest} =
       case argv do
-        [api, resource | rest] ->
-          {api, resource, rest}
+        [domain, resource | rest] ->
+          {domain, resource, rest}
 
         argv ->
           raise "Not enough arguments. Expected 2, got #{Enum.count(argv)}"
       end
 
-    if String.starts_with?(api, "-") do
-      raise "Expected first argument to be an api module, not an option"
+    if String.starts_with?(domain, "-") do
+      raise "Expected first argument to be an domain module, not an option"
     end
 
     if String.starts_with?(resource, "-") do
@@ -37,7 +37,7 @@ defmodule AshPhoenix.Gen do
         strict: [resource_plural: :string, actor: :string, no_actor: :boolean]
       )
 
-    api = Module.concat([api])
+    domain = Module.concat([domain])
     resource = Module.concat([resource])
 
     parsed =
@@ -45,7 +45,7 @@ defmodule AshPhoenix.Gen do
         plural_name!(resource, parsed)
       end)
 
-    {api, resource, parsed, rest}
+    {domain, resource, parsed, rest}
   end
 
   defp plural_name!(resource, opts) do

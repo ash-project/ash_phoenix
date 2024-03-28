@@ -28,7 +28,7 @@ defmodule AshPhoenix.FilterForm do
   ```elixir
   filter_form = AshPhoenix.validate(socket.assigns.filter_form, params)
 
-  # Generate a query and pass it to the Api
+  # Generate a query and pass it to the Domain
   query = AshPhoenix.FilterForm.filter!(MyApp.Payroll.Employee, filter_form)
   filtered_employees = MyApp.Payroll.read!(query)
 
@@ -203,6 +203,7 @@ defmodule AshPhoenix.FilterForm do
 
   alias AshPhoenix.FilterForm.Predicate
   require Ash.Query
+  require Ash.Expr
 
   @new_opts [
     params: [
@@ -240,16 +241,16 @@ defmodule AshPhoenix.FilterForm do
   Create a new filter form.
 
   Options:
-  #{Spark.OptionsHelpers.docs(@new_opts)}
+  #{Spark.Options.docs(@new_opts)}
   """
   def new(resource, opts \\ []) do
-    opts = Spark.OptionsHelpers.validate!(opts, @new_opts)
+    opts = Spark.Options.validate!(opts, @new_opts)
     params = opts[:params]
 
     params = sanitize_params(params)
 
     params =
-      if is_predicate?(params) do
+      if predicate?(params) do
         %{
           "operator" => "and",
           "id" => Ash.UUID.generate(),
@@ -290,7 +291,7 @@ defmodule AshPhoenix.FilterForm do
     params = sanitize_params(params)
 
     params =
-      if is_predicate?(params) do
+      if predicate?(params) do
         %{
           "operator" => "and",
           "id" => Ash.UUID.generate(),
@@ -520,7 +521,7 @@ defmodule AshPhoenix.FilterForm do
     ref =
       case Ash.Resource.Info.public_calculation(Ash.Resource.Info.related(resource, path), field) do
         nil ->
-          {:ok, Ash.Query.expr(ref(^field, ^path))}
+          {:ok, Ash.Expr.expr(^Ash.Expr.ref(List.wrap(path), field))}
 
         calc ->
           case Ash.Query.validate_calculation_arguments(
@@ -591,7 +592,7 @@ defmodule AshPhoenix.FilterForm do
   end
 
   defp sanitize_params(params) do
-    if is_predicate?(params) do
+    if predicate?(params) do
       field =
         case params[:field] || params["field"] do
           nil -> nil
@@ -651,7 +652,7 @@ defmodule AshPhoenix.FilterForm do
   end
 
   defp parse_component(parent, {key, params}, form_opts) do
-    if is_predicate?(params) do
+    if predicate?(params) do
       # Eventually, components may have references w/ paths
       # also, we should validate references here
       new_predicate(params, parent)
@@ -770,7 +771,7 @@ defmodule AshPhoenix.FilterForm do
           end
       end
     else
-      if is_predicate?(params) do
+      if predicate?(params) do
         new_predicate(params, form)
       else
         params = Map.put_new(params, "id", Ash.UUID.generate())
@@ -784,7 +785,7 @@ defmodule AshPhoenix.FilterForm do
     end
   end
 
-  defp is_predicate?(params) do
+  defp predicate?(params) do
     [:field, :value, "field", "value"] |> Enum.any?(&Map.has_key?(params, &1))
   end
 
@@ -909,10 +910,10 @@ defmodule AshPhoenix.FilterForm do
 
   Options:
 
-  #{Spark.OptionsHelpers.docs(@add_predicate_opts)}
+  #{Spark.Options.docs(@add_predicate_opts)}
   """
   def add_predicate(form, field, operator_or_function, value, opts \\ []) do
-    opts = Spark.OptionsHelpers.validate!(opts, @add_predicate_opts)
+    opts = Spark.Options.validate!(opts, @add_predicate_opts)
 
     predicate_id = Ash.UUID.generate()
 
@@ -1072,10 +1073,10 @@ defmodule AshPhoenix.FilterForm do
 
   Options:
 
-  #{Spark.OptionsHelpers.docs(@add_group_opts)}
+  #{Spark.Options.docs(@add_group_opts)}
   """
   def add_group(form, opts \\ []) do
-    opts = Spark.OptionsHelpers.validate!(opts, @add_group_opts)
+    opts = Spark.Options.validate!(opts, @add_group_opts)
     group_id = Ash.UUID.generate()
 
     group = %__MODULE__{resource: form.resource, operator: opts[:operator], id: group_id}

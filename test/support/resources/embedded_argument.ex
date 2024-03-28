@@ -3,7 +3,7 @@ defmodule AshPhoenix.Test.EmbeddedArgument do
   use Ash.Resource, data_layer: :embedded
 
   attributes do
-    attribute :value, :string
-    attribute :nested_embeds, {:array, AshPhoenix.Test.NestedEmbed}, default: []
+    attribute :value, :string, public?: true
+    attribute :nested_embeds, {:array, AshPhoenix.Test.NestedEmbed}, default: [], public?: true
   end
 end

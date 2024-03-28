@@ -18,6 +18,30 @@ defimpl AshPhoenix.FormData.Error, for: Ash.Error.Query.InvalidQuery do
   end
 end
 
+defimpl AshPhoenix.FormData.Error, for: Ash.Error.Invalid.NoSuchInput do
+  def to_form_error(error) do
+    input =
+      if is_atom(error.input) do
+        error.input
+      else
+        try do
+          String.to_existing_atom(error.input)
+        rescue
+          _ ->
+            error.input
+        end
+      end
+
+    {input, "no such input", error.vars}
+  end
+end
+
+# defimpl AshPhoenix.FormData.Error, for: Ash.Error.Invalid.NoSuchInput do
+#   def to_form_error(error) do
+#     {error.input, "", error.vars}
+#   end
+# end
+
 defimpl AshPhoenix.FormData.Error, for: Ash.Error.Query.InvalidArgument do
   def to_form_error(error) do
     {error.field, error.message, error.vars}

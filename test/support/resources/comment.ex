@@ -9,13 +9,17 @@ end
 
 defmodule AshPhoenix.Test.Comment do
   @moduledoc false
-  use Ash.Resource, data_layer: Ash.DataLayer.Ets
+
+  use Ash.Resource,
+    domain: AshPhoenix.Test.Domain,
+    data_layer: Ash.DataLayer.Ets
 
   ets do
     private?(true)
   end
 
   actions do
+    default_accept(:*)
     read(:read, primary?: true)
 
     read :featured do
@@ -42,9 +46,10 @@ defmodule AshPhoenix.Test.Comment do
   end
 
   attributes do
-    uuid_primary_key(:id)
-    attribute(:featured, :boolean, default: false)
-    attribute(:text, :string, allow_nil?: false)
+    uuid_primary_key(:id, public?: true, writable?: true)
+
+    attribute(:featured, :boolean, default: false, public?: true)
+    attribute(:text, :string, allow_nil?: false, public?: true)
   end
 
   relationships do

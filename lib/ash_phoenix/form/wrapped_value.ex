@@ -4,10 +4,13 @@ defmodule AshPhoenix.Form.WrappedValue do
     data_layer: :embedded
 
   attributes do
-    attribute :value, :term
+    attribute :value, :term, public?: true
   end
 
   actions do
+    default_accept :*
+    defaults []
+
     create :create do
       primary? true
     end
@@ -22,12 +25,17 @@ defmodule AshPhoenix.Form.WrappedValue do
       if Ash.Changeset.changing_attribute?(changeset, :value) do
         value = Ash.Changeset.get_attribute(changeset, :value)
 
-        with {:ok, casted} <-
-               Ash.Type.Helpers.cast_input(
+        with constraints <-
+               Ash.Type.include_source(
+                 changeset.context.type,
+                 changeset,
+                 changeset.context.constraints
+               ),
+             {:ok, casted} <-
+               Ash.Type.cast_input(
                  changeset.context.type,
                  value,
-                 changeset.context.constraints,
-                 changeset
+                 changeset.context.constraints
                ),
              {:constrained, {:ok, casted}} when not is_nil(casted) <-
                {:constrained,

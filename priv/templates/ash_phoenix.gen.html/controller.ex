@@ -69,10 +69,10 @@ defmodule <%= @app_name %>Web.<%= @resource %>Controller do
   end
 
   defp create_form(params \\ nil) do
-    AshPhoenix.Form.for_create(<%= @resource %>, :create, as: "<%= @singular %>", api: <%= @full_api %>, params: params)
+    AshPhoenix.Form.for_create(<%= @resource %>, :create, as: "<%= @singular %>", domain: <%= @full_domain %>, params: params)
   end
 
   defp update_form(<%= @singular %>, params \\ nil) do
-    AshPhoenix.Form.for_update(<%= @singular %>, :update, as: "<%= @singular %>", api: <%= @full_api %>, params: params)
+    AshPhoenix.Form.for_update(<%= @singular %>, :update, as: "<%= @singular %>", domain: <%= @full_domain %>, params: params)
   end
 end

@@ -2,7 +2,7 @@ defmodule AshPhoenix.Test.Artist do
   @moduledoc false
 
   use Ash.Resource,
-    api: AshPhoenix.Test.Api,
+    domain: AshPhoenix.Test.Domain,
     data_layer: Ash.DataLayer.Ets
 
   ets do
@@ -11,10 +11,16 @@ defmodule AshPhoenix.Test.Artist do
 
   attributes do
     uuid_primary_key :id
-    attribute :name, :string, allow_nil?: false
+    attribute :name, :string, allow_nil?: false, public?: true
   end
 
   actions do
-    defaults [:create, :read, :update, :destroy]
+    default_accept :*
+    defaults [:create, :read, :update]
+
+    destroy :destroy do
+      primary? true
+      argument :name, :string
+    end
   end
 end

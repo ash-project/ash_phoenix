@@ -4,7 +4,7 @@ errors = [
   {Ash.Error.Query.InvalidFilterValue, 400},
   {Ash.Error.Query.NotFound, 404},
   {Ash.Error.Forbidden.Policy, 403},
-  {Ash.Error.Forbidden.ApiRequiresActor, 403},
+  {Ash.Error.Forbidden.DomainRequiresActor, 403},
   {Ash.Error.Forbidden.MustPassStrictCheck, 403}
 ]
 

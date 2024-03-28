@@ -38,10 +38,10 @@ defmodule AshPhoenix.LiveView do
       type: :any,
       doc: "Results to use instead of running the query immediately."
     ],
-    api: [
+    domain: [
       type: :atom,
       doc:
-        "For paginated views, in order to use `change_page/3`, you must set the Api to use for pagination"
+        "For paginated views, in order to use `change_page/3`, you must set the Domain to use for pagination"
     ],
     refetch_interval: [
       type: :non_neg_integer,
@@ -219,11 +219,11 @@ defmodule AshPhoenix.LiveView do
         data -> data
       end
 
-    unless config.opts[:api] do
-      raise "Must set api to use change_page/3"
+    unless config.opts[:domain] do
+      raise "Must set domain to use change_page/3"
     end
 
-    new_result = config.opts[:api].page!(current_page, target)
+    new_result = config.opts[:domain].page!(current_page, target)
     {_query, rerun_opts} = new_result.rerun
     new_page_opts = Keyword.merge(config.opts[:page] || [], rerun_opts[:page])
     new_opts = Keyword.put(config.opts, :page, new_page_opts)

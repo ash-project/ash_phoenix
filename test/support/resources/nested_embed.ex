@@ -3,8 +3,8 @@ defmodule AshPhoenix.Test.NestedEmbed do
   use Ash.Resource, data_layer: :embedded
 
   attributes do
-    attribute :limit, :integer, allow_nil?: false
-    attribute :four_chars, :string, allow_nil?: false
+    attribute :limit, :integer, allow_nil?: false, public?: true
+    attribute :four_chars, :string, allow_nil?: false, public?: true
   end
 
   validations do

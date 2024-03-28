@@ -63,7 +63,7 @@ defmodule AshPhoenix.Form.Auto do
 
   ## Options
 
-  #{Spark.OptionsHelpers.docs(@auto_opts)}
+  #{Spark.Options.docs(@auto_opts)}
 
   ## Special Considerations
 
@@ -86,7 +86,7 @@ defmodule AshPhoenix.Form.Auto do
   @dialyzer {:nowarn_function, rel_to_resource: 2}
 
   def auto(resource, action, opts \\ []) do
-    opts = Spark.OptionsHelpers.validate!(opts, @auto_opts)
+    opts = Spark.Options.validate!(opts, @auto_opts)
 
     Keyword.new(
       related(resource, action, opts) ++
@@ -151,13 +151,20 @@ defmodule AshPhoenix.Form.Auto do
         end
 
       updater = fn opts, data, params ->
-        {type, constraints} = determine_type(constraints, data, params)
+        {type, constraints, tag} = determine_type(constraints, data, params)
 
-        {embed, constraints, fake_embedded?} =
+        {embed, constraints, fake_embedded?, skip_unknown_inputs} =
           if Ash.Type.embedded_type?(type) do
-            {type, constraints, false}
+            skip_unknown_inputs =
+              if tag do
+                [tag, to_string(tag)]
+              else
+                []
+              end
+
+            {type, constraints, false, skip_unknown_inputs}
           else
-            {AshPhoenix.Form.WrappedValue, [], true}
+            {AshPhoenix.Form.WrappedValue, [], true, []}
           end
 
         prepare_source =
@@ -204,6 +211,7 @@ defmodule AshPhoenix.Form.Auto do
           update_action: update_action.name,
           prepare_source: prepare_source,
           transform_params: transform_params,
+          skip_unknown_inputs: skip_unknown_inputs,
           embed?: true,
           forms: [],
           updater: fn opts ->
@@ -248,7 +256,7 @@ defmodule AshPhoenix.Form.Auto do
         """
 
       {_key, config} ->
-        {config[:type], config[:constraints]}
+        {config[:type], config[:constraints], config[:tag]}
     end
   end
 
@@ -275,7 +283,7 @@ defmodule AshPhoenix.Form.Auto do
         """
 
       {_key, config} ->
-        {config[:type], config[:constraints]}
+        {config[:type], config[:constraints], config[:tag]}
     end
   end
 
@@ -324,7 +332,7 @@ defmodule AshPhoenix.Form.Auto do
     end
 
     action.arguments
-    |> Enum.reject(& &1.private?)
+    |> Enum.reject(&(!&1.public?))
     |> exclude_non_map_types(auto_opts)
     |> Enum.flat_map(fn arg ->
       case find_manage_change(arg, action) do

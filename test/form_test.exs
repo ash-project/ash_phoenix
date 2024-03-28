@@ -3,7 +3,7 @@ defmodule AshPhoenix.FormTest do
   import ExUnit.CaptureLog
 
   alias AshPhoenix.Form
-  alias AshPhoenix.Test.{Api, Artist, Author, Comment, OtherApi, Post, PostWithDefault}
+  alias AshPhoenix.Test.{Domain, Artist, Author, Comment, Post, PostWithDefault}
   alias Phoenix.HTML.FormData
 
   defp form_for(form, _) do
@@ -19,7 +19,7 @@ defmodule AshPhoenix.FormTest do
       form =
         Post
         |> Form.for_create(:create,
-          api: Api,
+          domain: Domain,
           forms: [
             comments: [
               type: :list,
@@ -39,7 +39,7 @@ defmodule AshPhoenix.FormTest do
       form =
         Post
         |> Form.for_create(:create,
-          api: Api,
+          domain: Domain,
           params: %{"text" => "bar"},
           forms: [
             comments: [
@@ -62,7 +62,7 @@ defmodule AshPhoenix.FormTest do
       form =
         Post
         |> Form.for_create(:create,
-          api: Api,
+          domain: Domain,
           params: %{"text" => "bar"},
           forms: [
             comments: [
@@ -188,7 +188,7 @@ defmodule AshPhoenix.FormTest do
     test "lists with invalid values return those invalid values when getting them" do
       form =
         Post
-        |> Form.for_create(:create_author_required, api: Api, forms: [auto?: true])
+        |> Form.for_create(:create_author_required, domain: Domain, forms: [auto?: true])
         |> Form.validate(%{"list_of_ints" => %{"0" => %{"map" => "of stuff"}}})
 
       assert AshPhoenix.Form.value(form, :list_of_ints) == [%{"map" => "of stuff"}]
@@ -200,7 +200,7 @@ defmodule AshPhoenix.FormTest do
       form =
         Post
         |> Form.for_create(:create,
-          api: Api,
+          domain: Domain,
           forms: [
             comments: [
               type: :list,
@@ -269,7 +269,7 @@ defmodule AshPhoenix.FormTest do
   end
 
   test "validation errors are attached to fields" do
-    form = Form.for_create(PostWithDefault, :create, api: Api)
+    form = Form.for_create(PostWithDefault, :create, domain: Domain)
     form = AshPhoenix.Form.validate(form, %{"text" => ""}, errors: form.submitted_once?)
     {:error, form} = Form.submit(form, params: %{"text" => ""})
     assert %{errors: [text: {"is required", []}]} = form_for(form, "foo")
@@ -279,7 +279,7 @@ defmodule AshPhoenix.FormTest do
   test "blank form values unset - helps support dead view forms" do
     form =
       Form.for_create(PostWithDefault, :create,
-        api: Api,
+        domain: Domain,
         exclude_fields_if_empty: [:text, :title]
       )
 
@@ -292,7 +292,7 @@ defmodule AshPhoenix.FormTest do
     form =
       Comment
       |> Form.for_create(:create,
-        api: Api,
+        domain: Domain,
         forms: [
           post: [
             resource: PostWithDefault,
@@ -314,7 +314,7 @@ defmodule AshPhoenix.FormTest do
   end
 
   test "phoenix forms are accepted as input in some cases" do
-    form = Form.for_create(PostWithDefault, :create, api: Api)
+    form = Form.for_create(PostWithDefault, :create, domain: Domain)
     form = AshPhoenix.Form.validate(form, %{"text" => ""}, errors: form.submitted_once?)
     form = form_for(form, "foo")
     # This simply shouldn't raise
@@ -322,7 +322,7 @@ defmodule AshPhoenix.FormTest do
   end
 
   test "a phoenix form is returned in cases where a phoenix form is passed in" do
-    form = Form.for_create(PostWithDefault, :create, api: Api)
+    form = Form.for_create(PostWithDefault, :create, domain: Domain)
     form = AshPhoenix.Form.validate(form, %{"text" => ""}, errors: form.submitted_once?)
     form = form_for(form, "foo")
 
@@ -332,19 +332,19 @@ defmodule AshPhoenix.FormTest do
   test "it supports forms with data and a `type: :append_and_remove`" do
     post =
       Post
-      |> Ash.Changeset.new(%{text: "post"})
-      |> Api.create!()
+      |> Ash.Changeset.for_create(:create, %{text: "post"})
+      |> Ash.create!()
 
     comment =
       Comment
-      |> Ash.Changeset.new(%{text: "comment"})
+      |> Ash.Changeset.for_create(:create, %{text: "comment"})
       |> Ash.Changeset.manage_relationship(:post, post, type: :append_and_remove)
-      |> Api.create!()
+      |> Ash.create!()
 
     form =
       post
       |> Form.for_update(:update_with_replace,
-        api: Api,
+        domain: Domain,
         forms: [
           comments: [
             read_resource: Comment,
@@ -369,19 +369,19 @@ defmodule AshPhoenix.FormTest do
   test "ignoring a form filters it from the parameters" do
     post =
       Post
-      |> Ash.Changeset.new(%{text: "post"})
-      |> Api.create!()
+      |> Ash.Changeset.for_create(:create, %{text: "post"})
+      |> Ash.create!()
 
     comment =
       Comment
-      |> Ash.Changeset.new(%{text: "comment"})
+      |> Ash.Changeset.for_create(:create, %{text: "comment"})
       |> Ash.Changeset.manage_relationship(:post, post, type: :append_and_remove)
-      |> Api.create!()
+      |> Ash.create!()
 
     form =
       post
       |> Form.for_update(:update_with_replace,
-        api: Api,
+        domain: Domain,
         forms: [
           comments: [
             read_resource: Comment,
@@ -423,8 +423,8 @@ defmodule AshPhoenix.FormTest do
     test "it is false by default for update forms" do
       post =
         Post
-        |> Ash.Changeset.new(%{text: "post"})
-        |> Api.create!()
+        |> Ash.Changeset.for_create(:create, %{text: "post"})
+        |> Ash.create!()
 
       form =
         post
@@ -437,8 +437,8 @@ defmodule AshPhoenix.FormTest do
     test "it is true when a change is made" do
       post =
         Post
-        |> Ash.Changeset.new(%{text: "post"})
-        |> Api.create!()
+        |> Ash.Changeset.for_create(:create, %{text: "post"})
+        |> Ash.create!()
 
       form =
         post
@@ -451,8 +451,8 @@ defmodule AshPhoenix.FormTest do
     test "it goes back to false if the change is unmade" do
       post =
         Post
-        |> Ash.Changeset.new(%{text: "post"})
-        |> Api.create!()
+        |> Ash.Changeset.for_create(:create, %{text: "post"})
+        |> Ash.create!()
 
       form =
         post
@@ -472,7 +472,7 @@ defmodule AshPhoenix.FormTest do
       form =
         Comment
         |> Form.for_create(:create,
-          api: Api,
+          domain: Domain,
           forms: [
             post: [
               resource: Post,
@@ -489,23 +489,23 @@ defmodule AshPhoenix.FormTest do
     test "removing a form that was there prior marks the form as changed" do
       post =
         Post
-        |> Ash.Changeset.new(%{text: "post"})
-        |> Api.create!()
+        |> Ash.Changeset.for_create(:create, %{text: "post"})
+        |> Ash.create!()
 
       comment =
         Comment
-        |> Ash.Changeset.new(%{text: "comment"})
+        |> Ash.Changeset.for_create(:create, %{text: "comment"})
         |> Ash.Changeset.manage_relationship(:post, post, type: :append_and_remove)
-        |> Api.create!()
+        |> Ash.create!()
 
       # Check the persisted post.comments count after create
-      post = Post |> Api.get!(post.id) |> Api.load!(:comments)
+      post = Post |> Ash.get!(post.id) |> Ash.load!(:comments)
       assert Enum.count(post.comments) == 1
 
       form =
         post
         |> Form.for_update(:update,
-          api: Api,
+          domain: Domain,
           forms: [
             comments: [
               resource: Comment,
@@ -527,23 +527,23 @@ defmodule AshPhoenix.FormTest do
     test "generated forms have default values even with no server round-trips" do
       post =
         Post
-        |> Ash.Changeset.new(%{text: "post"})
-        |> Api.create!()
+        |> Ash.Changeset.for_create(:create, %{text: "post"})
+        |> Ash.create!()
 
       comment =
         Comment
-        |> Ash.Changeset.new(%{text: "comment"})
+        |> Ash.Changeset.for_create(:create, %{text: "comment"})
         |> Ash.Changeset.manage_relationship(:post, post, type: :append_and_remove)
-        |> Api.create!()
+        |> Ash.create!()
 
       # Check the persisted post.comments count after create
-      post = Post |> Api.get!(post.id) |> Api.load!(:comments)
+      post = Post |> Ash.get!(post.id) |> Ash.load!(:comments)
       assert Enum.count(post.comments) == 1
 
       form =
         post
         |> Form.for_update(:update,
-          api: Api,
+          domain: Domain,
           forms: [
             comments: [
               resource: Comment,
@@ -557,7 +557,7 @@ defmodule AshPhoenix.FormTest do
 
       form = AshPhoenix.Form.add_form(form, :comments)
 
-      assert AshPhoenix.Form.params(form) == %{
+      assert AshPhoenix.Form.params(form, hidden?: true) == %{
                "_form_type" => "update",
                "_touched" => "comments",
                "comments" => [
@@ -575,7 +575,7 @@ defmodule AshPhoenix.FormTest do
     test "removing a non-existant form should not change touched_forms" do
       form =
         Post
-        |> Form.for_create(:create, api: Api, forms: [auto?: true])
+        |> Form.for_create(:create, domain: Domain, forms: [auto?: true])
         |> AshPhoenix.Form.remove_form([:author])
 
       assert MapSet.member?(form.touched_forms, "author") == false
@@ -584,23 +584,23 @@ defmodule AshPhoenix.FormTest do
     test "removing a form that was added does not mark the form as changed" do
       post =
         Post
-        |> Ash.Changeset.new(%{text: "post"})
-        |> Api.create!()
+        |> Ash.Changeset.for_create(:create, %{text: "post"})
+        |> Ash.create!()
 
       comment =
         Comment
-        |> Ash.Changeset.new(%{text: "comment"})
+        |> Ash.Changeset.for_create(:create, %{text: "comment"})
         |> Ash.Changeset.manage_relationship(:post, post, type: :append_and_remove)
-        |> Api.create!()
+        |> Ash.create!()
 
       # Check the persisted post.comments count after create
-      post = Post |> Api.get!(post.id) |> Api.load!(:comments)
+      post = Post |> Ash.get!(post.id) |> Ash.load!(:comments)
       assert Enum.count(post.comments) == 1
 
       form =
         post
         |> Form.for_update(:update,
-          api: Api,
+          domain: Domain,
           forms: [
             comments: [
               resource: Comment,
@@ -648,7 +648,7 @@ defmodule AshPhoenix.FormTest do
       form =
         Comment
         |> Form.for_create(:create,
-          api: Api,
+          domain: Domain,
           forms: [
             post: [
               resource: Post,
@@ -670,21 +670,21 @@ defmodule AshPhoenix.FormTest do
     test "relationship source data is retained, so that it can be properly removed" do
       post =
         Post
-        |> Ash.Changeset.new(%{text: "post"})
-        |> Api.create!()
+        |> Ash.Changeset.for_create(:create, %{text: "post"})
+        |> Ash.create!()
 
       comment =
         Comment
-        |> Ash.Changeset.new(%{text: "comment"})
+        |> Ash.Changeset.for_create(:create, %{text: "comment"})
         |> Ash.Changeset.manage_relationship(:post, post, type: :append_and_remove)
-        |> Api.create!()
+        |> Ash.create!()
 
-      comment = Comment |> Api.get!(comment.id)
+      comment = Comment |> Ash.get!(comment.id)
 
       comment
-      |> Api.load!(:post)
+      |> Ash.load!(:post)
       |> Form.for_update(:update,
-        api: Api,
+        domain: Domain,
         forms: [
           auto?: true
         ]
@@ -692,14 +692,14 @@ defmodule AshPhoenix.FormTest do
       |> Form.remove_form([:post])
       |> Form.submit!(params: %{"text" => "text", "post" => %{"text" => "new_post"}})
 
-      assert [%{text: "new_post"}] = Api.read!(Post)
+      assert [%{text: "new_post"}] = Ash.read!(Post)
     end
 
     test "nested errors are set on the appropriate form after submit, even if no submit actually happens" do
       form =
         Comment
         |> Form.for_create(:create,
-          api: Api,
+          domain: Domain,
           forms: [
             post: [
               resource: Post,
@@ -721,7 +721,7 @@ defmodule AshPhoenix.FormTest do
       form =
         Comment
         |> Form.for_create(:create,
-          api: Api,
+          domain: Domain,
           forms: [
             post: [
               resource: Post,
@@ -752,7 +752,7 @@ defmodule AshPhoenix.FormTest do
       form =
         Comment
         |> Form.for_create(:create,
-          api: Api,
+          domain: Domain,
           forms: [
             post: [
               resource: Post,
@@ -816,14 +816,14 @@ defmodule AshPhoenix.FormTest do
                "post" => [],
                "_form_type" => "create",
                "_touched" => "_form_type,_touched,post,text"
-             } = Form.params(form)
+             } = Form.params(form, hidden?: true)
     end
 
     test "nested errors are set on the appropriate form after submit for many to many relationships" do
       form =
         Post
         |> Form.for_create(:create,
-          api: Api,
+          domain: Domain,
           forms: [
             post: [
               type: :list,
@@ -852,7 +852,7 @@ defmodule AshPhoenix.FormTest do
 
       form =
         author
-        |> Form.for_update(:update_with_embedded_argument, api: Api, forms: [auto?: true])
+        |> Form.for_update(:update_with_embedded_argument, domain: Domain, forms: [auto?: true])
         |> Form.add_form(:embedded_argument, params: %{})
         |> Form.validate(%{"embedded_argument" => %{"value" => "you@example.com"}})
         |> form_for("action")
@@ -887,7 +887,7 @@ defmodule AshPhoenix.FormTest do
 
       form =
         author
-        |> Form.for_update(:update_with_embedded_argument, api: Api, forms: [auto?: true])
+        |> Form.for_update(:update_with_embedded_argument, domain: Domain, forms: [auto?: true])
         |> Form.add_form(:embedded_argument, params: %{})
         |> Form.add_form([:embedded_argument, :nested_embeds], params: %{})
         |> Form.validate(%{
@@ -1016,12 +1016,12 @@ defmodule AshPhoenix.FormTest do
     test "it runs the action with the params" do
       assert {:ok, %{text: "text"}} =
                Post
-               |> Form.for_create(:create, api: Api)
+               |> Form.for_create(:create, domain: Domain)
                |> Form.validate(%{text: "text"})
                |> Form.submit()
     end
 
-    test "it fallback to resource defined Api if unset" do
+    test "it fallback to resource defined Domain if unset" do
       assert {:ok, %{name: "name"}} =
                Artist
                |> Form.for_action(:create)
@@ -1036,8 +1036,8 @@ defmodule AshPhoenix.FormTest do
 
       artist =
         Artist
-        |> Ash.Changeset.new(%{name: "name"})
-        |> Api.create!()
+        |> Ash.Changeset.for_create(:create, %{name: "name"})
+        |> Ash.create!()
 
       assert {:ok, %{name: "name changed"}} =
                artist
@@ -1051,17 +1051,6 @@ defmodule AshPhoenix.FormTest do
                |> Form.validate(%{name: "name changed"})
                |> Form.submit()
     end
-
-    test "it raises an appropriate error when the incorrect api is configured" do
-      assert_raise Ash.Error.Invalid.ResourceNotAllowed,
-                   ~r/Resource `AshPhoenix.Test.Post` is not accepted by AshPhoenix.Test.OtherApi/,
-                   fn ->
-                     Post
-                     |> Form.for_create(:create, api: OtherApi)
-                     |> Form.validate(%{text: "text"})
-                     |> Form.submit()
-                   end
-    end
   end
 
   describe "prepare_source" do
@@ -1069,7 +1058,7 @@ defmodule AshPhoenix.FormTest do
       form =
         Post
         |> Form.for_create(:create,
-          api: Api,
+          domain: Domain,
           prepare_source: &Ash.Changeset.put_context(&1, :foo, :bar)
         )
 
@@ -1080,7 +1069,7 @@ defmodule AshPhoenix.FormTest do
       form =
         Post
         |> Form.for_create(:create,
-          api: Api,
+          domain: Domain,
           prepare_source: &Ash.Changeset.put_context(&1, :foo, :bar)
         )
         |> Form.validate(%{text: "text"})
@@ -1092,7 +1081,7 @@ defmodule AshPhoenix.FormTest do
       result =
         Post
         |> Form.for_create(:create,
-          api: Api,
+          domain: Domain,
           prepare_source: fn changeset ->
             Ash.Changeset.before_action(
               changeset,
@@ -1746,13 +1735,14 @@ defmodule AshPhoenix.FormTest do
     test "when `remove_form`ing an existing `:single` relationship, a nil value is included in the params - if the form has been touched" do
       post =
         Post
-        |> Ash.Changeset.new(%{text: "post"})
+        |> Ash.Changeset.new()
         |> Ash.Changeset.set_argument(:author, %{email: "nigel@elixir-lang.org"})
-        |> Api.create!()
+        |> Ash.Changeset.for_create(:create, %{text: "post"})
+        |> Ash.create!()
 
       form =
         post
-        |> Form.for_update(:update, api: Api, forms: [auto?: true])
+        |> Form.for_update(:update, domain: Domain, forms: [auto?: true])
         |> Form.remove_form([:author])
 
       params =
@@ -1765,7 +1755,7 @@ defmodule AshPhoenix.FormTest do
     test "when add_forming a required argument, the added form should be valid without needing to manually validate it" do
       form =
         Post
-        |> Form.for_create(:create_author_required, api: Api, forms: [auto?: true])
+        |> Form.for_create(:create_author_required, domain: Domain, forms: [auto?: true])
         |> Form.validate(%{"text" => "foo"})
         |> Form.add_form([:author], params: %{"email" => "james@foo.com"})
 
@@ -1777,27 +1767,27 @@ defmodule AshPhoenix.FormTest do
     test "updating should not duplicate nested resources" do
       post =
         Post
-        |> Ash.Changeset.new(%{text: "post"})
-        |> Api.create!()
+        |> Ash.Changeset.for_create(:create, %{text: "post"})
+        |> Ash.create!()
 
       comment =
         Comment
-        |> Ash.Changeset.new(%{text: "comment"})
+        |> Ash.Changeset.for_create(:create, %{text: "comment"})
         |> Ash.Changeset.manage_relationship(:post, post, type: :append_and_remove)
-        |> Api.create!()
+        |> Ash.create!()
 
       # Check the persisted post.comments count after create
-      post = Post |> Api.get!(post.id) |> Api.load!(:comments)
+      post = Post |> Ash.get!(post.id) |> Ash.load!(:comments)
       assert Enum.count(post.comments) == 1
 
       # Grab the persisted comment
-      comment = Comment |> Api.get!(comment.id) |> Api.load!(post: [:comments])
+      comment = Comment |> Ash.get!(comment.id) |> Ash.load!(post: [:comments])
 
       form =
         comment
         |> Form.for_update(:update,
           as: "comment",
-          api: Api,
+          domain: Domain,
           forms: [
             post: [
               data: & &1.post,
@@ -1805,9 +1795,11 @@ defmodule AshPhoenix.FormTest do
               resource: Post,
               update_action: :update,
               create_action: :create,
+              skip_unknown_inputs: ["id"],
               forms: [
                 comments: [
                   data: & &1.comments,
+                  skip_unknown_inputs: ["id"],
                   type: :list,
                   resource: Comment,
                   update_action: :update,
@@ -1838,7 +1830,7 @@ defmodule AshPhoenix.FormTest do
       assert Enum.count(updated_comment.post.comments) == 1
 
       # now, check the persisted post
-      persisted_post = Post |> Api.get!(post.id) |> Api.load!(:comments)
+      persisted_post = Post |> Ash.get!(post.id) |> Ash.load!(:comments)
       assert Enum.count(persisted_post.comments) == 1
     end
   end

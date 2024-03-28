@@ -25,14 +25,14 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
     not_umbrella!()
     Mix.Task.run("compile")
 
-    {api, resource, opts, _} = AshPhoenix.Gen.parse_opts(args)
+    {domain, resource, opts, _} = AshPhoenix.Gen.parse_opts(args)
 
     singular = to_string(Ash.Resource.Info.short_name(resource))
 
     opts = %{
       resource: List.last(Module.split(resource)),
       full_resource: resource,
-      full_api: api,
+      full_domain: domain,
       singular: singular,
       plural: opts[:resource_plural]
     }
@@ -43,14 +43,18 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
 
       template_files(resource_html_dir, opts)
       |> generate_files(
-        assigns([:api, :full_resource, :full_api, :resource, :singular, :plural], resource, opts),
+        assigns(
+          [:domain, :full_resource, :full_domain, :resource, :singular, :plural],
+          resource,
+          opts
+        ),
         source_path
       )
 
       print_shell_instructions(opts)
     else
       Mix.shell().info(
-        "The resource #{inspect(opts[:api])}.#{inspect(opts[:resource])} does not exist."
+        "The resource #{inspect(opts[:domain])}.#{inspect(opts[:resource])} does not exist."
       )
     end
   end

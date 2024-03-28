@@ -14,7 +14,7 @@ defmodule AshPhoenix.Test.ValidateEmbeddedArgument do
   @embedded_attribute :value
 
   @impl true
-  def validate(changeset, _opts) do
+  def validate(changeset, _opts, _context) do
     case Ash.Changeset.get_argument(changeset, @embedded_argument) do
       nil ->
         :ok

@@ -1,15 +1,15 @@
 defmodule Mix.Tasks.AshPhoenix.Gen.Live do
   @moduledoc """
-  Generates liveviews for a given api and resource.
+  Generates liveviews for a given domain and resource.
 
-  The api and resource must already exist, this task does not define them.
+  The domain and resource must already exist, this task does not define them.
 
   #{AshPhoenix.Gen.docs()}
 
   For example:
 
   ```bash
-  mix ash_phoenix.gen.live ExistingApiName ExistingResourceName
+  mix ash_phoenix.gen.live ExistingDomainName ExistingResourceName
   ```
   """
   use Mix.Task

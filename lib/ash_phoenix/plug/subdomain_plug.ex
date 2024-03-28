@@ -26,7 +26,7 @@ defmodule AshPhoenix.SubdomainPlug do
 
   Options:
 
-  #{Spark.OptionsHelpers.docs(@plug_options)}
+  #{Spark.Options.docs(@plug_options)}
 
   To plug it on your router, you can use:
       plug AshPhoenix.SubdomainPlug,
@@ -46,7 +46,7 @@ defmodule AshPhoenix.SubdomainPlug do
         socket =
           assign_new(socket, :current_organization, fn ->
             if socket.assigns[:current_tenant] do
-              MyApp.Accounts.Api.get!(MyApp.Accounts.Organization,
+              MyApp.Accounts.Ash.get!(MyApp.Accounts.Organization,
                 subdomain: socket.assigns[:current_tenant]
               )
             end
@@ -58,7 +58,7 @@ defmodule AshPhoenix.SubdomainPlug do
   alias Plug.Conn
 
   @doc false
-  def init(opts), do: Spark.OptionsHelpers.validate!(opts, @plug_options)
+  def init(opts), do: Spark.Options.validate!(opts, @plug_options)
 
   @doc false
   def call(conn, opts) do
