@@ -1,4 +1,4 @@
-# Upgrading from 2.0 to 3.0
+# Upgrading from 1.0 to 2.0
 
 There are a few major changes in 3.0 that you should be aware of that affect AshPhoenix's behavior.
 
