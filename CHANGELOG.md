@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.0.0-rc.2](https://github.com/ash-project/ash_phoenix/compare/v2.0.0-rc.1...v2.0.0-rc.2) (2024-04-02)
+
+
+
+
+### Improvements:
+
+* loosen release candidate dependency
+
 ## [v2.0.0-rc.1](https://github.com/ash-project/ash_phoenix/compare/v2.0.0-rc.0...v2.0.0-rc.1) (2024-03-28)
 
 
