@@ -216,12 +216,6 @@ defmodule AshPhoenix.Form do
       type: :atom,
       doc: "The domain to use when calling the action"
     ],
-    skip_unknown_inputs: [
-      type: {:list, {:or, [:atom, :string]}},
-      default: [],
-      doc:
-        "A list of inputs that will be ignored by the underlying changeset if they are not accepted"
-    ],
     as: [
       type: :string,
       default: "form",
@@ -1087,7 +1081,8 @@ defmodule AshPhoenix.Form do
           |> Ash.Changeset.for_create(
             form.action,
             Map.drop(changeset_params, ["_form_type", "_touched", "_union_type"]),
-            source_opts
+            allow_all_keys_to_be_skipped(source_opts, changeset_params)
+
           )
 
         :update ->
@@ -1100,7 +1095,7 @@ defmodule AshPhoenix.Form do
           |> Ash.Changeset.for_update(
             form.action,
             Map.drop(changeset_params, ["_form_type", "_touched", "_union_type"]),
-            source_opts
+            allow_all_keys_to_be_skipped(source_opts, changeset_params)
           )
 
         :destroy ->
@@ -1113,7 +1108,7 @@ defmodule AshPhoenix.Form do
           |> Ash.Changeset.for_destroy(
             form.action,
             Map.drop(changeset_params, ["_form_type", "_touched", "_union_type"]),
-            source_opts
+            allow_all_keys_to_be_skipped(source_opts, changeset_params)
           )
 
         :read ->
@@ -1234,7 +1229,6 @@ defmodule AshPhoenix.Form do
                             domain: form.opts[:domain],
                             params: params,
                             forms: opts[:forms] || [],
-                            skip_unknown_inputs: opts[:skip_unknown_inputs] || [],
                             accessing_from: opts[:managed_relationship],
                             prepare_source: opts[:prepare_source],
                             transform_params: opts[:transform_params],
@@ -1259,7 +1253,6 @@ defmodule AshPhoenix.Form do
                             tenant: form.opts[:tenant],
                             domain: form.opts[:domain],
                             params: params,
-                            skip_unknown_inputs: opts[:skip_unknown_inputs] || [],
                             accessing_from: opts[:managed_relationship],
                             prepare_source: opts[:prepare_source],
                             transform_params: opts[:transform_params],
@@ -1342,7 +1335,6 @@ defmodule AshPhoenix.Form do
                       tenant: form.opts[:tenant],
                       domain: form.opts[:domain],
                       params: form_params,
-                      skip_unknown_inputs: opts[:skip_unknown_inputs] || [],
                       accessing_from: opts[:managed_relationship],
                       prepare_source: opts[:prepare_source],
                       transform_params: opts[:transform_params],
@@ -1413,7 +1405,6 @@ defmodule AshPhoenix.Form do
                           tenant: form.opts[:tenant],
                           domain: form.opts[:domain],
                           errors: errors?,
-                          skip_unknown_inputs: opts[:skip_unknown_inputs] || [],
                           accessing_from: opts[:managed_relationship],
                           prepare_source: opts[:prepare_source],
                           transform_params: opts[:transform_params],
@@ -1434,7 +1425,6 @@ defmodule AshPhoenix.Form do
                             actor: form.opts[:actor],
                             tenant: form.opts[:tenant],
                             errors: errors?,
-                            skip_unknown_inputs: opts[:skip_unknown_inputs] || [],
                             accessing_from: opts[:managed_relationship],
                             prepare_source: opts[:prepare_source],
                             warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
@@ -1488,7 +1478,6 @@ defmodule AshPhoenix.Form do
                           tenant: form.opts[:tenant],
                           domain: form.opts[:domain],
                           errors: errors?,
-                          skip_unknown_inputs: opts[:skip_unknown_inputs] || [],
                           accessing_from: opts[:managed_relationship],
                           prepare_source: opts[:prepare_source],
                           warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
@@ -1517,7 +1506,6 @@ defmodule AshPhoenix.Form do
                             tenant: form.opts[:tenant],
                             domain: form.opts[:domain],
                             errors: errors?,
-                            skip_unknown_inputs: opts[:skip_unknown_inputs] || [],
                             accessing_from: opts[:managed_relationship],
                             prepare_source: opts[:prepare_source],
                             prev_data_trail: prev_data_trail,
@@ -1691,7 +1679,7 @@ defmodule AshPhoenix.Form do
             |> Ash.Changeset.for_create(
               form.source.action.name,
               changeset_params,
-              changeset_opts
+              allow_all_keys_to_be_skipped(changeset_opts, changeset_params)
             )
             |> before_submit.()
             |> with_changeset(&Ash.create(&1, opts[:action_opts] || []))
@@ -1703,7 +1691,7 @@ defmodule AshPhoenix.Form do
             |> Ash.Changeset.for_update(
               form.source.action.name,
               changeset_params,
-              changeset_opts
+              allow_all_keys_to_be_skipped(changeset_opts, changeset_params)
             )
             |> before_submit.()
             |> with_changeset(&Ash.update(&1, opts[:action_opts] || []))
@@ -1715,7 +1703,7 @@ defmodule AshPhoenix.Form do
             |> Ash.Changeset.for_destroy(
               form.source.action.name,
               changeset_params,
-              changeset_opts
+              allow_all_keys_to_be_skipped(changeset_opts, changeset_params)
             )
             |> before_submit.()
             |> with_changeset(&Ash.destroy(&1, opts[:action_opts] || []))
@@ -2568,7 +2556,7 @@ defmodule AshPhoenix.Form do
   def params(form, opts \\ []) do
     form = to_form!(form)
     # These options aren't documented because they are still experimental
-    hidden? = Keyword.get(opts, :hidden?, false)
+    hidden? = Keyword.get(opts, :hidden?, true)
 
     excluded_empty_fields =
       Keyword.get(
@@ -3432,7 +3420,6 @@ defmodule AshPhoenix.Form do
               domain: form.opts[:domain],
               actor: form.opts[:actor],
               tenant: form.opts[:tenant],
-              skip_unknown_inputs: config[:skip_unknown_inputs] || [],
               accessing_from: config[:managed_relationship],
               transform_params: config[:transform_params],
               prepare_source: config[:prepare_source],
@@ -3943,7 +3930,6 @@ defmodule AshPhoenix.Form do
                   actor: actor,
                   tenant: tenant,
                   errors: error?,
-                  skip_unknown_inputs: opts[:skip_unknown_inputs] || [],
                   accessing_from: opts[:managed_relationship],
                   prepare_source: opts[:prepare_source],
                   warn_on_unhandled_errors?: warn_on_unhandled_errors?,
@@ -3964,7 +3950,6 @@ defmodule AshPhoenix.Form do
                     actor: actor,
                     tenant: tenant,
                     errors: error?,
-                    skip_unknown_inputs: opts[:skip_unknown_inputs] || [],
                     accessing_from: opts[:managed_relationship],
                     prepare_source: opts[:prepare_source],
                     warn_on_unhandled_errors?: warn_on_unhandled_errors?,
@@ -4022,7 +4007,6 @@ defmodule AshPhoenix.Form do
                   actor: actor,
                   tenant: tenant,
                   errors: error?,
-                  skip_unknown_inputs: opts[:skip_unknown_inputs] || [],
                   accessing_from: opts[:managed_relationship],
                   prepare_source: opts[:prepare_source],
                   warn_on_unhandled_errors?: warn_on_unhandled_errors?,
@@ -4048,7 +4032,6 @@ defmodule AshPhoenix.Form do
                     actor: actor,
                     tenant: tenant,
                     errors: error?,
-                    skip_unknown_inputs: opts[:skip_unknown_inputs] || [],
                     accessing_from: opts[:managed_relationship],
                     prepare_source: opts[:prepare_source],
                     prev_data_trail: prev_data_trail,
@@ -4163,7 +4146,6 @@ defmodule AshPhoenix.Form do
           params: form_params,
           warn_on_unhandled_errors?: warn_on_unhandled_errors?,
           forms: opts[:forms] || [],
-          skip_unknown_inputs: opts[:skip_unknown_inputs] || [],
           accessing_from: opts[:managed_relationship],
           prepare_source: opts[:prepare_source],
           transform_params: opts[:transform_params],
@@ -4190,7 +4172,6 @@ defmodule AshPhoenix.Form do
           tenant: tenant,
           params: form_params,
           forms: opts[:forms] || [],
-          skip_unknown_inputs: opts[:skip_unknown_inputs] || [],
           accessing_from: opts[:managed_relationship],
           prepare_source: opts[:prepare_source],
           transform_params: opts[:transform_params],
@@ -4224,7 +4205,6 @@ defmodule AshPhoenix.Form do
             tenant: tenant,
             params: add_index(form_params, original_index, opts),
             forms: opts[:forms] || [],
-            skip_unknown_inputs: opts[:skip_unknown_inputs] || [],
             accessing_from: opts[:managed_relationship],
             prepare_source: opts[:prepare_source],
             transform_params: opts[:transform_params],
@@ -4252,7 +4232,6 @@ defmodule AshPhoenix.Form do
             tenant: tenant,
             params: add_index(form_params, original_index, opts),
             forms: opts[:forms] || [],
-            skip_unknown_inputs: opts[:skip_unknown_inputs] || [],
             accessing_from: opts[:managed_relationship],
             prepare_source: opts[:prepare_source],
             warn_on_unhandled_errors?: warn_on_unhandled_errors?,
@@ -4309,7 +4288,6 @@ defmodule AshPhoenix.Form do
               params: form_params,
               forms: opts[:forms] || [],
               errors: error?,
-              skip_unknown_inputs: opts[:skip_unknown_inputs] || [],
               accessing_from: opts[:managed_relationship],
               prepare_source: opts[:prepare_source],
               transform_params: opts[:transform_params],
@@ -4332,7 +4310,6 @@ defmodule AshPhoenix.Form do
               tenant: tenant,
               params: form_params,
               forms: opts[:forms] || [],
-              skip_unknown_inputs: opts[:skip_unknown_inputs] || [],
               accessing_from: opts[:managed_relationship],
               prepare_source: opts[:prepare_source],
               transform_params: opts[:transform_params],
@@ -4363,7 +4340,6 @@ defmodule AshPhoenix.Form do
               tenant: tenant,
               params: form_params,
               forms: opts[:forms] || [],
-              skip_unknown_inputs: opts[:skip_unknown_inputs] || [],
               accessing_from: opts[:managed_relationship],
               prepare_source: opts[:prepare_source],
               transform_params: opts[:transform_params],
@@ -4392,7 +4368,6 @@ defmodule AshPhoenix.Form do
               tenant: tenant,
               params: form_params,
               forms: opts[:forms] || [],
-              skip_unknown_inputs: opts[:skip_unknown_inputs] || [],
               accessing_from: opts[:managed_relationship],
               prepare_source: opts[:prepare_source],
               transform_params: opts[:transform_params],
@@ -4437,7 +4412,6 @@ defmodule AshPhoenix.Form do
               params: add_index(form_params, original_index, opts),
               forms: opts[:forms] || [],
               errors: error?,
-              skip_unknown_inputs: opts[:skip_unknown_inputs] || [],
               accessing_from: opts[:managed_relationship],
               prepare_source: opts[:prepare_source],
               transform_params: opts[:transform_params],
@@ -4469,7 +4443,6 @@ defmodule AshPhoenix.Form do
                   tenant: tenant,
                   params: add_index(form_params, original_index, opts),
                   forms: opts[:forms] || [],
-                  skip_unknown_inputs: opts[:skip_unknown_inputs] || [],
                   accessing_from: opts[:managed_relationship],
                   prepare_source: opts[:prepare_source],
                   transform_params: opts[:transform_params],
@@ -4497,7 +4470,6 @@ defmodule AshPhoenix.Form do
                     tenant: tenant,
                     params: form_params,
                     forms: opts[:forms] || [],
-                    skip_unknown_inputs: opts[:skip_unknown_inputs] || [],
                     accessing_from: opts[:managed_relationship],
                     prepare_source: opts[:prepare_source],
                     transform_params: opts[:transform_params],
@@ -4520,7 +4492,6 @@ defmodule AshPhoenix.Form do
                     tenant: tenant,
                     params: form_params,
                     forms: opts[:forms] || [],
-                    skip_unknown_inputs: opts[:skip_unknown_inputs] || [],
                     accessing_from: opts[:managed_relationship],
                     prepare_source: opts[:prepare_source],
                     transform_params: opts[:transform_params],
@@ -4553,7 +4524,6 @@ defmodule AshPhoenix.Form do
                   tenant: tenant,
                   params: form_params,
                   forms: opts[:forms] || [],
-                  skip_unknown_inputs: opts[:skip_unknown_inputs] || [],
                   transform_params: opts[:transform_params],
                   accessing_from: opts[:managed_relationship],
                   prepare_source: opts[:prepare_source],
