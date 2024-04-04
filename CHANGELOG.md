@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.0.0-rc.3](https://github.com/ash-project/ash_phoenix/compare/v2.0.0-rc.2...v2.0.0-rc.3) (2024-04-04)
+
+
+
+
+### Bug Fixes:
+
+* undo the change of not returning hidden fields
+
 ## [v2.0.0-rc.2](https://github.com/ash-project/ash_phoenix/compare/v2.0.0-rc.1...v2.0.0-rc.2) (2024-04-02)
 
 
