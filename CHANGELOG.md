@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.0.0-rc.4](https://github.com/ash-project/ash_phoenix/compare/v2.0.0-rc.3...v2.0.0-rc.4) (2024-04-05)
+
+
+
+
+### Bug Fixes:
+
+* handle cases where changesets/queries are not returned with errors
+
 ## [v2.0.0-rc.3](https://github.com/ash-project/ash_phoenix/compare/v2.0.0-rc.2...v2.0.0-rc.3) (2024-04-04)
 
 
