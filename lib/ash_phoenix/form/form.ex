@@ -1737,9 +1737,16 @@ defmodule AshPhoenix.Form do
           Resource #{inspect(resource)} not found in domain #{inspect(form.domain)}
           """
 
-        {:error, %{query: query} = error} when form.type == :read and not is_nil(query) ->
+        {:error, %{query: query} = error} when form.type == :read ->
           if opts[:raise?] do
-            raise Ash.Error.to_error_class(query.errors, query: query)
+            errors =
+              if query do
+                query.errors
+              else
+                error
+              end
+
+            raise Ash.Error.to_error_class(errors, query: query)
           else
             errors =
               error
@@ -1761,9 +1768,16 @@ defmodule AshPhoenix.Form do
           end
 
         {:error, %{changeset: changeset} = error}
-        when form.type != :read and not is_nil(changeset) ->
+        when form.type != :read ->
           if opts[:raise?] do
-            raise Ash.Error.to_error_class(changeset.errors, changeset: changeset)
+            errors =
+              if changeset do
+                changeset.errors
+              else
+                error
+              end
+
+            raise Ash.Error.to_error_class(errors, changeset: changeset)
           else
             errors =
               error
