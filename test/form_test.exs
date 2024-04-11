@@ -1201,18 +1201,19 @@ defmodule AshPhoenix.FormTest do
   end
 
   describe "`inputs_for` with no configuration" do
-    # phoenix changes make this not work anymore
-    # test "it should raise an error" do
-    #   form =
-    #     Post
-    #     |> Form.for_create(:create)
-    #     |> Form.validate(%{text: "text"})
-    #     |> form_for("action")
+    test "it should raise an error" do
+      form =
+        Post
+        |> Form.for_create(:create)
+        |> Form.validate(%{text: "text"})
+        |> form_for("action")
 
-    #   assert_raise AshPhoenix.Form.NoFormConfigured, fn ->
-    #     inputs_for(form, :post) == []
-    #   end
-    # end
+      assert_raise AshPhoenix.Form.NoFormConfigured,
+                   ~r/There is a no attribute or relationship called `post` on the resource `AshPhoenix.Test.Post`/,
+                   fn ->
+                     AshPhoenix.Form.add_form(form, :post)
+                   end
+    end
   end
 
   describe "inputs_for` relationships" do

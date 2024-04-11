@@ -3233,6 +3233,8 @@ defmodule AshPhoenix.Form do
   defp do_remove_form(form, [key], trail) when not is_integer(key) do
     unless form.form_keys[key] do
       raise AshPhoenix.Form.NoFormConfigured,
+        resource: form.resource,
+        action: form.action,
         field: key,
         available: Keyword.keys(form.form_keys || []),
         path: Enum.reverse(trail)
@@ -3277,6 +3279,8 @@ defmodule AshPhoenix.Form do
   defp do_remove_form(form, [key, i], trail) when is_integer(i) do
     unless form.form_keys[key] do
       raise AshPhoenix.Form.NoFormConfigured,
+        resource: form.resource,
+        action: form.action,
         field: key,
         available: Keyword.keys(form.form_keys || []),
         path: Enum.reverse(trail)
@@ -3319,6 +3323,8 @@ defmodule AshPhoenix.Form do
   defp do_remove_form(form, [key, i | rest], trail) when is_integer(i) do
     unless form.form_keys[key] do
       raise AshPhoenix.Form.NoFormConfigured,
+        resource: form.resource,
+        action: form.action,
         field: key,
         available: Keyword.keys(form.form_keys || []),
         path: Enum.reverse(trail)
@@ -3337,6 +3343,8 @@ defmodule AshPhoenix.Form do
   defp do_remove_form(form, [key | rest], trail) do
     unless form.form_keys[key] do
       raise AshPhoenix.Form.NoFormConfigured,
+        resource: form.resource,
+        action: form.action,
         field: key,
         available: Keyword.keys(form.form_keys || []),
         path: Enum.reverse(trail)
@@ -3357,6 +3365,8 @@ defmodule AshPhoenix.Form do
   defp do_add_form(form, [key, i | rest], opts, trail, transform_errors) when is_integer(i) do
     unless form.form_keys[key] do
       raise AshPhoenix.Form.NoFormConfigured,
+        resource: form.resource,
+        action: form.action,
         field: key,
         available: Keyword.keys(form.form_keys || []),
         path: Enum.reverse(trail)
@@ -3389,6 +3399,8 @@ defmodule AshPhoenix.Form do
     config =
       form.form_keys[key] ||
         raise AshPhoenix.Form.NoFormConfigured,
+          resource: form.resource,
+          action: form.action,
           field: key,
           available: Keyword.keys(form.form_keys || []),
           path: Enum.reverse(trail)
@@ -3478,6 +3490,8 @@ defmodule AshPhoenix.Form do
   defp do_add_form(form, [key | rest], opts, trail, transform_errors) do
     unless form.form_keys[key] do
       raise AshPhoenix.Form.NoFormConfigured,
+        resource: form.resource,
+        action: form.action,
         field: key,
         available: Keyword.keys(form.form_keys || []),
         path: Enum.reverse(trail)
@@ -4739,6 +4753,8 @@ defmodule AshPhoenix.Form do
     def to_form(form, _phoenix_form, field, opts) do
       unless Keyword.has_key?(form.form_keys, field) do
         raise AshPhoenix.Form.NoFormConfigured,
+          resource: form.resource,
+          action: form.action,
           field: field,
           available: Keyword.keys(form.form_keys || [])
       end
