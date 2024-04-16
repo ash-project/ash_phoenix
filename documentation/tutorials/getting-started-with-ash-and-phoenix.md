@@ -170,6 +170,8 @@ Below is the resource module. Read the comments carefully, every line is explain
 defmodule MyAshPhoenixApp.Blog.Post do
   # Using Ash.Resource turns this module into an Ash resource.
   use Ash.Resource,
+    # Tells Ash where the generated code interface belongs
+    domain: MyAshPhoenixApp.Blog,
     # Tells Ash you want this resource to store its data in Postgres.
     data_layer: AshPostgres.DataLayer
 
@@ -184,7 +186,6 @@ defmodule MyAshPhoenixApp.Blog.Post do
   # Defines convenience methods for
   # interacting with the resource programmatically.
   code_interface do
-    define_for MyAshPhoenixApp.Blog
     define :create, action: :create
     define :read_all, action: :read
     define :update, action: :update
@@ -194,7 +195,17 @@ defmodule MyAshPhoenixApp.Blog.Post do
 
   actions do
     # Exposes default built in actions to manage the resource
-    defaults [:create, :read, :update, :destroy]
+    defaults [:read, :destroy]
+
+    create :create do
+      # accept title as input
+      accept [:title]
+    end
+
+    update :update do
+      # accept content as input
+      accept [:content]
+    end
 
     # Defines custom read action which fetches post by id.
     read :by_id do
@@ -216,6 +227,8 @@ defmodule MyAshPhoenixApp.Blog.Post do
     attribute :title, :string do
       # We don't want the title to ever be `nil`
       allow_nil? false
+      # Allow this attribute to be public. By default, all attributes are private.
+      public? true
     end
 
     # Add a string type attribute called `:content`
@@ -232,9 +245,12 @@ We have specified the resource in Ash. But we have yet to create it in our data 
 First we need to create our database:
 
 ```bash
-$ mix ash_postgres.create
+$ mix ash.setup
 
+Running setup for AshPostgres.DataLayer...
 The database for MyAshPhoenixApp.Repo has been created
+
+01:23:45.678 [info] Migrations already up
 ```
 
 Now we need to populate our database. We do this by generating and performing a migration.
@@ -242,7 +258,7 @@ Now we need to populate our database. We do this by generating and performing a 
 We can use a generator to produce a migration for us. Ash can deduce what needs to go into the migration and do the hard work for us, to do this use the command below:
 
 ```bash
-$ mix ash_postgres.generate_migrations --name initial_migration
+$ mix ash.codegen initial_migration
 
 # ... don't worry about other files it creates
 
@@ -264,7 +280,7 @@ defmodule MyAshPhoenixApp.Repo.Migrations.InitialMigration do
     create table(:posts, primary_key: false) do
       # Adds primary key attribute `:id` of type `:uuid`
       # null values are not allowed
-      add :id, :uuid, null: false, default: fragment("uuid_generate_v4()"), primary_key: true
+      add :id, :uuid, null: false, default: fragment("gen_random_uuid()"), primary_key: true
 
       # Adds attribute `:title` of type `:text`, null values are not allowed
       add :title, :text, null: false
@@ -284,10 +300,10 @@ end
 We can run the `up/0` function which will perform the desired operations on the Postgres database. We do this with the migrate command:
 
 ```bash
-$ mix ash_postgres.migrate
+$ mix ash.migrate
 ```
 
-> In case you want to drop the database and start over again during development you can use `mix ash_postgres.drop` followed by `mix ash_postgres.create` and `mix ash_postgres.migrate`.
+> In case you want to drop the database and start over again during development you can use `mix ash.reset`.
 
 ## Interacting with your Resources
 
@@ -304,36 +320,34 @@ Below is the most verbose way of calling your resource. All other ways of intera
 new_post =
   MyAshPhoenixApp.Blog.Post
   |> Ash.Changeset.for_create(:create, %{title: "hello world"})
-  |>  MyAshPhoenixApp.Blog.create!()
+  |> Ash.create!()
 
 # read all posts
 MyAshPhoenixApp.Blog.Post
 |> Ash.Query.for_read(:read)
-|> MyAshPhoenixApp.Blog.read!()
+|> Ash.read!()
 
 # get single post by id
 MyAshPhoenixApp.Blog.Post
 |> Ash.Query.for_read(:by_id, %{id: new_post.id})
-|> MyAshPhoenixApp.Blog.read_one!()
+|> Ash.read_one!()
 
 # update post
 updated_post =
   new_post
   |> Ash.Changeset.for_update(:update, %{content: "hello to you too!"})
-  |> MyAshPhoenixApp.Blog.update!()
+  |> Ash.update!()
 
 # delete post
 new_post
 |> Ash.Changeset.for_destroy(:destroy)
-|> MyAshPhoenixApp.Blog.destroy!()
+|> Ash.destroy!()
 ```
 
 As stated above, this is verbose so Ash has a built in shortcut - The `code_interface`. You may notice this has already been done in your `Post` resource. Here it is again with more explanation:
 
 ```elixir
  code_interface do
-    # defines the domain this resource should be called from
-    define_for MyAshPhoenixApp.Blog
     # defining function Post.create/2 it calls the :create action
     define :create, action: :create
     # defining function Post.read_all/2 it calls the :read action
@@ -394,13 +408,13 @@ defmodule MyAshPhoenixAppWeb.PostsLive do
     ~H"""
     <h2>Posts</h2>
     <div>
-    <%= for post <- @posts do %>
-      <div>
-        <div><%= post.title %></div>
-        <div><%= if Map.get(post, :content), do: post.content, else: "" %></div>
-        <button phx-click="delete_post" phx-value-post-id={post.id}>delete</button>
-      </div>
-    <% end %>
+      <%= for post <- @posts do %>
+        <div>
+          <div><%= post.title %></div>
+          <div><%= if Map.get(post, :content), do: post.content, else: "" %></div>
+          <button phx-click="delete_post" phx-value-post-id={post.id}>delete</button>
+        </div>
+      <% end %>
     </div>
     <h2>Create Post</h2>
     <.form :let={f} for={@create_form} phx-submit="create_post">
