@@ -1796,11 +1796,9 @@ defmodule AshPhoenix.FormTest do
               resource: Post,
               update_action: :update,
               create_action: :create,
-              skip_unknown_inputs: ["id"],
               forms: [
                 comments: [
                   data: & &1.comments,
-                  skip_unknown_inputs: ["id"],
                   type: :list,
                   resource: Comment,
                   update_action: :update,

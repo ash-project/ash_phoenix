@@ -151,20 +151,13 @@ defmodule AshPhoenix.Form.Auto do
         end
 
       updater = fn opts, data, params ->
-        {type, constraints, tag} = determine_type(constraints, data, params)
+        {type, constraints, _tag} = determine_type(constraints, data, params)
 
-        {embed, constraints, fake_embedded?, skip_unknown_inputs} =
+        {embed, constraints, fake_embedded?} =
           if Ash.Type.embedded_type?(type) do
-            skip_unknown_inputs =
-              if tag do
-                [tag, to_string(tag)]
-              else
-                []
-              end
-
-            {type, constraints, false, skip_unknown_inputs}
+            {type, constraints, false}
           else
-            {AshPhoenix.Form.WrappedValue, [], true, []}
+            {AshPhoenix.Form.WrappedValue, [], true}
           end
 
         prepare_source =
@@ -211,7 +204,6 @@ defmodule AshPhoenix.Form.Auto do
           update_action: update_action.name,
           prepare_source: prepare_source,
           transform_params: transform_params,
-          skip_unknown_inputs: skip_unknown_inputs,
           embed?: true,
           forms: [],
           updater: fn opts ->
