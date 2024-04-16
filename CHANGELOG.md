@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.0.0-rc.5](https://github.com/ash-project/ash_phoenix/compare/v2.0.0-rc.4...v2.0.0-rc.5) (2024-04-16)
+
+
+
+
+### Bug Fixes:
+
+* ensure domain is passed down to all child forms
+
+### Improvements:
+
+* remove unknown keys option from embedded attributes
+
+* add error hints for `NoFormConfigured` errors
+
 ## [v2.0.0-rc.4](https://github.com/ash-project/ash_phoenix/compare/v2.0.0-rc.3...v2.0.0-rc.4) (2024-04-05)
 
 
