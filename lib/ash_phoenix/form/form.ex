@@ -2871,7 +2871,7 @@ defmodule AshPhoenix.Form do
 
   If you pass parameters to this function, keep in mind that, unless they are string keyed in
   the same shape they might come from your form, then the result of `params/1` will reflect that,
-  i.e `add_form(form, "foo", %{bar: 10})`, could produce params like `%{"field" => value, "foo" => [%{bar: 10}]}`"}.
+  i.e `add_form(form, "foo", params: %{bar: 10})`, could produce params like `%{"field" => value, "foo" => [%{bar: 10}]}`.
   Notice how they are not string keyed as you would expect. However, once the form is changed (in liveview) and a call
   to `validate/2` is made with that input, then the parameters would become what you'd expect. In this way, if you are using
   `add_form` with not string keys/values you may not be able to depend on the shape of the `params` map (which you should ideally
