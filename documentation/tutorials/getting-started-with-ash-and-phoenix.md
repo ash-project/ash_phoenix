@@ -227,8 +227,6 @@ defmodule MyAshPhoenixApp.Blog.Post do
     attribute :title, :string do
       # We don't want the title to ever be `nil`
       allow_nil? false
-      # Allow this attribute to be public. By default, all attributes are private.
-      public? true
     end
 
     # Add a string type attribute called `:content`
