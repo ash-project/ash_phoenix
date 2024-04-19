@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.0.0-rc.6](https://github.com/ash-project/ash_phoenix/compare/v2.0.0-rc.5...v2.0.0-rc.6) (2024-04-19)
+
+
+
+
+### Bug Fixes:
+
+* handle unions on initial form creation
+
+* always include domain on add_form (#157)
+
 ## [v2.0.0-rc.5](https://github.com/ash-project/ash_phoenix/compare/v2.0.0-rc.4...v2.0.0-rc.5) (2024-04-16)
 
 
