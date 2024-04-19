@@ -483,7 +483,7 @@ defmodule AshPhoenix.Form do
         source,
         action,
         params,
-        changeset_opts
+        allow_all_keys_to_be_skipped(changeset_opts, params)
       )
 
     %__MODULE__{
@@ -580,7 +580,7 @@ defmodule AshPhoenix.Form do
         source,
         action,
         params,
-        changeset_opts
+        allow_all_keys_to_be_skipped(changeset_opts, params)
       )
 
     %__MODULE__{
@@ -716,7 +716,7 @@ defmodule AshPhoenix.Form do
         source,
         action,
         params,
-        changeset_opts
+        allow_all_keys_to_be_skipped(changeset_opts, params)
       )
 
     %__MODULE__{
@@ -3193,16 +3193,9 @@ defmodule AshPhoenix.Form do
       end)
 
     touched_forms =
-      if is_map(params) do
-        Enum.reduce(Map.keys(params) -- ["_touched"], touched_forms, &MapSet.put(&2, &1))
-      else
-        touched_forms
-      end
+      Enum.reduce(Map.keys(params) -- ["_touched"], touched_forms, &MapSet.put(&2, &1))
 
-    form_touched =
-      if is_map(params) do
-        params["_touched"]
-      end
+    form_touched = params["_touched"]
 
     if is_binary(form_touched) do
       form_touched
@@ -3933,35 +3926,33 @@ defmodule AshPhoenix.Form do
          warn_on_unhandled_errors?
        ) do
     if Keyword.has_key?(opts, :data) do
+      data =
+        if opts[:data] do
+          if is_function(opts[:data]) do
+            if Enum.at(prev_data_trail, 0) do
+              case call_data(opts[:data], prev_data_trail) do
+                %Ash.NotLoaded{} ->
+                  raise AshPhoenix.Form.NoDataLoaded,
+                    path: Enum.reverse(trail, [key])
+
+                other ->
+                  other
+              end
+            else
+              nil
+            end
+          else
+            opts[:data]
+          end
+        end
+
       cond do
         opts[:update_action] ->
           update_action = opts[:update_action]
 
-          data =
-            if opts[:data] do
-              if is_function(opts[:data]) do
-                if Enum.at(prev_data_trail, 0) do
-                  case call_data(opts[:data], prev_data_trail) do
-                    %Ash.NotLoaded{} ->
-                      raise AshPhoenix.Form.NoDataLoaded,
-                        path: Enum.reverse(trail, [key])
-
-                    other ->
-                      other
-                  end
-                else
-                  nil
-                end
-              else
-                opts[:data]
-              end
-            end
-
           if data do
             form_values =
               if (opts[:type] || :single) == :single do
-                opts = update_opts(opts, data, %{})
-
                 for_action(data, update_action,
                   domain: domain,
                   actor: actor,
@@ -3981,7 +3972,7 @@ defmodule AshPhoenix.Form do
                 data
                 |> Enum.with_index()
                 |> Enum.map(fn {data, index} ->
-                  opts = update_opts(opts, data, %{})
+                  opts = Keyword.put(opts, :data, data)
 
                   for_action(data, update_action,
                     domain: domain,
@@ -4092,7 +4083,32 @@ defmodule AshPhoenix.Form do
           end
 
         true ->
-          {forms, params}
+          if data && data != [] do
+            opts = update_opts(opts, data, %{})
+
+            if opts[:update_action] || opts[:read_action] do
+              handle_form_without_params(
+                forms,
+                params,
+                opts,
+                key,
+                domain,
+                actor,
+                tenant,
+                trail,
+                prev_data_trail,
+                error?,
+                name,
+                id,
+                transform_errors,
+                warn_on_unhandled_errors?
+              )
+            else
+              {forms, params}
+            end
+          else
+            {forms, params}
+          end
       end
     else
       {forms, params}

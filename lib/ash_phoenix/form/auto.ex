@@ -151,7 +151,8 @@ defmodule AshPhoenix.Form.Auto do
         end
 
       updater = fn opts, data, params ->
-        {type, constraints, _tag} = determine_type(constraints, data, params)
+        {type, constraints, _tag} =
+          determine_type(constraints, data, params)
 
         {embed, constraints, fake_embedded?} =
           if Ash.Type.embedded_type?(type) do
@@ -298,8 +299,8 @@ defmodule AshPhoenix.Form.Auto do
     if is_struct(data) do
       case config[:tag_value] || key do
         value when is_atom(value) ->
-          data[config[:tag]] == to_string(value) ||
-            data[config[:tag]] == value
+          Map.get(data, config[:tag]) == to_string(value) ||
+            Map.get(data, config[:tag]) == value
 
         value ->
           data[config[:tag]] == value
