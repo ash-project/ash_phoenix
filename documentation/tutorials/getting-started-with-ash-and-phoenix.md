@@ -112,7 +112,7 @@ end
 
 ### Edit Config
 
-We need to specify the Ash domains that our application uses and some config for backwards compatibility that will be removed in the next major release.
+We need to specify the Ash domains that our application uses.
 
 Add this to your config:
 
