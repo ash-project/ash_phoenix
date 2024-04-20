@@ -406,13 +406,11 @@ defmodule MyAshPhoenixAppWeb.PostsLive do
     ~H"""
     <h2>Posts</h2>
     <div>
-      <%= for post <- @posts do %>
-        <div>
+        <div :for={post <- @posts}>
           <div><%= post.title %></div>
           <div><%= if Map.get(post, :content), do: post.content, else: "" %></div>
           <button phx-click="delete_post" phx-value-post-id={post.id}>delete</button>
         </div>
-      <% end %>
     </div>
     <h2>Create Post</h2>
     <.form :let={f} for={@create_form} phx-submit="create_post">
@@ -436,7 +434,6 @@ defmodule MyAshPhoenixAppWeb.PostsLive do
       assign(socket,
         posts: posts,
         post_selector: post_selector(posts),
-        # the `to_form/1` calls below are for liveview 0.18.12+. For earlier versions, remove those calls
         create_form: AshPhoenix.Form.for_create(Post, :create) |> to_form(),
         update_form: AshPhoenix.Form.for_update(List.first(posts, %Post{}), :update) |> to_form()
       )
