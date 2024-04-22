@@ -1771,6 +1771,38 @@ defmodule AshPhoenix.FormTest do
 
       assert form.valid? == true
     end
+
+    test "add form with nested params generate form with correct name" do
+      post_id = Ash.UUID.generate()
+      comment_id = Ash.UUID.generate()
+
+      comment = %Comment{
+        text: "text",
+        post: %Post{
+          id: post_id,
+          text: "Some text",
+          comments: [%Comment{id: comment_id}]
+        }
+      }
+
+      form =
+        comment
+        |> Form.for_update(:update, as: "comment", forms: [auto?: true])
+        |> Form.add_form([:post])
+        |> Form.add_form([:post, :comments], params: %{"post" => %{}})
+
+      post_form =
+        form
+        |> form_for("action")
+        |> inputs_for(:post)
+        |> hd()
+        |> inputs_for(:comments)
+        |> hd()
+        |> inputs_for(:post)
+        |> hd()
+
+      assert post_form.name == "comment[post][comments][0][post]"
+    end
   end
 
   describe "issue #259" do
