@@ -3434,31 +3434,61 @@ defmodule AshPhoenix.Form do
             resource
           end
 
-        new_form =
-          for_action(
-            data_or_resource,
-            action,
-            Keyword.merge(opts[:validate_opts] || [],
-              params: opts[:params] || %{},
-              domain: form.domain,
-              actor: form.opts[:actor],
-              tenant: form.opts[:tenant],
-              accessing_from: config[:managed_relationship],
-              transform_params: config[:transform_params],
-              prepare_source: config[:prepare_source],
-              warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
-              forms: config[:forms] || [],
-              data: opts[:data],
-              transform_errors: transform_errors
-            )
-          )
-
         case config[:type] || :single do
           :single ->
-            %{new_form | name: form.name <> "[#{key}]", id: form.id <> "_#{key}", added?: true}
+            new_form =
+              for_action(
+                data_or_resource,
+                action,
+                Keyword.merge(opts[:validate_opts] || [],
+                  as: form.name <> "[#{key}]",
+                  id: form.id <> "_#{key}",
+                  params: opts[:params] || %{},
+                  domain: form.domain,
+                  actor: form.opts[:actor],
+                  tenant: form.opts[:tenant],
+                  accessing_from: config[:managed_relationship],
+                  transform_params: config[:transform_params],
+                  prepare_source: config[:prepare_source],
+                  warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
+                  forms: config[:forms] || [],
+                  data: opts[:data],
+                  transform_errors: transform_errors
+                )
+              )
+
+            %{new_form | added?: true}
 
           :list ->
             forms = List.wrap(forms)
+
+            index =
+              if opts[:prepend] do
+                0
+              else
+                Enum.count(forms)
+              end
+
+            new_form =
+              for_action(
+                data_or_resource,
+                action,
+                Keyword.merge(opts[:validate_opts] || [],
+                  as: form.name <> "[#{key}][#{index}]",
+                  id: form.id <> "_#{key}_#{index}",
+                  params: opts[:params] || %{},
+                  domain: form.domain,
+                  actor: form.opts[:actor],
+                  tenant: form.opts[:tenant],
+                  accessing_from: config[:managed_relationship],
+                  transform_params: config[:transform_params],
+                  prepare_source: config[:prepare_source],
+                  warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
+                  forms: config[:forms] || [],
+                  data: opts[:data],
+                  transform_errors: transform_errors
+                )
+              )
 
             if opts[:prepend] do
               [%{new_form | added?: true} | forms]
