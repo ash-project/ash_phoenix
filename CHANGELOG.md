@@ -5,6 +5,37 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.0.0-rc.7](https://github.com/ash-project/ash_phoenix/compare/v2.0.0-rc.6...v2.0.0-rc.7) (2024-04-23)
+### Breaking Changes:
+
+* upgrade to Ash 3.0
+
+
+
+### Bug Fixes:
+
+* ensure nested form names are remapped on remove form
+
+* ensure nested forms included as params when adding forms get proper names
+
+* handle unions on initial form creation
+
+* always include domain on add_form (#157)
+
+* ensure domain is passed down to all child forms
+
+* handle cases where changesets/queries are not returned with errors
+
+* undo the change of not returning hidden fields
+
+### Improvements:
+
+* remove unknown keys option from embedded attributes
+
+* add error hints for `NoFormConfigured` errors
+
+* loosen release candidate dependency
+
 ## [v2.0.0-rc.6](https://github.com/ash-project/ash_phoenix/compare/v2.0.0-rc.5...v2.0.0-rc.6) (2024-04-19)
 
 
