@@ -1818,7 +1818,12 @@ defmodule AshPhoenix.FormTest do
 
       assert form |> AshPhoenix.Form.get_form([:post, :comments, 0])
       assert form |> AshPhoenix.Form.get_form([:post, :comments, 1])
-      refute form |> AshPhoenix.Form.get_form([:post, :comments, 2])
+      assert form |> AshPhoenix.Form.get_form([:post, :comments, 2])
+
+      assert form |> AshPhoenix.Form.get_form([:post, :comments, 2, :post]) |> Map.get(:name) ==
+               "comment[post][comments][2][post]"
+
+      refute form |> AshPhoenix.Form.get_form([:post, :comments, 3])
     end
   end
 
