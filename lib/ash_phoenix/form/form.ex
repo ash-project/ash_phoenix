@@ -620,7 +620,7 @@ defmodule AshPhoenix.Form do
 
   def can_submit?(form) do
     Ash.can?(form.source, form.source.context[:private][:actor],
-      tenant: form.source.context[:private][:tenant]
+      tenant: form.source.tenant
     )
   end
 
