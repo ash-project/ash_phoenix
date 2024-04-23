@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.3.6](https://github.com/ash-project/ash_phoenix/compare/v1.3.5...v1.3.6) (2024-04-23)
+
+
+
+
+### Bug Fixes:
+
+* ensure nested form names are remapped on remove form
+
+* backport fix for form names from 3.0
+
+* ensure nested forms included as params when adding forms get proper names
+
 ## [v1.3.5](https://github.com/ash-project/ash_phoenix/compare/v1.3.4...v1.3.5) (2024-04-22)
 
 

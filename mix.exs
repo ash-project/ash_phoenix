@@ -5,7 +5,7 @@ defmodule AshPhoenix.MixProject do
   Utilities for integrating Ash with Phoenix
   """
 
-  @version "1.3.5"
+  @version "1.3.6"
 
   def project do
     [
