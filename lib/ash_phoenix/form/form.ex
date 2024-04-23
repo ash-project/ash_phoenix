@@ -619,7 +619,9 @@ defmodule AshPhoenix.Form do
   end
 
   def can_submit?(form) do
-    Ash.can?(form.source, form.source.context[:private][:actor])
+    Ash.can?(form.source, form.source.context[:private][:actor],
+      tenant: form.source.tenant
+    )
   end
 
   @spec ensure_can_submit!(t()) :: t()
@@ -630,7 +632,8 @@ defmodule AshPhoenix.Form do
 
   def ensure_can_submit!(form) do
     case Ash.can(form.source, form.source.context[:private][:actor],
-           return_forbidden_error?: true
+           return_forbidden_error?: true,
+           tenant: form.source.tenant
          ) do
       {:ok, false, %{stacktrace: %{stacktrace: stacktrace}} = exception} ->
         reraise exception, stacktrace
