@@ -1794,6 +1794,32 @@ defmodule AshPhoenix.FormTest do
 
       assert post_form.name == "comment[post][comments][0][post]"
     end
+
+    test "update nested form name correctly when remove form in the middle" do
+      post_id = Ash.UUID.generate()
+      comment_id = Ash.UUID.generate()
+
+      comment = %Comment{
+        text: "text",
+        post: %Post{
+          id: post_id,
+          text: "Some text",
+          comments: [%Comment{id: comment_id}]
+        }
+      }
+
+      form =
+        comment
+        |> Form.for_update(:update, as: "comment", forms: [auto?: true])
+        |> Form.add_form([:post, :comments], params: %{"post" => %{}})
+        |> Form.add_form([:post, :comments], params: %{"post" => %{}})
+        |> Form.add_form([:post, :comments], params: %{"post" => %{}})
+        |> Form.remove_form([:post, :comments, 1])
+
+      assert form |> AshPhoenix.Form.get_form([:post, :comments, 0])
+      assert form |> AshPhoenix.Form.get_form([:post, :comments, 1])
+      refute form |> AshPhoenix.Form.get_form([:post, :comments, 2])
+    end
   end
 
   describe "issue #259" do
