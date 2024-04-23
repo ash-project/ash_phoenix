@@ -3365,7 +3365,24 @@ defmodule AshPhoenix.Form do
         |> List.delete_at(i)
         |> Enum.with_index()
         |> Enum.map(fn {nested_form, i} ->
-          %{nested_form | name: form.name <> "[#{key}][#{i}]", id: form.id <> "_#{key}_#{i}"}
+          new_name = form.name <> "[#{key}][#{i}]"
+          new_id = form.id <> "_#{key}_#{i}"
+
+          if nested_form.name == new_name && nested_form.id == new_id do
+            nested_form
+          else
+            %{
+              nested_form
+              | name: new_name,
+                id: new_id,
+                forms:
+                  replace_form_names(
+                    nested_form.forms,
+                    {nested_form.name, new_name},
+                    {nested_form.id, new_id}
+                  )
+            }
+          end
         end)
       end)
 
@@ -3415,6 +3432,36 @@ defmodule AshPhoenix.Form do
 
   defp do_remove_form(_form, path, trail) do
     raise InvalidPath, path: Enum.reverse(trail, path)
+  end
+
+  defp replace_form_names(
+         forms,
+         {original_name, new_name},
+         {original_id, new_id}
+       ) do
+    Map.new(forms || %{}, fn {key, nested} ->
+      if is_list(nested) do
+        {key,
+         Enum.map(
+           nested,
+           &do_replace_form_names(&1, {original_name, new_name}, {original_id, new_id})
+         )}
+      else
+        {key, do_replace_form_names(nested, {original_name, new_name}, {original_id, new_id})}
+      end
+    end)
+  end
+
+  defp do_replace_form_names(nested, {original_name, new_name}, {original_id, new_id}) do
+    new_name = String.replace_leading(nested.name, original_name, new_name)
+    new_id = String.replace_leading(nested.id, original_id, new_id)
+
+    %{
+      nested
+      | name: new_name,
+        id: new_id,
+        forms: replace_form_names(nested.forms, {nested.name, new_name}, {nested.id, new_id})
+    }
   end
 
   defp do_add_form(form, [key, i | rest], opts, trail, transform_errors) when is_integer(i) do
