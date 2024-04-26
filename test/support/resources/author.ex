@@ -20,6 +20,7 @@ defmodule AshPhoenix.Test.Author do
     defaults([:create, :read, :update])
 
     update :update_with_embedded_argument do
+      require_atomic? false
       # This an empty change, just so test how we handle errors on embedded arguments
       accept []
       argument :embedded_argument, AshPhoenix.Test.EmbeddedArgument, allow_nil?: false

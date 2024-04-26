@@ -38,6 +38,7 @@ defmodule AshPhoenix.Test.Comment do
 
     update :update do
       primary?(true)
+      require_atomic? false
       argument(:post, :map)
       change(manage_relationship(:post, type: :direct_control))
     end

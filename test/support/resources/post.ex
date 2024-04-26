@@ -44,12 +44,14 @@ defmodule AshPhoenix.Test.Post do
     end
 
     update :update_with_replace do
+      require_atomic? false
       argument(:comments, {:array, :map})
       change(manage_relationship(:comments, type: :append_and_remove))
     end
 
     update :update do
       primary?(true)
+      require_atomic? false
       argument(:author, :map, allow_nil?: true)
       argument(:comments, {:array, :map})
       change(manage_relationship(:comments, type: :direct_control))
