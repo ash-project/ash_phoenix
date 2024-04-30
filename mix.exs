@@ -61,6 +61,7 @@ defmodule AshPhoenix.MixProject do
       extras: [
         "documentation/tutorials/getting-started-with-ash-and-phoenix.md",
         "documentation/topics/working-with-phoenix.md",
+        "documentation/topics/union-forms.md",
         "documentation/how_to/upgrade.md"
       ],
       groups_for_extras: [
@@ -124,7 +125,7 @@ defmodule AshPhoenix.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ash, ash_version("~> 3.0.0-rc")},
+      {:ash, ash_version("~> 3.0.0-rc and >= 3.0.0-rc.39")},
       {:phoenix, "~> 1.5.6 or ~> 1.6"},
       {:phoenix_html, "~> 4.0"},
       {:phoenix_live_view, "~> 0.20.3"},

@@ -368,7 +368,15 @@ defmodule AshPhoenix.Form do
   import AshPhoenix.FormData.Helpers
 
   @doc "Calls the corresponding `for_*` function depending on the action type"
-  def for_action(resource_or_data, action, opts \\ []) do
+  def for_action(resource_or_data, action, opts \\ [])
+
+  def for_action(%Ash.Union{value: value, type: type}, action, opts) do
+    form = for_action(value, action, opts)
+
+    %{form | params: Map.put(form.params, "_union_type", to_string(type))}
+  end
+
+  def for_action(resource_or_data, action, opts) do
     {resource, data} =
       case resource_or_data do
         module when is_atom(resource_or_data) ->
@@ -2643,7 +2651,7 @@ defmodule AshPhoenix.Form do
               if nested_params["_ignore"] == "true" do
                 Map.put(params, for_name, nil)
               else
-                if form.form_keys[key][:merge?] do
+                if get_form_key(form.form_keys, key)[:merge?] do
                   Map.merge(nested_params || %{}, params)
                 else
                   nested_params =
@@ -2894,14 +2902,10 @@ defmodule AshPhoenix.Form do
   def add_form(form, path, opts) do
     opts = Spark.Options.validate!(opts, @add_form_opts)
 
+    path = parse_path!(form, path, skip_last?: true)
+
     form =
-      if is_binary(path) do
-        path = parse_path!(form, path)
-        do_add_form(form, path, opts, [], form.transform_errors)
-      else
-        path = List.wrap(path)
-        do_add_form(form, path, opts, [], form.transform_errors)
-      end
+      do_add_form(form, path, opts, [], form.transform_errors)
 
     if opts[:validate?] do
       validate(form, params(form, transform?: false, hidden?: true), opts[:validate_opts] || [])
@@ -2951,14 +2955,10 @@ defmodule AshPhoenix.Form do
     opts = Spark.Options.validate!(opts, @remove_form_opts)
 
     if has_form?(form, path) do
+      path = parse_path!(form, path)
+
       form =
-        if is_binary(path) do
-          path = parse_path!(form, path)
-          do_remove_form(form, path, [])
-        else
-          path = List.wrap(path)
-          do_remove_form(form, path, [])
-        end
+        do_remove_form(form, path, [])
 
       form = set_changed?(form)
 
@@ -3230,7 +3230,7 @@ defmodule AshPhoenix.Form do
   end
 
   defp do_remove_form(form, [key], trail) when not is_integer(key) do
-    unless form.form_keys[key] do
+    unless get_form_key(form.form_keys, key) do
       raise AshPhoenix.Form.NoFormConfigured,
         resource: form.resource,
         action: form.action,
@@ -3276,7 +3276,7 @@ defmodule AshPhoenix.Form do
   end
 
   defp do_remove_form(form, [key, i], trail) when is_integer(i) do
-    unless form.form_keys[key] do
+    unless get_form_key(form.form_keys, key) do
       raise AshPhoenix.Form.NoFormConfigured,
         resource: form.resource,
         action: form.action,
@@ -3337,7 +3337,7 @@ defmodule AshPhoenix.Form do
   end
 
   defp do_remove_form(form, [key, i | rest], trail) when is_integer(i) do
-    unless form.form_keys[key] do
+    unless get_form_key(form.form_keys, key) do
       raise AshPhoenix.Form.NoFormConfigured,
         resource: form.resource,
         action: form.action,
@@ -3357,7 +3357,7 @@ defmodule AshPhoenix.Form do
   end
 
   defp do_remove_form(form, [key | rest], trail) do
-    unless form.form_keys[key] do
+    unless get_form_key(form.form_keys, key) do
       raise AshPhoenix.Form.NoFormConfigured,
         resource: form.resource,
         action: form.action,
@@ -3408,8 +3408,20 @@ defmodule AshPhoenix.Form do
     }
   end
 
+  defp get_form_key(form_keys, key) when is_atom(key) do
+    form_keys[key]
+  end
+
+  defp get_form_key(form_keys, string_key) when is_binary(string_key) do
+    Enum.find_value(form_keys, fn {key, value} ->
+      if to_string(key) == string_key do
+        value
+      end
+    end)
+  end
+
   defp do_add_form(form, [key, i | rest], opts, trail, transform_errors) when is_integer(i) do
-    unless form.form_keys[key] do
+    unless get_form_key(form.form_keys, key) do
       raise AshPhoenix.Form.NoFormConfigured,
         resource: form.resource,
         action: form.action,
@@ -3418,12 +3430,19 @@ defmodule AshPhoenix.Form do
         path: Enum.reverse(trail)
     end
 
+    key =
+      if is_binary(key) do
+        String.to_existing_atom(key)
+      else
+        key
+      end
+
     new_forms =
       form.forms
       |> Map.put_new(key, [])
       |> Map.update!(key, fn forms ->
         index =
-          if form.form_keys[key][:sparse?] do
+          if get_form_key(form.form_keys, key)[:sparse?] do
             Enum.find_index(forms, fn form ->
               form.params["_index"] == to_string(i)
             end) || i
@@ -3443,13 +3462,20 @@ defmodule AshPhoenix.Form do
 
   defp do_add_form(form, [key], opts, trail, transform_errors) do
     config =
-      form.form_keys[key] ||
+      get_form_key(form.form_keys, key) ||
         raise AshPhoenix.Form.NoFormConfigured,
           resource: form.resource,
           action: form.action,
           field: key,
           available: Keyword.keys(form.form_keys || []),
           path: Enum.reverse(trail)
+
+    key =
+      if is_binary(key) do
+        String.to_existing_atom(key)
+      else
+        key
+      end
 
     config = update_opts(config, opts[:data], opts[:params] || %{})
 
@@ -3564,7 +3590,7 @@ defmodule AshPhoenix.Form do
   end
 
   defp do_add_form(form, [key | rest], opts, trail, transform_errors) do
-    unless form.form_keys[key] do
+    unless get_form_key(form.form_keys, key) do
       raise AshPhoenix.Form.NoFormConfigured,
         resource: form.resource,
         action: form.action,
@@ -3572,6 +3598,13 @@ defmodule AshPhoenix.Form do
         available: Keyword.keys(form.form_keys || []),
         path: Enum.reverse(trail)
     end
+
+    key =
+      if is_binary(key) do
+        String.to_existing_atom(key)
+      else
+        key
+      end
 
     new_forms =
       form.forms
@@ -3745,7 +3778,7 @@ defmodule AshPhoenix.Form do
     new_forms =
       form.forms
       |> Map.new(fn {key, forms} ->
-        config = form.form_keys[key]
+        config = get_form_key(form.form_keys, key)
 
         new_forms =
           if is_list(forms) do
@@ -3783,7 +3816,7 @@ defmodule AshPhoenix.Form do
     new_forms =
       form.forms
       |> Map.new(fn {key, forms} ->
-        config = form.form_keys[key]
+        config = get_form_key(form.form_keys, key)
 
         new_forms =
           if is_list(forms) do
@@ -3835,21 +3868,64 @@ defmodule AshPhoenix.Form do
   [:comments, 0, :sub_comments, 0]
   ```
   """
-  @spec parse_path!(t() | Phoenix.HTML.Form.t(), String.t()) :: list(atom | integer) | no_return
-  def parse_path!(%{name: name} = form, original_path) do
+  @spec parse_path!(
+          t() | Phoenix.HTML.Form.t(),
+          String.t() | list(String.t() | atom | integer),
+          opts :: Keyword.t()
+        ) ::
+          list(atom | integer) | no_return
+  def parse_path!(%{name: name} = form, original_path, opts \\ []) do
     form = to_form!(form)
 
     path =
-      original_path
-      |> Plug.Conn.Query.decode()
-      |> decoded_to_list()
+      if is_binary(original_path) do
+        original_path
+        |> Plug.Conn.Query.decode()
+        |> decoded_to_list()
+      else
+        List.wrap(original_path)
+      end
 
-    case path do
-      [^name | rest] ->
-        do_decode_path(form, original_path, rest, false)
+    {path, last} =
+      if opts[:skip_last?] do
+        {:lists.droplast(path), List.last(path)}
+      else
+        {path, nil}
+      end
 
-      _other ->
-        raise InvalidPath, path: original_path
+    parsed_path =
+      case path do
+        [] ->
+          []
+
+        [^name | rest] ->
+          try do
+            do_decode_path(form, original_path, rest, false)
+          rescue
+            InvalidPath ->
+              do_decode_path(form, original_path, [name | rest], false)
+          end
+
+        other ->
+          try do
+            do_decode_path(form, original_path, other, false)
+          rescue
+            e in InvalidPath ->
+              stacktrace = __STACKTRACE__
+
+              try do
+                do_decode_path(form, original_path, [name | other], false)
+              rescue
+                InvalidPath ->
+                  reraise e, stacktrace
+              end
+          end
+      end
+
+    if opts[:skip_last?] do
+      parsed_path ++ [last]
+    else
+      parsed_path
     end
   end
 
@@ -3862,7 +3938,7 @@ defmodule AshPhoenix.Form do
   end
 
   defp do_decode_path(forms, original_path, [key | rest], sparse?) when is_list(forms) do
-    case Integer.parse(key) do
+    case parse_int(key) do
       {index, ""} ->
         matching_form =
           if sparse? do
@@ -3901,9 +3977,11 @@ defmodule AshPhoenix.Form do
 
   defp do_decode_path(form, original_path, [key | rest], _sparse?) do
     form.form_keys
-    |> Enum.find_value(fn {search_key, value} ->
-      if to_string(search_key) == key do
-        {search_key, value}
+    |> Enum.find(fn {search_key, _value} ->
+      if is_atom(key) do
+        search_key == key
+      else
+        to_string(search_key) == key
       end
     end)
     |> case do
@@ -3922,6 +4000,9 @@ defmodule AshPhoenix.Form do
         end
     end
   end
+
+  defp parse_int(value) when is_integer(value), do: {value, ""}
+  defp parse_int(value) when is_binary(value), do: Integer.parse(value)
 
   defp decoded_to_list(""), do: []
 
