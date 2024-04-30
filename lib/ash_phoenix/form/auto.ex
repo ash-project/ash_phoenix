@@ -850,7 +850,7 @@ defmodule AshPhoenix.Form.Auto do
   @doc false
   def accepted_attributes(resource, action) do
     resource
-    |> Ash.Resource.Info.public_attributes()
+    |> Ash.Resource.Info.attributes()
     |> only_accepted(action)
   end
 

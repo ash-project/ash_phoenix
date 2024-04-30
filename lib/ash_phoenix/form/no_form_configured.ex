@@ -77,18 +77,18 @@ defmodule AshPhoenix.Form.NoFormConfigured do
         if attribute.name in error.action.accept do
           """
 
-          There is a attribute called `#{attribute.name}` on the resource `#{inspect(error.resource)}`,  but it is
-          not accepted by `#{inspect(error.resource)}.#{error.action.name}`.
+          There is an attribute called `#{attribute.name}` on the resource `#{inspect(error.resource)}`, and it is
+          accepted by `#{inspect(error.resource)}.#{error.action.name}`.
 
-          Perhaps you meant to add that attribute to the `accept` list, or you meant to make it `public? true`?
+          Perhaps it is not a type that can have forms generated for it?
           """
         else
           """
 
-          There is a attribute called `#{attribute.name}` on the resource `#{inspect(error.resource)}`,  and it is
-          accepted by `#{inspect(error.resource)}.#{error.action.name}`.
+          There is an attribute called `#{attribute.name}` on the resource `#{inspect(error.resource)}`, but it is
+          not accepted by `#{inspect(error.resource)}.#{error.action.name}`.
 
-          Perhaps it is not a type that can have forms generated for it?
+          Perhaps you meant to add that attribute to the `accept` list, or you meant to make it `public? true`?
           """
         end
 
