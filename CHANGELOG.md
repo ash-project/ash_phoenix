@@ -5,6 +5,25 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.0.0-rc.8](https://github.com/ash-project/ash_phoenix/compare/v2.0.0-rc.7...v2.0.0-rc.8) (2024-04-30)
+
+
+
+
+### Bug Fixes:
+
+* don't use `public_attributes?`, check for all accepted attributes
+
+* show proper error message for accepted/non accepted missing forms
+
+* Pass the tenant to `Ash.can/3` and `Ash.can?/3`. (#165)
+
+* Pass the tenant to `Ash.can/3` and `Ash.can?/3`.
+
+### Improvements:
+
+* Remove domain opt from AshPhoenix.LiveView (#167)
+
 ## [v2.0.0-rc.7](https://github.com/ash-project/ash_phoenix/compare/v2.0.0-rc.6...v2.0.0-rc.7) (2024-04-23)
 ### Breaking Changes:
 
