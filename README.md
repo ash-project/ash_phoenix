@@ -17,7 +17,7 @@ Welcome! This is the package for integrating [Phoenix Framework](https://www.pho
 ## Whats in the box?
 
 - `AshPhoenix.Form` - A form data structure for using resource actions with phoenix forms
-- `AshPhoenix.Form.Auto` - Tools to automatically determine nested form structures based on calls `manage_relationship` for an action.
+- `AshPhoenix.Form.Auto` - Tools to automatically determine nested form structures based on calls to `manage_relationship` for an action.
 - `AshPhoenix.FilterForm` - A form data structure for building filter statements
 - `AshPhoenix.LiveView` - Helpers for querying data and integrating changes
 - `AshPhoenix.SubdomainPlug` - A plug to determine a tenant using subdomains for multitenancy
