@@ -1,6 +1,6 @@
 defmodule AshPhoenix.LiveView do
   @moduledoc """
-  Utilities for keeping ash query results up to date in a live view.
+  Utilities for keeping Ash query results up to date in a LiveView.
   """
 
   @type socket :: term
