@@ -1,34 +1,36 @@
+![Logo](https://github.com/ash-project/ash/blob/main/logos/cropped-for-header-black-text.png?raw=true#gh-light-mode-only)
+![Logo](https://github.com/ash-project/ash/blob/main/logos/cropped-for-header-white-text.png?raw=true#gh-dark-mode-only)
+
+![Elixir CI](https://github.com/ash-project/ash_phoenix/workflows/CI/badge.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Hex version badge](https://img.shields.io/hexpm/v/ash_phoenix.svg)](https://hex.pm/packages/ash_phoenix)
+[![Hexdocs badge](https://img.shields.io/badge/docs-hexdocs-purple)](https://hexdocs.pm/ash_phoenix)
+
 # AshPhoenix
 
-[![Elixir CI](https://github.com/ash-project/ash_phoenix/actions/workflows/elixir.yml/badge.svg)](https://github.com/ash-project/ash_phoenix/actions/workflows/elixir.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Coverage Status](https://coveralls.io/repos/github/ash-project/ash_phoenix/badge.svg?branch=main)](https://coveralls.io/github/ash-project/ash_phoenix?branch=main)
-[![Hex version badge](https://img.shields.io/hexpm/v/ash_phoenix.svg)](https://hex.pm/packages/ash_phoenix)
+Welcome! This is the package for integrating [Phoenix Framework](https://www.phoenixframework.org) and [Ash Framework](https://hexdocs.pm/ash). It provides tools for integrating with Phoenix forms (`AshPhoenix.Form`), Phoenix LiveViews (`AshPhoenix.LiveView`) and more.
 
-See the module documentation for more information:
+## Installation
 
-- `AshPhoenix.LiveView`: for liveview querying utilities
-- `AshPhoenix.Form`: Utilities for using forms with Ash changesets 
+`{:ash_phoenix, "~> 2.0.0-rc.8"}`
 
-## Roadmap
+## Whats in the box?
 
-- UI authorization utilities e.g `<%= if authorized_to_do?(resource, action, actor) do %>`
-- Potentially helpers for easily connecting buttons to resource actions
+- `AshPhoenix.Form` - A form data structure for using resource actions with phoenix forms
+- `AshPhoenix.Form.Auto` - Tools to automatically determine nested form structures based on calls `manage_relationship` for an action.
+- `AshPhoenix.FilterForm` - A form data structure for building filter statements
+- `AshPhoenix.LiveView` - Helpers for querying data and integrating changes
+- `AshPhoenix.SubdomainPlug` - A plug to determine a tenant using subdomains for multitenancy
+- `AshPhoenix.FormData.Error` - A protocol to allow errors to be rendered in forms
+- `Phoenix.HTML.Safe` implementations for `Ash.CiString`, `Ash.NotLoaded` and `Decimal`
+- `AshPhoenix.SubdomainPlug` for multitenant subdomain-based applications.
+- [`mix ash_phoenix.gen.live`](Mix.Tasks.AshPhoenix.Gen.Live.html) for generating liveview modules
+- [`mix ash_phoenix.gen.html`](Mix.Tasks.AshPhoenix.Gen.Html.html) for generating controllers and views
 
-```elixir
-def deps do
-  [
-    {:ash_phoenix, "~> 1.1"}
-  ]
-end
-```
+## Tutorials
 
-## Contributors
+- [Getting Started with Ash and Phoenix](documentation/tutorials/getting-started-with-ash-and-phoenix.md)
 
-Ash is made possible by its excellent community!
+## Topics
 
-<a href="https://github.com/ash-project/ash_phoenix/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=ash-project/ash_phoenix" />
-</a>
-
-[Become a contributor](https://ash-hq.org/docs/guides/ash/latest/how_to/contribute.md)
+- [Union Forms](documentation/topics/union-forms.md)

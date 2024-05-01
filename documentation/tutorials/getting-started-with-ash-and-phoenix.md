@@ -1,15 +1,5 @@
 # Get Started with Ash and Phoenix
 
-<!--- ash-hq-hide-start --> <!--- -->
-
-This documentation is best viewed at [ash-hq.org](https://ash-hq.org)
-
-<!--- ash-hq-hide-stop --> <!--- -->
-
-## Who is This For?
-
-This is designed to be a quick start guide for Ash with Phoenix. Familiarity with Phoenix and LiveView are not necessary, but would certainly be helpful.
-
 ## Goals
 
 In this guide we will:
@@ -21,7 +11,7 @@ In this guide we will:
 5. Learn how to interact with your resource
 6. Integrate a minimal Phoenix LiveView with Ash
 
-## Things You May Want to Read First
+## Preparation
 
 - [Install Elixir](https://elixir-lang.org/install.html)
 - [Phoenix - Up and Running Guide](https://hexdocs.pm/phoenix/up_and_running.html)
@@ -40,11 +30,11 @@ If you want to follow along yourself, you will need the following things:
 
 ### Create a New Phoenix Project
 
-_This section is based on the [Phoenix installation docs](https://hexdocs.pm/phoenix/installation.html). For more details go there._
+> ### Install Phoenix {: .info}
+>
+> _This section is based on the [Phoenix installation docs](https://hexdocs.pm/phoenix/installation.html). For more details go there._
 
 First we need to install the Phoenix project generator, then we'll run the generator to create our new project.
-
-**NOTE: DO NOT run `mix ecto.create`, (as it asks you to) we will do this the Ash way later.**
 
 ```bash
 # install Phoenix project generator
@@ -56,6 +46,10 @@ $ mix phx.new my_ash_phoenix_app
 # cd into project
 $ cd my_ash_phoenix_app
 ```
+
+> ### Don't run `mix ecto.create` {: .warning}
+>
+> Do _not_ run `mix ecto.create`, (as it asks you to) we will do this the Ash way later.
 
 ### Add Dependencies
 
@@ -140,7 +134,14 @@ defmodule MyAshPhoenixApp.Blog do
   use Ash.Domain
 
   resources do
-    resource MyAshPhoenixApp.Blog.Post
+    resource MyAshPhoenixApp.Blog.Post do
+      # Define an interface for calling resource actions.
+      define :create_posts, action: :create
+      define :list_posts, action: :read
+      define :update_post, action: :update
+      define :destroy_post, action: :destroy
+      define :get_post, args: [:id], action: :by_id
+    end
   end
 end
 ```
@@ -151,15 +152,14 @@ end
 
 A resource is a central concept in Ash. In short, a resource is a domain model object in your system. A resource defines the data it holds and defines the actions that can operate on that data.
 
-It's convention to place all the resource in their own resources folder. So when we create `Post` we will place it in `lib/my_ash_phoenix_app/blog/resources/post.ex`. So the structure after making the resource should look like so:
+When we create `Post` we will place it in `lib/my_ash_phoenix_app/blog/post.ex`. So the structure after making the resource should look like so:
 
 ```
 lib/
 ├─ my_ash_phoenix_app/
 │  ├─ blog/
 │  │  ├─ blog.ex
-│  │  ├─ resources/
-│  │  │  ├─ post.ex
+│  │  ├─ post.ex
 ```
 
 Below is the resource module. Read the comments carefully, every line is explained:
@@ -181,16 +181,6 @@ defmodule MyAshPhoenixApp.Blog.Post do
     table "posts"
     # Tells Ash how to interface with the Postgres table
     repo MyAshPhoenixApp.Repo
-  end
-
-  # Defines convenience methods for
-  # interacting with the resource programmatically.
-  code_interface do
-    define :create, action: :create
-    define :read_all, action: :read
-    define :update, action: :update
-    define :destroy, action: :destroy
-    define :get_by_id, args: [:id], action: :by_id
   end
 
   actions do
@@ -342,54 +332,42 @@ new_post
 |> Ash.destroy!()
 ```
 
-As stated above, this is verbose so Ash has a built in shortcut - The `code_interface`. You may notice this has already been done in your `Post` resource. Here it is again with more explanation:
+As stated above, this is verbose so Ash has a built in shortcut - The `code_interface`. You may notice this has already been done in your `Post` resource inside of the domain module.
 
-```elixir
- code_interface do
-    # defining function Post.create/2 it calls the :create action
-    define :create, action: :create
-    # defining function Post.read_all/2 it calls the :read action
-    define :read_all, action: :read
-    # defining function Post.update/2 it calls the :update action
-    define :update, action: :update
-    # defining function Post.destroy/2 it calls the :destroy action
-    define :destroy, action: :destroy
-    # defining function Post.get_by_id/2
-    # it calls the :by_id action with the argument :id
-    define :get_by_id, args: [:id], action: :by_id
-  end
-```
-
-> Note: The function name doesn't have to match the action name in any way. You could also write:
+> ### you can call code interfaces whatever you like {: .info}
+>
+> The function name doesn't have to match the action name in any way. You could also write:
 >
 > ```elixir
-> define :make, action: :create
+> define :make_post, action: :create
 > ```
 >
-> That's perfectly valid and could be called via `Blog.Post.make/2`.
+> That's perfectly valid and could be called via `Blog.make_post/2`.
 
 Now we can call our resource like so:
 
 ```elixir
 # create post
-new_post = MyAshPhoenixApp.Blog.Post.create!(%{title: "hello world"})
+new_post = MyAshPhoenixApp.Blog.create_post!(%{title: "hello world"})
 
 # read post
-MyAshPhoenixApp.Blog.Post.read_all!()
+MyAshPhoenixApp.Blog.list_posts!()
 
 # get post by id
-MyAshPhoenixApp.Blog.Post.get_by_id!(new_post.id)
+MyAshPhoenixApp.Blog.get_post!(new_post.id)
 
 # update post
-updated_post = MyAshPhoenixApp.Blog.Post.update!(new_post, %{content: "hello to you too!"})
+updated_post = MyAshPhoenixApp.Blog.update_post!(new_post, %{content: "hello to you too!"})
 
 # delete post
-MyAshPhoenixApp.Blog.Post.destroy!(updated_post)
+MyAshPhoenixApp.Blog.destroy_post!(updated_post)
 ```
 
 Now isn't that more convenient?
 
-> Note: All functions that interact with an Ash resource have a safe and unsafe version. For example there are two create functions `create/2` and `create!/2`. `create/2` returns `{:ok, resource}` or `{:error, reason}`. `create!/2` will return just the resource on success and will raise an error on failure.
+> ### raising and non-raising functions {: .info}
+>
+> All functions that interact with an Ash resource have a raising and non-raising version. For example there are two create functions `create/2` and `create!/2`. `create/2` returns `{:ok, resource}` or `{:error, reason}`. `create!/2` will return just the record on success and will raise an error on failure.
 
 ## Connecting your Resource to a Phoenix LiveView
 
@@ -400,7 +378,7 @@ Now we know how to interact with our resource, let's connect it to a simple Phoe
 
 defmodule MyAshPhoenixAppWeb.PostsLive do
   use MyAshPhoenixAppWeb, :live_view
-  alias MyAshPhoenixApp.Blog.Post
+  alias MyAshPhoenixApp.Blog
 
   def render(assigns) do
     ~H"""
@@ -428,7 +406,7 @@ defmodule MyAshPhoenixAppWeb.PostsLive do
   end
 
   def mount(_params, _session, socket) do
-    posts = Post.read_all!()
+    posts = Blog.list_posts!()
 
     socket =
       assign(socket,
@@ -442,15 +420,15 @@ defmodule MyAshPhoenixAppWeb.PostsLive do
   end
 
   def handle_event("delete_post", %{"post-id" => post_id}, socket) do
-    post_id |> Post.get_by_id!() |> Post.destroy!()
-    posts = Post.read_all!()
+    post_id |> Blog.get_post!() |> Blog.destroy_post!()
+    posts = Blog.list_posts!()
 
     {:noreply, assign(socket, posts: posts, post_selector: post_selector(posts))}
   end
 
   def handle_event("create_post", %{"form" => %{"title" => title}}, socket) do
-    Post.create(%{title: title})
-    posts = Post.read_all!()
+    Blog.create_post(%{title: title})
+    posts = Blog.list_posts!()
 
     {:noreply, assign(socket, posts: posts, post_selector: post_selector(posts))}
   end
@@ -458,8 +436,8 @@ defmodule MyAshPhoenixAppWeb.PostsLive do
   def handle_event("update_post", %{"form" => form_params}, socket) do
     %{"post_id" => post_id, "content" => content} = form_params
 
-    post_id |> Post.get_by_id!() |> Post.update!(%{content: content})
-    posts = Post.read_all!()
+    post_id |> Blog.get_post!() |> Blog.update_post!(%{content: content})
+    posts = Blog.list_posts!()
 
     {:noreply, assign(socket, posts: posts, post_selector: post_selector(posts))}
   end

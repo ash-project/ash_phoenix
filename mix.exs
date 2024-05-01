@@ -2,7 +2,7 @@ defmodule AshPhoenix.MixProject do
   use Mix.Project
 
   @description """
-  Utilities for integrating Ash with Phoenix
+  Utilities for integrating Ash and Phoenix
   """
 
   @version "2.0.0-rc.8"
@@ -55,14 +55,13 @@ defmodule AshPhoenix.MixProject do
 
   defp docs do
     [
-      main: "working-with-phoenix",
+      main: "readme",
       source_ref: "v#{@version}",
       logo: "logos/small-logo.png",
       extras: [
+        {"README.md", title: "Home"},
         "documentation/tutorials/getting-started-with-ash-and-phoenix.md",
-        "documentation/topics/working-with-phoenix.md",
-        "documentation/topics/union-forms.md",
-        "documentation/how_to/upgrade.md"
+        "documentation/topics/union-forms.md"
       ],
       groups_for_extras: [
         Tutorials: ~r'documentation/tutorials',
