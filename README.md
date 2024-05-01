@@ -12,7 +12,11 @@ Welcome! This is the package for integrating [Phoenix Framework](https://www.pho
 
 ## Installation
 
-`{:ash_phoenix, "~> 2.0.0-rc"}`
+Add `ash_phoenix` to your list of dependencies in `mix.exs`:
+
+```elixir
+{:ash_phoenix, "~> 2.0.0-rc"}
+```
 
 ## Whats in the box?
 
