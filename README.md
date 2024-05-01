@@ -28,8 +28,8 @@ Add `ash_phoenix` to your list of dependencies in `mix.exs`:
 - `AshPhoenix.FormData.Error` - A protocol to allow errors to be rendered in forms
 - `Phoenix.HTML.Safe` implementations for `Ash.CiString`, `Ash.NotLoaded` and `Decimal`
 - `AshPhoenix.SubdomainPlug` for multitenant subdomain-based applications.
-- [`mix ash_phoenix.gen.live`](Mix.Tasks.AshPhoenix.Gen.Live.html) for generating liveview modules
-- [`mix ash_phoenix.gen.html`](Mix.Tasks.AshPhoenix.Gen.Html.html) for generating controllers and views
+- `mix ash_phoenix.gen.live` for generating liveview modules
+- `mix ash_phoenix.gen.html` for generating controllers and views
 
 ## Tutorials
 
