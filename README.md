@@ -12,7 +12,7 @@ Welcome! This is the package for integrating [Phoenix Framework](https://www.pho
 
 ## Installation
 
-`{:ash_phoenix, "~> 2.0.0-rc.8"}`
+`{:ash_phoenix, "~> 2.0.0-rc"}`
 
 ## Whats in the box?
 
