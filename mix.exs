@@ -61,12 +61,16 @@ defmodule AshPhoenix.MixProject do
       extras: [
         {"README.md", title: "Home"},
         "documentation/tutorials/getting-started-with-ash-and-phoenix.md",
-        "documentation/topics/union-forms.md"
+        "documentation/topics/union-forms.md",
+        "CHANGELOG.md"
       ],
       groups_for_extras: [
         Tutorials: ~r'documentation/tutorials',
         "How To": ~r'documentation/how_to',
-        Topics: ~r'documentation/topics'
+        Topics: ~r'documentation/topics',
+        "About AshPhoenix": [
+          "CHANGELOG.md"
+        ]
       ],
       before_closing_head_tag: fn type ->
         if type == :html do
@@ -130,7 +134,7 @@ defmodule AshPhoenix.MixProject do
       {:phoenix_live_view, "~> 0.20.3"},
       {:simple_sat, "~> 0.1", only: [:dev, :test]},
       {:git_ops, "~> 2.5", only: [:dev, :test]},
-      {:ex_doc, "~> 0.23", only: [:dev, :test], runtime: false},
+      {:ex_doc, path: "../ex_doc", override: true},
       {:ex_check, "~> 0.14", only: [:dev, :test]},
       {:credo, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:dialyxir, ">= 0.0.0", only: [:dev, :test], runtime: false},
