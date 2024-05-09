@@ -134,7 +134,7 @@ defmodule AshPhoenix.MixProject do
       {:phoenix_live_view, "~> 0.20.3"},
       {:simple_sat, "~> 0.1", only: [:dev, :test]},
       {:git_ops, "~> 2.5", only: [:dev, :test]},
-      {:ex_doc, path: "../ex_doc", override: true},
+      {:ex_doc, "~> 0.32", override: true},
       {:ex_check, "~> 0.14", only: [:dev, :test]},
       {:credo, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:dialyxir, ">= 0.0.0", only: [:dev, :test], runtime: false},
