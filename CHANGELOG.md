@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [2.0.0](https://github.com/ash-project/ash_phoenix/compare/v2.0.0-rc.8...2.0.0) (2024-05-10)
+
+
+
+
+### Bug Fixes:
+
+* various fixes around union forms
+
 ## [v2.0.0](https://github.com/ash-project/ash_phoenix/compare/v2.0.0...v1.3.4) (2024-04-30)
 
 The changelog is being restarted. See `/documentation/1.0-CHANGELOG.md` in GitHub for the old changelog.
