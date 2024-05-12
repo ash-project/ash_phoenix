@@ -136,7 +136,7 @@ defmodule MyAshPhoenixApp.Blog do
   resources do
     resource MyAshPhoenixApp.Blog.Post do
       # Define an interface for calling resource actions.
-      define :create_posts, action: :create
+      define :create_post, action: :create
       define :list_posts, action: :read
       define :update_post, action: :update
       define :destroy_post, action: :destroy
