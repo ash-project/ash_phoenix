@@ -384,25 +384,36 @@ defmodule MyAshPhoenixAppWeb.PostsLive do
 
   def render(assigns) do
     ~H"""
-    <h2>Posts</h2>
-    <div>
-      <div :for={post <- @posts}>
-        <div><%= post.title %></div>
-        <div><%= if Map.get(post, :content), do: post.content, else: "" %></div>
-        <button phx-click="delete_post" phx-value-post-id={post.id}>delete</button>
+    <h2 class="text-xl text-center">Your Posts</h2>
+    <div class="my-4">
+      <div :if={Enum.empty?(@posts)} class="font-bold text-center">
+        No posts created yet
       </div>
+      <ol class="list-decimal">
+        <li :for={post <- @posts} class="mt-4">
+          <div class="font-bold"><%= post.title %></div>
+          <div><%= if Map.get(post, :content), do: post.content, else: "" %></div>
+          <button
+            class="mt-2 p-2 bg-black text-white rounded-md"
+            phx-click="delete_post"
+            phx-value-post-id={post.id}
+          >
+            Delete post
+          </button>
+        </li>
+      </ol>
     </div>
-    <h2>Create Post</h2>
+    <h2 class="mt-8 text-lg">Create Post</h2>
     <.form :let={f} for={@create_form} phx-submit="create_post">
       <.input type="text" field={f[:title]} placeholder="input title" />
-      <.button type="submit">create</.button>
+      <.button class="mt-2" type="submit">Create</.button>
     </.form>
-    <h2>Update Post</h2>
+    <h2 class="mt-8 text-lg">Update Post</h2>
     <.form :let={f} for={@update_form} phx-submit="update_post">
       <.label>Post Name</.label>
       <.input type="select" field={f[:post_id]} options={@post_selector} />
       <.input type="text" field={f[:content]} placeholder="input content" />
-      <.button type="submit">Update</.button>
+      <.button class="mt-2" type="submit">Update</.button>
     </.form>
     """
   end
