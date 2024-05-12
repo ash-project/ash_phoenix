@@ -97,9 +97,9 @@ To use `AshPostgres.Repo` change your repo module to look like this:
 defmodule MyAshPhoenixApp.Repo do
   use AshPostgres.Repo, otp_app: :my_ash_phoenix_app
 
-  # Installs Postgres extensions that ash commonly uses
+  # Installs extensions that ash commonly uses
   def installed_extensions do
-    ["uuid-ossp", "citext"]
+    ["ash-functions", "uuid-ossp", "citext"]
   end
 end
 ```
@@ -165,7 +165,7 @@ lib/
 Below is the resource module. Read the comments carefully, every line is explained:
 
 ```elixir
-# lib/my_ash_phoenix_app/blog/resources/post.ex
+# lib/my_ash_phoenix_app/blog/post.ex
 
 defmodule MyAshPhoenixApp.Blog.Post do
   # Using Ash.Resource turns this module into an Ash resource.
@@ -378,29 +378,42 @@ Now we know how to interact with our resource, let's connect it to a simple Phoe
 
 defmodule MyAshPhoenixAppWeb.PostsLive do
   use MyAshPhoenixAppWeb, :live_view
+
   alias MyAshPhoenixApp.Blog
+  alias MyAshPhoenixApp.Blog.Post
 
   def render(assigns) do
     ~H"""
-    <h2>Posts</h2>
-    <div>
-        <div :for={post <- @posts}>
-          <div><%= post.title %></div>
+    <h2 class="text-xl text-center">Your Posts</h2>
+    <div class="my-4">
+      <div :if={Enum.empty?(@posts)} class="font-bold text-center">
+        No posts created yet
+      </div>
+      <ol class="list-decimal">
+        <li :for={post <- @posts} class="mt-4">
+          <div class="font-bold"><%= post.title %></div>
           <div><%= if Map.get(post, :content), do: post.content, else: "" %></div>
-          <button phx-click="delete_post" phx-value-post-id={post.id}>delete</button>
-        </div>
+          <button
+            class="mt-2 p-2 bg-black text-white rounded-md"
+            phx-click="delete_post"
+            phx-value-post-id={post.id}
+          >
+            Delete post
+          </button>
+        </li>
+      </ol>
     </div>
-    <h2>Create Post</h2>
+    <h2 class="mt-8 text-lg">Create Post</h2>
     <.form :let={f} for={@create_form} phx-submit="create_post">
       <.input type="text" field={f[:title]} placeholder="input title" />
-      <.button type="submit">create</.button>
+      <.button class="mt-2" type="submit">Create</.button>
     </.form>
-    <h2>Update Post</h2>
+    <h2 class="mt-8 text-lg">Update Post</h2>
     <.form :let={f} for={@update_form} phx-submit="update_post">
       <.label>Post Name</.label>
       <.input type="select" field={f[:post_id]} options={@post_selector} />
       <.input type="text" field={f[:content]} placeholder="input content" />
-      <.button type="submit">Update</.button>
+      <.button class="mt-2" type="submit">Update</.button>
     </.form>
     """
   end
@@ -460,7 +473,7 @@ Don't forget to add the LiveView to your router.
   end
 ```
 
-All being well you should be able to load up what we have just created on http://localhost:4000/posts.
+Now, start the web server by running `mix phx.server`. Then, visit http://localhost:4000/posts in your browser to see what we have just created.
 
 You can see how using functions created by our `code_interface` makes it easy to integrate Ash with Phoenix.
 
