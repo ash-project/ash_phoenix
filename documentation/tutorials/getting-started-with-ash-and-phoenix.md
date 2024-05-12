@@ -97,9 +97,9 @@ To use `AshPostgres.Repo` change your repo module to look like this:
 defmodule MyAshPhoenixApp.Repo do
   use AshPostgres.Repo, otp_app: :my_ash_phoenix_app
 
-  # Installs Postgres extensions that ash commonly uses
+  # Installs extensions that ash commonly uses
   def installed_extensions do
-    ["uuid-ossp", "citext"]
+    ["ash-functions", "uuid-ossp", "citext"]
   end
 end
 ```
@@ -165,7 +165,7 @@ lib/
 Below is the resource module. Read the comments carefully, every line is explained:
 
 ```elixir
-# lib/my_ash_phoenix_app/blog/resources/post.ex
+# lib/my_ash_phoenix_app/blog/post.ex
 
 defmodule MyAshPhoenixApp.Blog.Post do
   # Using Ash.Resource turns this module into an Ash resource.
@@ -378,17 +378,19 @@ Now we know how to interact with our resource, let's connect it to a simple Phoe
 
 defmodule MyAshPhoenixAppWeb.PostsLive do
   use MyAshPhoenixAppWeb, :live_view
+
   alias MyAshPhoenixApp.Blog
+  alias MyAshPhoenixApp.Blog.Post
 
   def render(assigns) do
     ~H"""
     <h2>Posts</h2>
     <div>
-        <div :for={post <- @posts}>
-          <div><%= post.title %></div>
-          <div><%= if Map.get(post, :content), do: post.content, else: "" %></div>
-          <button phx-click="delete_post" phx-value-post-id={post.id}>delete</button>
-        </div>
+      <div :for={post <- @posts}>
+        <div><%= post.title %></div>
+        <div><%= if Map.get(post, :content), do: post.content, else: "" %></div>
+        <button phx-click="delete_post" phx-value-post-id={post.id}>delete</button>
+      </div>
     </div>
     <h2>Create Post</h2>
     <.form :let={f} for={@create_form} phx-submit="create_post">
@@ -460,7 +462,7 @@ Don't forget to add the LiveView to your router.
   end
 ```
 
-All being well you should be able to load up what we have just created on http://localhost:4000/posts.
+Now, start the web server by running `mix phx.server`. Then, visit http://localhost:4000/posts in your browser to see what we have just created.
 
 You can see how using functions created by our `code_interface` makes it easy to integrate Ash with Phoenix.
 
