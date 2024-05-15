@@ -239,7 +239,7 @@ defmodule AshPhoenix.Gen.Live do
               nil
 
             action ->
-              action(resource, Keyword.put(opts, :"#{type}_action", action), type)
+              action(resource, Keyword.put(opts, :"#{type}_action", String.to_atom(action)), type)
           end
         else
           if Mix.shell().yes?("Would you like to create one?") do
