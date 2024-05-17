@@ -58,7 +58,7 @@ We track the type of the value in a hidden param called `_union_type`. You can u
 If you want to let the user _change_ the union type, you would use `AshPhoenix.Form.remove_form/3` and `AshPhoenix.Form.add_form/3`. See the example below for the template, and here is an example event handler
 
 ```elixir
-def handle_event(  def handle_event("type-changed", %{"_target" => path} = params, socket) do
+def handle_event("type-changed", %{"_target" => path} = params, socket) do
   new_type = get_in(params, path)
   # The last part of the path in this case is the field name
   path = :lists.droplast(path)
@@ -70,7 +70,6 @@ def handle_event(  def handle_event("type-changed", %{"_target" => path} = param
 
   {:noreply, assign(socket, :form, form)}
 end
-
 ```
 
 ## Non-embedded types

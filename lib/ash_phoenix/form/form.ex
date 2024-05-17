@@ -379,7 +379,7 @@ defmodule AshPhoenix.Form do
   def for_action(resource_or_data, action, opts) do
     {resource, data} =
       case resource_or_data do
-        module when is_atom(resource_or_data) ->
+        module when is_atom(resource_or_data) and not is_nil(resource_or_data) ->
           {module, module.__struct__()}
 
         %resource{} = data ->
@@ -3420,6 +3420,88 @@ defmodule AshPhoenix.Form do
     end)
   end
 
+  defp do_add_form(form, [key, i], opts, trail, transform_errors) when is_integer(i) do
+    config =
+      get_form_key(form.form_keys, key) ||
+        raise AshPhoenix.Form.NoFormConfigured,
+          resource: form.resource,
+          action: form.action,
+          field: key,
+          available: Keyword.keys(form.form_keys || []),
+          path: Enum.reverse(trail)
+
+    key =
+      if is_binary(key) do
+        String.to_existing_atom(key)
+      else
+        key
+      end
+
+    {resource, action} = add_form_resource_and_action(opts, config, key, trail)
+
+    data_or_resource =
+      if opts[:data] do
+        opts[:data]
+      else
+        resource
+      end
+
+    new_form =
+      for_action(
+        data_or_resource,
+        action,
+        Keyword.merge(opts[:validate_opts] || [],
+          as: form.name <> "[#{key}][#{i}]",
+          id: form.id <> "_#{key}_#{i}",
+          params: opts[:params] || %{},
+          domain: form.domain,
+          actor: form.opts[:actor],
+          tenant: form.opts[:tenant],
+          accessing_from: config[:managed_relationship],
+          transform_params: config[:transform_params],
+          prepare_source: config[:prepare_source],
+          warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
+          forms: config[:forms] || [],
+          data: opts[:data],
+          transform_errors: transform_errors
+        )
+      )
+
+    new_forms =
+      form.forms
+      |> Map.put_new(key, [])
+      |> Map.update!(key, fn forms ->
+        List.insert_at(
+          forms,
+          i,
+          new_form
+        )
+        |> Enum.with_index()
+        |> Enum.map(fn {nested_form, i} ->
+          new_name = form.name <> "[#{key}][#{i}]"
+          new_id = form.id <> "_#{key}_#{i}"
+
+          if nested_form.name == new_name && nested_form.id == new_id do
+            nested_form
+          else
+            %{
+              nested_form
+              | name: new_name,
+                id: new_id,
+                forms:
+                  replace_form_names(
+                    nested_form.forms,
+                    {nested_form.name, new_name},
+                    {nested_form.id, new_id}
+                  )
+            }
+          end
+        end)
+      end)
+
+    %{form | forms: new_forms, touched_forms: MapSet.put(form.touched_forms, to_string(key))}
+  end
+
   defp do_add_form(form, [key, i | rest], opts, trail, transform_errors) when is_integer(i) do
     unless get_form_key(form.form_keys, key) do
       raise AshPhoenix.Form.NoFormConfigured,
@@ -4103,6 +4185,10 @@ defmodule AshPhoenix.Form do
           else
             opts[:data]
           end
+        end
+        |> case do
+          %Ash.Union{value: nil} -> nil
+          value -> value
         end
 
       cond do
