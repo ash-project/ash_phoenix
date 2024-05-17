@@ -5,6 +5,23 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.0.1](https://github.com/ash-project/ash_phoenix/compare/v2.0.0...v2.0.1) (2024-05-17)
+
+
+
+
+### Bug Fixes:
+
+* improve union handling
+
+* Convert entered action names into atoms for lookup in the resource (#187)
+
+* various fixes around union forms
+
+### Improvements:
+
+* support adding a form by inserting to an index
+
 ## [v2.0.0](https://github.com/ash-project/ash_phoenix/compare/v2.0.0...v1.3.4) (2024-04-30)
 
 The changelog is being restarted. See `/documentation/1.0-CHANGELOG.md` in GitHub for the old changelog.
