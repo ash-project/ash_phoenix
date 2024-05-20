@@ -495,7 +495,7 @@ There's a few places you can go to learn more about how to use ash:
 
 ### Ash Authentication & Ash Authentication Phoenix
 
-See the power Ash can bring to your web app or API. [Get authentication working in minutes](https://hexdocs.pm/ash_authentication_phoenix/getting-started-with-ash-authentication-phoenix.html).
+See the power Ash can bring to your web app or API. [Get authentication working in minutes](https://hexdocs.pm/ash_authentication_phoenix/get-started.html).
 
 ### Add an API (or two)
 
