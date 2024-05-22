@@ -831,18 +831,18 @@ defmodule AshPhoenix.Form.Auto do
        [
          type: type,
          resource: embed,
-         create_action: create_action.name,
-         update_action: update_action.name,
+         create_action: create_action && create_action.name,
+         update_action: update_action && update_action.name,
          embed?: true,
          data: data,
          forms: [],
          updater: fn opts ->
            Keyword.update!(opts, :forms, fn forms ->
              forms ++
-               embedded(embed, create_action, auto_opts) ++
-               embedded(embed, update_action, auto_opts) ++
-               unions(embed, create_action, auto_opts) ++
-               unions(embed, update_action, auto_opts)
+               List.wrap(create_action && embedded(embed, create_action, auto_opts)) ++
+               List.wrap(update_action && embedded(embed, update_action, auto_opts)) ++
+               List.wrap(create_action && unions(embed, create_action, auto_opts)) ++
+               List.wrap(update_action && unions(embed, update_action, auto_opts))
            end)
          end
        ]}
