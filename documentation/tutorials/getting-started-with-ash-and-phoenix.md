@@ -64,6 +64,7 @@ We now need to add Ash, AshPhoenix and AshPostgres to our Phoenix project. We ne
       {:phoenix, "~> x.x"},
       # ...
       {:ash, "~> x.x"},
+      {:picosat_elixir, "~> x.x"},
       {:ash_postgres, "~> x.x"},
       {:ash_phoenix, "~> x.x"}
     ]
@@ -85,6 +86,10 @@ Now in the terminal install these new dependencies.
 ```bash
 $ mix deps.get
 ```
+
+> ### Picosat installation issues? {: .info}
+>
+> If you have trouble compiling `picosat_elixir`, then replace `{:picosat_elixir, "~> 0.2"}` with `{:simple_sat, "~> 0.1"}` to use a simpler (but mildly slower) solver. You can always switch back to `picosat_elixir` later once you're done with the tutorial.
 
 ### Use `AshPostgres.Repo`
 
