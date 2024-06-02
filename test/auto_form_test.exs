@@ -97,6 +97,38 @@ defmodule AshPhoenix.AutoFormTest do
       |> AshPhoenix.Form.add_form(:union, params: %{"_union_type" => "bar", "value" => 10})
       |> AshPhoenix.Form.submit!()
     end
+
+    test "my test" do
+      AshPhoenix.Test.DeepNestedUnionResource
+      |> AshPhoenix.Form.for_create(:create,
+        domain: Domain,
+        forms: [
+          auto?: true
+        ]
+      )
+      |> AshPhoenix.Form.add_form(:items,
+        params: %{"subject" => %{"_union_type" => "predefined"}}
+      )
+      # |> AshPhoenix.Form.add_form(:union_array)
+      |> AshPhoenix.Form.submit!(
+        params: %{
+          "items" => %{
+            "0" => %{
+              "_form_type" => "create",
+              "_persistent_id" => "0",
+              "_touched" => "_form_type,_persistent_id,_touched,subject",
+              "subject" => %{
+                "_form_type" => "create",
+                "_persistent_id" => "0",
+                "_touched" => "_form_type,_persistent_id,_touched,_union_type,value",
+                "_union_type" => "predefined",
+                "value" => "test"
+              }
+            }
+          }
+        }
+      )
+    end
   end
 
   describe "list unions" do
