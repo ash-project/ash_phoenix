@@ -212,6 +212,7 @@ defmodule AshPhoenix.Form.Auto do
             prepare_source: prepare_source,
             transform_params: transform_params,
             embed?: true,
+            save_updates?: false,
             forms:
               Keyword.new(
                 embedded(embed, create_action, auto_opts) ++
@@ -226,7 +227,8 @@ defmodule AshPhoenix.Form.Auto do
        [
          data: data,
          type: form_type,
-         updater: updater
+         updater: updater,
+         save_updates?: false
        ]}
     end)
     |> Keyword.new()
@@ -266,6 +268,16 @@ defmodule AshPhoenix.Form.Auto do
 
   defp determine_type(constraints, %Ash.Union{type: type}, _params) do
     config = constraints[:types][type]
+    {config[:type], config[:constraints], config[:tag], config[:tag_value]}
+  end
+
+  defp determine_type(constraints, %AshPhoenix.Form.WrappedValue{value: nil}, params)
+       when params == %{} do
+    determine_type(constraints, nil, params)
+  end
+
+  defp determine_type(constraints, nil, params) when params == %{} do
+    {_key, config} = Enum.at(constraints[:types], 0)
     {config[:type], config[:constraints], config[:tag], config[:tag_value]}
   end
 

@@ -1,4 +1,5 @@
 defmodule DeepNestedUnionResource.Union do
+  @moduledoc false
   use Ash.Type.NewType,
     subtype_of: :union,
     constraints: [
@@ -15,6 +16,7 @@ defmodule DeepNestedUnionResource.Union do
 end
 
 defmodule DeepNestedUnionResource.Wrapper do
+  @moduledoc false
   use Ash.Resource,
     data_layer: :embedded
 
@@ -26,6 +28,7 @@ defmodule DeepNestedUnionResource.Wrapper do
 end
 
 defmodule AshPhoenix.Test.DeepNestedUnionResource do
+  @moduledoc false
   use Ash.Resource,
     domain: AshPhoenix.Test.Domain,
     data_layer: Ash.DataLayer.Ets

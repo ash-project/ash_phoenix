@@ -997,6 +997,17 @@ defmodule AshPhoenix.Form do
   end
 
   def validate(%{name: name} = form, new_params, opts) do
+    form = Map.update!(form, :opts, &update_opts(&1, form.data, new_params))
+
+    form = %{
+      form
+      | transform_params: form.opts[:transform_params],
+        prepare_params: form.opts[:prepare_params],
+        prepare_source: form.opts[:prepare_source],
+        transform_errors: form.opts[:transform_errors],
+        warn_on_unhandled_errors?: form.opts[:warn_on_unhandled_errors?]
+    }
+
     form =
       case opts[:target] do
         [^name | target] ->
@@ -1246,6 +1257,7 @@ defmodule AshPhoenix.Form do
                             accessing_from: opts[:managed_relationship],
                             prepare_source: opts[:prepare_source],
                             transform_params: opts[:transform_params],
+                            updater: opts[:updater],
                             errors: errors?,
                             warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
                             prev_data_trail: prev_data_trail,
@@ -1270,6 +1282,7 @@ defmodule AshPhoenix.Form do
                             accessing_from: opts[:managed_relationship],
                             prepare_source: opts[:prepare_source],
                             transform_params: opts[:transform_params],
+                            updater: opts[:updater],
                             forms: opts[:forms] || [],
                             errors: errors?,
                             warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
@@ -1286,7 +1299,9 @@ defmodule AshPhoenix.Form do
                     opts = update_opts(opts, matching_form.data, params)
 
                     validated =
-                      validate(matching_form, params,
+                      validate(
+                        matching_form,
+                        params,
                         errors: errors?,
                         matcher: matcher,
                         accessing_from: opts[:managed_relationship],
@@ -1326,7 +1341,12 @@ defmodule AshPhoenix.Form do
               new_forms =
                 if form.forms[key] do
                   new_form =
-                    validate(form.forms[key], form_params, errors: errors?, matcher: matcher)
+                    validate(form.forms[key], form_params,
+                      errors: errors?,
+                      matcher: matcher,
+                      accessing_from: opts[:managed_relationship],
+                      prepare_source: opts[:prepare_source]
+                    )
 
                   Map.put(forms, key, new_form)
                 else
@@ -1353,6 +1373,7 @@ defmodule AshPhoenix.Form do
                       prepare_source: opts[:prepare_source],
                       transform_params: opts[:transform_params],
                       warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
+                      updater: opts[:updater],
                       forms: opts[:forms] || [],
                       errors: errors?,
                       prev_data_trail: prev_data_trail,
@@ -1422,6 +1443,7 @@ defmodule AshPhoenix.Form do
                           accessing_from: opts[:managed_relationship],
                           prepare_source: opts[:prepare_source],
                           transform_params: opts[:transform_params],
+                          updater: opts[:updater],
                           warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
                           prev_data_trail: prev_data_trail,
                           forms: opts[:forms] || [],
@@ -1443,6 +1465,7 @@ defmodule AshPhoenix.Form do
                             accessing_from: opts[:managed_relationship],
                             prepare_source: opts[:prepare_source],
                             warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
+                            updater: opts[:updater],
                             transform_params: opts[:transform_params],
                             prev_data_trail: prev_data_trail,
                             forms: opts[:forms] || [],
@@ -1496,6 +1519,7 @@ defmodule AshPhoenix.Form do
                           accessing_from: opts[:managed_relationship],
                           prepare_source: opts[:prepare_source],
                           warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
+                          updater: opts[:updater],
                           transform_params: opts[:transform_params],
                           params: Map.new(pkey, &{to_string(&1), Map.get(data, &1)}),
                           prev_data_trail: prev_data_trail,
@@ -1523,6 +1547,7 @@ defmodule AshPhoenix.Form do
                             errors: errors?,
                             accessing_from: opts[:managed_relationship],
                             prepare_source: opts[:prepare_source],
+                            updater: opts[:updater],
                             prev_data_trail: prev_data_trail,
                             params: Map.new(pkey, &{to_string(&1), Map.get(data, &1)}),
                             transform_params: opts[:transform_params],
@@ -1681,8 +1706,6 @@ defmodule AshPhoenix.Form do
       changeset_params =
         opts[:override_params] || params(form)
 
-      changeset_params = Map.drop(changeset_params, ["_form_type", "_touched", "_union_type"])
-
       prepare_source = form.prepare_source || (& &1)
 
       {original_changeset_or_query, result} =
@@ -1818,13 +1841,20 @@ defmodule AshPhoenix.Form do
       end
     else
       if opts[:raise?] do
-        case form.source do
-          %Ash.Query{} = query ->
-            raise Ash.Error.to_error_class(query.errors, query: query)
+        errors =
+          case ash_errors(form, for_path: :all) do
+            [] ->
+              [
+                Ash.Error.Unknown.UnknownError.exception(
+                  error: "Form is invalid, but no errors were found on the form."
+                )
+              ]
 
-          %Ash.Changeset{} = changeset ->
-            raise Ash.Error.to_error_class(changeset.errors, changeset: changeset)
-        end
+            errors ->
+              errors
+          end
+
+        raise Ash.Error.to_error_class(errors)
       else
         {:error,
          form
@@ -2245,6 +2275,29 @@ defmodule AshPhoenix.Form do
     end
   end
 
+  def ash_errors(form, opts \\ []) do
+    form = to_form!(form)
+    opts = validate_opts_with_extra_keys(opts, @errors_opts)
+
+    case opts[:for_path] do
+      :all ->
+        gather_ash_errors(form, opts[:format])
+
+      [] ->
+        if form.errors do
+          List.wrap(form.source.errors)
+        else
+          []
+        end
+
+      path ->
+        form
+        |> gather_ash_errors(opts[:format])
+        |> Map.get(path)
+        |> List.wrap()
+    end
+  end
+
   defp format_errors(errors, :raw), do: errors
 
   defp format_errors(errors, :simple) do
@@ -2290,6 +2343,32 @@ defmodule AshPhoenix.Form do
 
         nested_form ->
           gather_errors(nested_form, format, acc, trail ++ [key])
+      end
+    end)
+  end
+
+  defp gather_ash_errors(form, format, acc \\ [], trail \\ []) do
+    errors = ash_errors(form, format: format)
+
+    acc = acc ++ errors
+
+    Enum.reduce(form.forms, acc, fn {key, forms}, acc ->
+      case forms do
+        [] ->
+          acc
+
+        nil ->
+          acc
+
+        forms when is_list(forms) ->
+          forms
+          |> Enum.with_index()
+          |> Enum.reduce(acc, fn {nested_form, i}, acc ->
+            gather_ash_errors(nested_form, format, acc, trail ++ [key, i])
+          end)
+
+        nested_form ->
+          gather_ash_errors(nested_form, format, acc, trail ++ [key])
       end
     end)
   end
@@ -3151,10 +3230,17 @@ defmodule AshPhoenix.Form do
           opts
 
         is_function(opts[:updater], 1) ->
-          Keyword.delete(opts[:updater].(opts), :updater)
+          opts[:updater].(opts)
 
         is_function(opts[:updater], 3) ->
-          Keyword.delete(opts[:updater].(opts, data, params), :updater)
+          opts[:updater].(opts, data, params)
+      end
+
+    opts =
+      if Keyword.get(opts, :save_updates?, true) do
+        Keyword.delete(opts, :updater)
+      else
+        opts
       end
 
     if opts[:forms] do
@@ -3462,6 +3548,7 @@ defmodule AshPhoenix.Form do
           accessing_from: config[:managed_relationship],
           transform_params: config[:transform_params],
           prepare_source: config[:prepare_source],
+          updater: opts[:updater],
           warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
           forms: config[:forms] || [],
           data: opts[:data],
@@ -3608,6 +3695,7 @@ defmodule AshPhoenix.Form do
                   accessing_from: config[:managed_relationship],
                   transform_params: config[:transform_params],
                   prepare_source: config[:prepare_source],
+                  updater: opts[:updater],
                   warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
                   forms: config[:forms] || [],
                   data: opts[:data],
@@ -3641,6 +3729,7 @@ defmodule AshPhoenix.Form do
                   accessing_from: config[:managed_relationship],
                   transform_params: config[:transform_params],
                   prepare_source: config[:prepare_source],
+                  updater: opts[:updater],
                   warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
                   forms: config[:forms] || [],
                   data: opts[:data],
@@ -4209,6 +4298,7 @@ defmodule AshPhoenix.Form do
                   prepare_source: opts[:prepare_source],
                   warn_on_unhandled_errors?: warn_on_unhandled_errors?,
                   transform_params: opts[:transform_params],
+                  updater: opts[:updater],
                   prev_data_trail: prev_data_trail,
                   forms: opts[:forms] || [],
                   transform_errors: transform_errors,
@@ -4229,6 +4319,7 @@ defmodule AshPhoenix.Form do
                     params: add_index(params, index, opts),
                     accessing_from: opts[:managed_relationship],
                     prepare_source: opts[:prepare_source],
+                    updater: opts[:updater],
                     warn_on_unhandled_errors?: warn_on_unhandled_errors?,
                     prev_data_trail: prev_data_trail,
                     forms: opts[:forms] || [],
@@ -4287,6 +4378,7 @@ defmodule AshPhoenix.Form do
                   domain: domain,
                   accessing_from: opts[:managed_relationship],
                   prepare_source: opts[:prepare_source],
+                  updater: opts[:updater],
                   warn_on_unhandled_errors?: warn_on_unhandled_errors?,
                   params: Map.new(pkey, &{to_string(&1), Map.get(data, &1)}),
                   transform_params: opts[:transform_params],
@@ -4317,6 +4409,7 @@ defmodule AshPhoenix.Form do
                     params: Map.new(pkey, &{to_string(&1), Map.get(data, &1)}),
                     forms: opts[:forms] || [],
                     transform_params: opts[:transform_params],
+                    updater: opts[:updater],
                     data: data,
                     transform_errors: transform_errors,
                     as: name <> "[#{key}][#{index}]",
@@ -4332,8 +4425,6 @@ defmodule AshPhoenix.Form do
 
         true ->
           if data && data != [] do
-            opts = update_opts(opts, data, %{})
-
             if opts[:update_action] || opts[:read_action] do
               handle_form_without_params(
                 forms,
@@ -4458,6 +4549,7 @@ defmodule AshPhoenix.Form do
           accessing_from: opts[:managed_relationship],
           prepare_source: opts[:prepare_source],
           transform_params: opts[:transform_params],
+          updater: opts[:updater],
           errors: error?,
           prev_data_trail: prev_data_trail,
           transform_errors: transform_errors,
@@ -4485,6 +4577,7 @@ defmodule AshPhoenix.Form do
           accessing_from: opts[:managed_relationship],
           prepare_source: opts[:prepare_source],
           transform_params: opts[:transform_params],
+          updater: opts[:updater],
           warn_on_unhandled_errors?: warn_on_unhandled_errors?,
           errors: error?,
           prev_data_trail: prev_data_trail,
@@ -4519,6 +4612,7 @@ defmodule AshPhoenix.Form do
             accessing_from: opts[:managed_relationship],
             prepare_source: opts[:prepare_source],
             transform_params: opts[:transform_params],
+            updater: opts[:updater],
             warn_on_unhandled_errors?: warn_on_unhandled_errors?,
             errors: error?,
             prev_data_trail: prev_data_trail,
@@ -4551,6 +4645,7 @@ defmodule AshPhoenix.Form do
             errors: error?,
             prev_data_trail: prev_data_trail,
             transform_errors: transform_errors,
+            updater: opts[:updater],
             as: name <> "[#{key}][#{index}]",
             id: id <> "_#{key}_#{index}"
           )
@@ -4628,6 +4723,7 @@ defmodule AshPhoenix.Form do
               accessing_from: opts[:managed_relationship],
               prepare_source: opts[:prepare_source],
               transform_params: opts[:transform_params],
+              updater: opts[:updater],
               errors: error?,
               warn_on_unhandled_errors?: warn_on_unhandled_errors?,
               prev_data_trail: prev_data_trail,
@@ -4659,6 +4755,7 @@ defmodule AshPhoenix.Form do
               accessing_from: opts[:managed_relationship],
               prepare_source: opts[:prepare_source],
               transform_params: opts[:transform_params],
+              updater: opts[:updater],
               errors: error?,
               warn_on_unhandled_errors?: warn_on_unhandled_errors?,
               prev_data_trail: prev_data_trail,
@@ -4688,6 +4785,7 @@ defmodule AshPhoenix.Form do
               accessing_from: opts[:managed_relationship],
               prepare_source: opts[:prepare_source],
               transform_params: opts[:transform_params],
+              updater: opts[:updater],
               errors: error?,
               warn_on_unhandled_errors?: warn_on_unhandled_errors?,
               prev_data_trail: prev_data_trail,
@@ -4733,6 +4831,7 @@ defmodule AshPhoenix.Form do
               accessing_from: opts[:managed_relationship],
               prepare_source: opts[:prepare_source],
               transform_params: opts[:transform_params],
+              updater: opts[:updater],
               warn_on_unhandled_errors?: warn_on_unhandled_errors?,
               prev_data_trail: prev_data_trail,
               transform_errors: transform_errors,
@@ -4765,6 +4864,7 @@ defmodule AshPhoenix.Form do
                   accessing_from: opts[:managed_relationship],
                   prepare_source: opts[:prepare_source],
                   transform_params: opts[:transform_params],
+                  updater: opts[:updater],
                   warn_on_unhandled_errors?: warn_on_unhandled_errors?,
                   errors: error?,
                   prev_data_trail: prev_data_trail,
@@ -4793,6 +4893,7 @@ defmodule AshPhoenix.Form do
                     accessing_from: opts[:managed_relationship],
                     prepare_source: opts[:prepare_source],
                     transform_params: opts[:transform_params],
+                    updater: opts[:updater],
                     warn_on_unhandled_errors?: warn_on_unhandled_errors?,
                     errors: error?,
                     prev_data_trail: prev_data_trail,
@@ -4816,6 +4917,7 @@ defmodule AshPhoenix.Form do
                     accessing_from: opts[:managed_relationship],
                     prepare_source: opts[:prepare_source],
                     transform_params: opts[:transform_params],
+                    updater: opts[:updater],
                     errors: error?,
                     warn_on_unhandled_errors?: warn_on_unhandled_errors?,
                     prev_data_trail: prev_data_trail,
@@ -4850,6 +4952,7 @@ defmodule AshPhoenix.Form do
                   accessing_from: opts[:managed_relationship],
                   prepare_source: opts[:prepare_source],
                   warn_on_unhandled_errors?: warn_on_unhandled_errors?,
+                  updater: opts[:updater],
                   errors: error?,
                   transform_errors: transform_errors,
                   prev_data_trail: prev_data_trail,

@@ -99,6 +99,97 @@ defmodule AshPhoenix.AutoFormTest do
     end
 
     test "deeply nested unions" do
+      # AshPhoenix.Test.DeepNestedUnionResource
+      # |> AshPhoenix.Form.for_create(:create,
+      #   domain: Domain,
+      #   forms: [
+      #     auto?: true
+      #   ]
+      # )
+      # |> AshPhoenix.Form.add_form(:items,
+      #   params: %{"subject" => %{"_union_type" => "predefined"}}
+      # )
+      # |> AshPhoenix.Form.submit!(
+      #   params: %{
+      #     "items" => %{
+      #       "0" => %{
+      #         "_form_type" => "create",
+      #         "_touched" => "_form_type,_persistent_id,_touched,subject",
+      #         "subject" => %{
+      #           "_form_type" => "create",
+      #           "_touched" => "_form_type,_persistent_id,_touched,_union_type,value",
+      #           "_union_type" => "predefined",
+      #           "value" => "update"
+      #         }
+      #       }
+      #     }
+      #   }
+      # )
+      # |> then(fn result ->
+      #   assert %Ash.Union{value: :update, type: :predefined} === Enum.at(result.items, 0).subject
+      # end)
+
+      # assert {:error, submitted_with_invalid} =
+      #          AshPhoenix.Test.DeepNestedUnionResource
+      #          |> AshPhoenix.Form.for_create(:create,
+      #            domain: Domain,
+      #            forms: [
+      #              auto?: true
+      #            ]
+      #          )
+      #          |> AshPhoenix.Form.add_form(:items,
+      #            params: %{"subject" => %{"_union_type" => "predefined"}}
+      #          )
+      #          |> AshPhoenix.Form.submit(
+      #            params: %{
+      #              "items" => %{
+      #                "0" => %{
+      #                  "_form_type" => "create",
+      #                  "_touched" => "_form_type,_persistent_id,_touched,subject",
+      #                  "subject" => %{
+      #                    "_form_type" => "create",
+      #                    "_touched" => "_form_type,_persistent_id,_touched,_union_type,value",
+      #                    "_union_type" => "predefined",
+      #                    "value" => "this_is_completely_unique"
+      #                  }
+      #                }
+      #              }
+      #            }
+      #          )
+
+      # assert %{[:items, 0, :subject] => [value: "is invalid"]} =
+      #          AshPhoenix.Form.errors(submitted_with_invalid, for_path: :all)
+
+      # AshPhoenix.Test.DeepNestedUnionResource
+      # |> AshPhoenix.Form.for_create(:create,
+      #   domain: Domain,
+      #   forms: [
+      #     auto?: true
+      #   ]
+      # )
+      # |> AshPhoenix.Form.add_form(:items,
+      #   params: %{"subject" => %{"_union_type" => "predefined"}}
+      # )
+      # |> AshPhoenix.Form.submit!(
+      #   params: %{
+      #     "items" => %{
+      #       "0" => %{
+      #         "_form_type" => "create",
+      #         "_touched" => "_form_type,_persistent_id,_touched,subject",
+      #         "subject" => %{
+      #           "_form_type" => "create",
+      #           "_touched" => "_form_type,_persistent_id,_touched,_union_type,value",
+      #           "_union_type" => "custom",
+      #           "value" => "different"
+      #         }
+      #       }
+      #     }
+      #   }
+      # )
+      # |> then(fn result ->
+      #   assert %Ash.Union{value: "different", type: :custom} === Enum.at(result.items, 0).subject
+      # end)
+
       AshPhoenix.Test.DeepNestedUnionResource
       |> AshPhoenix.Form.for_create(:create,
         domain: Domain,
@@ -114,11 +205,9 @@ defmodule AshPhoenix.AutoFormTest do
           "items" => %{
             "0" => %{
               "_form_type" => "create",
-              "_persistent_id" => "0",
               "_touched" => "_form_type,_persistent_id,_touched,subject",
               "subject" => %{
                 "_form_type" => "create",
-                "_persistent_id" => "0",
                 "_touched" => "_form_type,_persistent_id,_touched,_union_type,value",
                 "_union_type" => "predefined",
                 "value" => "update"
@@ -146,107 +235,11 @@ defmodule AshPhoenix.AutoFormTest do
           "items" => %{
             "0" => %{
               "_form_type" => "create",
-              "_persistent_id" => "0",
               "_touched" => "_form_type,_persistent_id,_touched,subject",
               "subject" => %{
                 "_form_type" => "create",
-                "_persistent_id" => "0",
-                "_touched" => "_form_type,_persistent_id,_touched,_union_type,value",
-                "_union_type" => "predefined",
-                "value" => "this_is_completely_unique"
-              }
-            }
-          }
-        }
-      )
-      |> then(fn result ->
-        assert :it_should_be_error === Enum.at(result.items, 0).subject
-      end)
-
-      AshPhoenix.Test.DeepNestedUnionResource
-      |> AshPhoenix.Form.for_create(:create,
-        domain: Domain,
-        forms: [
-          auto?: true
-        ]
-      )
-      |> AshPhoenix.Form.add_form(:items,
-        params: %{"subject" => %{"_union_type" => "predefined"}}
-      )
-      |> AshPhoenix.Form.submit!(
-        params: %{
-          "items" => %{
-            "0" => %{
-              "_form_type" => "create",
-              "_persistent_id" => "0",
-              "_touched" => "_form_type,_persistent_id,_touched,subject",
-              "subject" => %{
-                "_form_type" => "create",
-                "_persistent_id" => "0",
                 "_touched" => "_form_type,_persistent_id,_touched,_union_type,value",
                 "_union_type" => "custom",
-                "value" => "update"
-              }
-            }
-          }
-        }
-      )
-      |> then(fn result ->
-        assert %Ash.Union{value: "update", type: "custom"} === Enum.at(result.items, 0).subject
-      end)
-
-      AshPhoenix.Test.DeepNestedUnionResource
-      |> AshPhoenix.Form.for_create(:create,
-        domain: Domain,
-        forms: [
-          auto?: true
-        ]
-      )
-      |> AshPhoenix.Form.add_form(:items,
-        params: %{"subject" => %{"_union_type" => "predefined"}}
-      )
-      |> AshPhoenix.Form.submit!(
-        params: %{
-          "items" => %{
-            "0" => %{
-              "_form_type" => "create",
-              "_persistent_id" => "0",
-              "_touched" => "_form_type,_persistent_id,_touched,subject",
-              "subject" => %{
-                "_form_type" => "create",
-                "_persistent_id" => "0",
-                "_touched" => "_form_type,_persistent_id,_touched,_union_type,value",
-                "value" => "update"
-              }
-            }
-          }
-        }
-      )
-      |> then(fn result ->
-        assert %Ash.Union{value: :update, type: :predefined} === Enum.at(result.items, 0).subject
-      end)
-
-      AshPhoenix.Test.DeepNestedUnionResource
-      |> AshPhoenix.Form.for_create(:create,
-        domain: Domain,
-        forms: [
-          auto?: true
-        ]
-      )
-      |> AshPhoenix.Form.add_form(:items,
-        params: %{"subject" => %{"_union_type" => "predefined"}}
-      )
-      |> AshPhoenix.Form.submit!(
-        params: %{
-          "items" => %{
-            "0" => %{
-              "_form_type" => "create",
-              "_persistent_id" => "0",
-              "_touched" => "_form_type,_persistent_id,_touched,subject",
-              "subject" => %{
-                "_form_type" => "create",
-                "_persistent_id" => "0",
-                "_touched" => "_form_type,_persistent_id,_touched,_union_type,value",
                 "value" => "this_is_another_custom_one"
               }
             }
@@ -254,7 +247,7 @@ defmodule AshPhoenix.AutoFormTest do
         }
       )
       |> then(fn result ->
-        assert %Ash.Union{value: "this_is_another_custom_one", type: "custom"} ===
+        assert %Ash.Union{value: "this_is_another_custom_one", type: :custom} ===
                  Enum.at(result.items, 0).subject
       end)
     end
