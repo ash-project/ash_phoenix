@@ -5,7 +5,7 @@ defmodule AshPhoenix.MixProject do
   Utilities for integrating Ash and Phoenix
   """
 
-  @version "2.0.1"
+  @version "2.0.2"
 
   def project do
     [
@@ -131,7 +131,7 @@ defmodule AshPhoenix.MixProject do
       {:ash, ash_version("~> 3.0")},
       {:phoenix, "~> 1.5.6 or ~> 1.6"},
       {:phoenix_html, "~> 4.0"},
-      {:phoenix_live_view, "~> 0.20.3"},
+      {:phoenix_live_view, "~> 0.20.3 or ~> 1.0"},
       {:simple_sat, "~> 0.1", only: [:dev, :test]},
       {:git_ops, "~> 2.5", only: [:dev, :test]},
       {:ex_doc, "~> 0.32", only: [:dev, :test], override: true},

@@ -15,7 +15,7 @@ In this guide we will:
 
 - [Install Elixir](https://elixir-lang.org/install.html)
 - [Phoenix - Up and Running Guide](https://hexdocs.pm/phoenix/up_and_running.html)
-- [Philosophy Guide](https://hexdocs.pm/ash/philosophy.html)
+- [Design Principles](https://hexdocs.pm/ash/design-principles.html)
 
 ## Requirements
 
@@ -64,6 +64,7 @@ We now need to add Ash, AshPhoenix and AshPostgres to our Phoenix project. We ne
       {:phoenix, "~> x.x"},
       # ...
       {:ash, "~> x.x"},
+      {:picosat_elixir, "~> x.x"},
       {:ash_postgres, "~> x.x"},
       {:ash_phoenix, "~> x.x"}
     ]
@@ -85,6 +86,10 @@ Now in the terminal install these new dependencies.
 ```bash
 $ mix deps.get
 ```
+
+> ### Picosat installation issues? {: .info}
+>
+> If you have trouble compiling `picosat_elixir`, then replace `{:picosat_elixir, "~> 0.2"}` with `{:simple_sat, "~> 0.1"}` to use a simpler (but mildly slower) solver. You can always switch back to `picosat_elixir` later once you're done with the tutorial.
 
 ### Use `AshPostgres.Repo`
 
@@ -495,7 +500,7 @@ There's a few places you can go to learn more about how to use ash:
 
 ### Ash Authentication & Ash Authentication Phoenix
 
-See the power Ash can bring to your web app or API. [Get authentication working in minutes](https://hexdocs.pm/ash_authentication_phoenix/getting-started-with-ash-authentication-phoenix.html).
+See the power Ash can bring to your web app or API. [Get authentication working in minutes](https://hexdocs.pm/ash_authentication_phoenix/get-started.html).
 
 ### Add an API (or two)
 
