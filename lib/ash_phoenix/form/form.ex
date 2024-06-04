@@ -393,6 +393,8 @@ defmodule AshPhoenix.Form do
           {AshPhoenix.Form.WrappedValue, %AshPhoenix.Form.WrappedValue{value: value}}
       end
 
+    opts = update_opts(opts, data, %{})
+
     type =
       if is_atom(action) do
         Ash.Resource.Info.action(resource, action).type
@@ -2600,7 +2602,6 @@ defmodule AshPhoenix.Form do
     set_params = opts[:set_params]
     only_touched? = Keyword.get(opts, :only_touched?, true)
     filter = opts[:filter] || fn _ -> true end
-    opts = Keyword.put(opts, :transform?, false)
 
     form_keys =
       form.form_keys

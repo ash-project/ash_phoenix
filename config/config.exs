@@ -3,6 +3,8 @@ config :phoenix, :json_library, Jason
 config :ash, :validate_domain_resource_inclusion?, false
 config :ash, :validate_domain_config_inclusion?, false
 
+config :logger, level: :warning
+
 if Mix.env() == :dev do
   config :git_ops,
     mix_project: AshPhoenix.MixProject,
