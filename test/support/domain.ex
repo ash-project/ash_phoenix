@@ -10,5 +10,6 @@ defmodule AshPhoenix.Test.Domain do
     resource(AshPhoenix.Test.PostLink)
     resource(AshPhoenix.Test.PostWithDefault)
     resource(AshPhoenix.Test.User)
+    resource(AshPhoenix.Test.DeepNestedUnionResource)
   end
 end
