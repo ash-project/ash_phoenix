@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.0.3](https://github.com/ash-project/ash_phoenix/compare/v2.0.2...v2.0.3) (2024-06-05)
+
+
+
+
+### Bug Fixes:
+
+* properly (i.e safely) encode ci strings to iodata and params
+
+* various union param handling fixes
+
+* properly transform nested params
+
+* make sure that _index is correctly updated before and after removal for sparse forms (#196) (#197)
+
 ## [v2.0.2](https://github.com/ash-project/ash_phoenix/compare/v2.0.1...v2.0.2) (2024-05-22)
 
 
