@@ -117,23 +117,67 @@ defmodule AshPhoenix.AutoFormTest do
                |> Map.get(:union)
     end
 
+    test "simple unions with same value" do
+      assert %Ash.Union{type: :predefined, value: :update2} =
+               SimplePost
+               |> AshPhoenix.Form.for_create(:create,
+                 domain: Domain,
+                 forms: [
+                   auto?: true
+                 ],
+                 params: %{
+                   "text" => "foobar"
+                 }
+               )
+               |> AshPhoenix.Form.add_form(:union,
+                 params: %{"_union_type" => "predefined", "value" => "update"}
+               )
+               |> AshPhoenix.Form.submit!(
+                 params: %{"union" => %{"_union_type" => "predefined", "value" => "update2"}}
+               )
+               |> Map.get(:union)
+    end
+
+    test "simple unions with cutom value" do
+      assert %Ash.Union{type: :custom, value: "update"} =
+               SimplePost
+               |> AshPhoenix.Form.for_create(:create,
+                 domain: Domain,
+                 forms: [
+                   auto?: true
+                 ],
+                 params: %{
+                   "text" => "foobar"
+                 }
+               )
+               |> AshPhoenix.Form.add_form(:union,
+                 params: %{"_union_type" => "predefined"}
+               )
+               |> AshPhoenix.Form.submit!(
+                 params: %{"union" => %{"_union_type" => "custom", "value" => "update"}}
+               )
+               |> Map.get(:union)
+    end
+
     test "simple unions with invalid values" do
-      assert_raise Ash.Error.Invalid, ~r/atom must be one of "update", got: :create/, fn ->
-        SimplePost
-        |> AshPhoenix.Form.for_create(:create,
-          domain: Domain,
-          forms: [
-            auto?: true
-          ],
-          params: %{
-            "text" => "foobar"
-          }
-        )
-        |> AshPhoenix.Form.add_form(:union,
-          params: %{"_union_type" => "predefined", "value" => "create"}
-        )
-        |> AshPhoenix.Form.submit!()
-      end
+      assert_raise Ash.Error.Invalid,
+                   ~r/atom must be one of "update, update2", got: :create/,
+                   fn ->
+                     SimplePost
+                     |> AshPhoenix.Form.for_create(:create,
+                       domain: Domain,
+                       forms: [
+                         auto?: true
+                       ],
+                       params: %{
+                         "text" => "foobar"
+                       }
+                     )
+                     |> AshPhoenix.Form.add_form(:union,
+                       params: %{"_union_type" => "predefined", "value" => "create"}
+                     )
+                     |> AshPhoenix.Form.submit!()
+                   end
     end
 
     test "deeply nested unions" do
