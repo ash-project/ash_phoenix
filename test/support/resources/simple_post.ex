@@ -8,7 +8,7 @@ defmodule AshPhoenix.Test.SimplePost.SimpleUnion do
         ],
         predefined: [
           type: :atom,
-          constraints: [one_of: [:update]]
+          constraints: [one_of: [:update, :update2]]
         ]
       ]
     ]
