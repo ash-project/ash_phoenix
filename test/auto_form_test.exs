@@ -2,7 +2,7 @@ defmodule AshPhoenix.AutoFormTest do
   use ExUnit.Case
 
   alias AshPhoenix.Form.Auto
-  alias AshPhoenix.Test.{Domain, Post}
+  alias AshPhoenix.Test.{Domain, Post, SimplePost}
   import AshPhoenix.Form, only: [update_opts: 2]
 
   defp form_for(a, _b), do: Phoenix.HTML.FormData.to_form(a, [])
@@ -95,6 +95,21 @@ defmodule AshPhoenix.AutoFormTest do
         }
       )
       |> AshPhoenix.Form.add_form(:union, params: %{"_union_type" => "bar", "value" => 10})
+      |> AshPhoenix.Form.submit!()
+    end
+
+    test "simple unions" do
+      SimplePost
+      |> AshPhoenix.Form.for_create(:create,
+        domain: Domain,
+        forms: [
+          auto?: true
+        ],
+        params: %{
+          "text" => "foobar"
+        }
+      )
+      |> AshPhoenix.Form.add_form(:union, params: %{"type" => "custom"})
       |> AshPhoenix.Form.submit!()
     end
 
