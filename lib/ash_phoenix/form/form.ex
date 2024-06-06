@@ -1004,11 +1004,12 @@ defmodule AshPhoenix.Form do
 
     form = %{
       form
-      | transform_params: form.opts[:transform_params],
-        prepare_params: form.opts[:prepare_params],
-        prepare_source: form.opts[:prepare_source],
-        transform_errors: form.opts[:transform_errors],
-        warn_on_unhandled_errors?: form.opts[:warn_on_unhandled_errors?]
+      | transform_params: opts[:transform_params] || form.opts[:transform_params],
+        prepare_params: opts[:prepare_params] || form.opts[:prepare_params],
+        prepare_source: opts[:prepare_source] || form.opts[:prepare_source],
+        transform_errors: opts[:transform_errors] || form.opts[:transform_errors],
+        warn_on_unhandled_errors?:
+          opts[:warn_on_unhandled_errors] || form.opts[:warn_on_unhandled_errors?]
     }
 
     form =
@@ -1343,10 +1344,13 @@ defmodule AshPhoenix.Form do
             if is_map(form_params) do
               new_forms =
                 if form.forms[key] do
+                  opts = update_opts(opts, form.forms[key].data, form_params)
+
                   new_form =
                     validate(form.forms[key], form_params,
                       errors: errors?,
                       matcher: matcher,
+                      transform_params: opts[:transform_params],
                       accessing_from: opts[:managed_relationship],
                       prepare_source: opts[:prepare_source]
                     )
