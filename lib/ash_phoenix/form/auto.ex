@@ -152,7 +152,7 @@ defmodule AshPhoenix.Form.Auto do
 
       updater =
         fn opts, data, params ->
-          {type, constraints, tag, tag_value} =
+          {type_name, type, constraints, tag, tag_value} =
             determine_type(constraints, data, params)
 
           {embed, constraints, fake_embedded?} =
@@ -177,14 +177,7 @@ defmodule AshPhoenix.Form.Auto do
 
           transform_params =
             if fake_embedded? do
-              fn form, params, type ->
-                if type == :nested do
-                  AshPhoenix.Form.value(form, :value)
-                else
-                  params
-                end
-                |> set_tag_value(tag, tag_value)
-              end
+              union_param_transformer(type_name)
             else
               fn _form, params, _type ->
                 set_tag_value(params, tag, tag_value)
@@ -261,14 +254,14 @@ defmodule AshPhoenix.Form.Auto do
         #{inspect(constraints[:types], pretty: true)}
         """
 
-      {_key, config} ->
-        {config[:type], config[:constraints], config[:tag], config[:tag_value]}
+      {key, config} ->
+        {key, config[:type], config[:constraints], config[:tag], config[:tag_value]}
     end
   end
 
   defp determine_type(constraints, %Ash.Union{type: type}, _params) do
     config = constraints[:types][type]
-    {config[:type], config[:constraints], config[:tag], config[:tag_value]}
+    {type, config[:type], config[:constraints], config[:tag], config[:tag_value]}
   end
 
   defp determine_type(constraints, %AshPhoenix.Form.WrappedValue{value: nil}, params)
@@ -277,8 +270,8 @@ defmodule AshPhoenix.Form.Auto do
   end
 
   defp determine_type(constraints, nil, params) when params == %{} do
-    {_key, config} = Enum.at(constraints[:types], 0)
-    {config[:type], config[:constraints], config[:tag], config[:tag_value]}
+    {key, config} = Enum.at(constraints[:types], 0)
+    {key, config[:type], config[:constraints], config[:tag], config[:tag_value]}
   end
 
   defp determine_type(constraints, data, params) do
@@ -303,8 +296,19 @@ defmodule AshPhoenix.Form.Auto do
         #{inspect(constraints[:types], pretty: true)}
         """
 
-      {_key, config} ->
-        {config[:type], config[:constraints], config[:tag], config[:tag_value]}
+      {key, config} ->
+        {key, config[:type], config[:constraints], config[:tag], config[:tag_value]}
+    end
+  end
+
+  @doc false
+  def union_param_transformer(type_name) do
+    fn form, params, validation_type ->
+      if validation_type == :nested do
+        %Ash.Union{type: type_name, value: AshPhoenix.Form.value(form, :value)}
+      else
+        params
+      end
     end
   end
 

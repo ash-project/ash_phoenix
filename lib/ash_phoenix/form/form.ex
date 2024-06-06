@@ -371,6 +371,9 @@ defmodule AshPhoenix.Form do
   def for_action(resource_or_data, action, opts \\ [])
 
   def for_action(%Ash.Union{value: value, type: type}, action, opts) do
+    opts =
+      Keyword.put_new(opts, :transform_params, AshPhoenix.Form.Auto.union_param_transformer(type))
+
     form = for_action(value, action, opts)
 
     %{form | params: Map.put(form.params, "_union_type", to_string(type))}

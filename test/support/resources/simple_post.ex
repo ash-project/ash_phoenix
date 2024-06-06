@@ -3,18 +3,12 @@ defmodule AshPhoenix.Test.SimplePost.SimpleUnion do
     subtype_of: :union,
     constraints: [
       types: [
+        custom: [
+          type: :string
+        ],
         predefined: [
           type: :atom,
-          constraints: [one_of: [:update]],
-          tag: :type,
-          tag_value: :predefined,
-          cast_tag?: true
-        ],
-        custom: [
-          type: :string,
-          tag: :type,
-          tag_value: :custom,
-          cast_tag?: true
+          constraints: [one_of: [:update]]
         ]
       ]
     ]
