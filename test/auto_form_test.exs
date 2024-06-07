@@ -333,6 +333,25 @@ defmodule AshPhoenix.AutoFormTest do
                  Enum.at(result.items, 0).subject
       end)
     end
+
+    test "union filled value is shown in input" do
+      form =
+        %SimplePost{union: %Ash.Union{value: :update, type: :predefined}}
+        |> AshPhoenix.Form.for_update(:update,
+          domain: Domain,
+          forms: [
+            auto?: true
+          ],
+          params: %{
+            "text" => "foobar"
+          }
+        )
+
+      #   |> Phoenix.HTML.FormData.to_form([])
+
+      # IO.inspect(Phoenix.Component.inputs_for(%{field: form[:union], __changed__: %{}}))
+      # assert "update" == AshPhoenix.Form.value(form[:union], :value)
+    end
   end
 
   describe "list unions" do
