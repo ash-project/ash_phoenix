@@ -346,11 +346,12 @@ defmodule AshPhoenix.AutoFormTest do
             "text" => "foobar"
           }
         )
+        |> Phoenix.HTML.FormData.to_form([])
 
-      #   |> Phoenix.HTML.FormData.to_form([])
-
-      # IO.inspect(Phoenix.Component.inputs_for(%{field: form[:union], __changed__: %{}}))
-      # assert "update" == AshPhoenix.Form.value(form[:union], :value)
+      assert Enum.at(form[:union].value, 0)[:value].value == %Ash.Union{
+               value: :update,
+               type: :predefined
+             }
     end
   end
 

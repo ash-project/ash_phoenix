@@ -370,11 +370,24 @@ defmodule AshPhoenix.Form do
   @doc "Calls the corresponding `for_*` function depending on the action type"
   def for_action(resource_or_data, action, opts \\ [])
 
-  def for_action(%Ash.Union{value: value, type: type}, action, opts) do
+  def for_action(%Ash.Union{value: value, type: type} = union, action, opts) do
     opts =
       Keyword.put_new(opts, :transform_params, AshPhoenix.Form.Auto.union_param_transformer(type))
 
-    form = for_action(value, action, opts)
+    data =
+      case value do
+        %struct{} = value ->
+          if Ash.Resource.Info.resource?(struct) do
+            value
+          else
+            %AshPhoenix.Form.WrappedValue{value: union}
+          end
+
+        _value ->
+          %AshPhoenix.Form.WrappedValue{value: union}
+      end
+
+    form = for_action(data, action, opts)
 
     %{form | params: Map.put(form.params, "_union_type", to_string(type))}
   end
@@ -4431,30 +4444,67 @@ defmodule AshPhoenix.Form do
           end
 
         true ->
-          if data && data != [] do
-            if opts[:update_action] || opts[:read_action] do
-              handle_form_without_params(
-                forms,
-                params,
-                opts,
-                key,
-                domain,
-                actor,
-                tenant,
-                trail,
-                prev_data_trail,
-                error?,
-                name,
-                id,
-                transform_errors,
-                warn_on_unhandled_errors?
-              )
-            else
+          cond do
+            !data ->
               {forms, params}
-            end
-          else
-            {forms, params}
+
+            opts[:type] == :list ->
+              form_values =
+                data
+                |> List.wrap()
+                |> Enum.with_index()
+                |> Enum.map(fn {data, index} ->
+                  opts = update_opts(opts, data, nil)
+
+                  if opts[:update_action] do
+                    for_action(data, opts[:update_action],
+                      domain: domain,
+                      actor: actor,
+                      tenant: tenant,
+                      errors: error?,
+                      params: add_index(params, index, opts),
+                      accessing_from: opts[:managed_relationship],
+                      prepare_source: opts[:prepare_source],
+                      updater: opts[:updater],
+                      warn_on_unhandled_errors?: warn_on_unhandled_errors?,
+                      prev_data_trail: prev_data_trail,
+                      forms: opts[:forms] || [],
+                      transform_params: opts[:transform_params],
+                      transform_errors: transform_errors,
+                      as: name <> "[#{key}][#{index}]",
+                      id: id <> "_#{key}_#{index}"
+                    )
+                  end
+                end)
+
+              {Map.put(forms, key, Enum.filter(form_values, & &1)), params}
+
+            true ->
+              opts = update_opts(opts, data, nil)
+
+              form_value =
+                if opts[:update_action] do
+                  for_action(data, opts[:update_action],
+                    domain: domain,
+                    actor: actor,
+                    tenant: tenant,
+                    errors: error?,
+                    accessing_from: opts[:managed_relationship],
+                    prepare_source: opts[:prepare_source],
+                    warn_on_unhandled_errors?: warn_on_unhandled_errors?,
+                    transform_params: opts[:transform_params],
+                    updater: opts[:updater],
+                    prev_data_trail: prev_data_trail,
+                    forms: opts[:forms] || [],
+                    transform_errors: transform_errors,
+                    as: name <> "[#{key}]",
+                    id: id <> "_#{key}"
+                  )
+                end
+
+              {Map.put(forms, key, form_value), params}
           end
+
       end
     else
       {forms, params}
