@@ -1,4 +1,6 @@
 defmodule AshPhoenix.Test.SimplePost.SimpleUnion do
+  @moduledoc false
+
   use Ash.Type.NewType,
     subtype_of: :union,
     constraints: [
@@ -15,6 +17,8 @@ defmodule AshPhoenix.Test.SimplePost.SimpleUnion do
 end
 
 defmodule AshPhoenix.Test.SimplePost do
+  @moduledoc false
+
   use Ash.Resource,
     domain: AshPhoenix.Test.Domain,
     data_layer: Ash.DataLayer.Ets
