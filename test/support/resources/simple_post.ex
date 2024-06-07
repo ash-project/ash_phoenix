@@ -30,6 +30,6 @@ defmodule AshPhoenix.Test.SimplePost do
 
   actions do
     default_accept(:*)
-    defaults([:create])
+    defaults([:create, :update])
   end
 end
