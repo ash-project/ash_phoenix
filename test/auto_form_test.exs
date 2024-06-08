@@ -159,6 +159,33 @@ defmodule AshPhoenix.AutoFormTest do
                |> Map.get(:union)
     end
 
+    test "auto detect union value" do
+      base_form =
+        SimplePost
+        |> AshPhoenix.Form.for_create(:create,
+          domain: Domain,
+          forms: [
+            auto?: true
+          ],
+          params: %{
+            "text" => "foobar"
+          }
+        )
+        |> AshPhoenix.Form.add_form(:union,
+          params: %{}
+        )
+
+      assert %Ash.Union{type: :predefined, value: :update} =
+               base_form
+               |> AshPhoenix.Form.submit!(params: %{"union" => %{"value" => "update"}})
+               |> Map.get(:union)
+
+      assert %Ash.Union{type: :custom, value: "another_one"} =
+               base_form
+               |> AshPhoenix.Form.submit!(params: %{"union" => %{"value" => "another_one"}})
+               |> Map.get(:union)
+    end
+
     test "simple unions with invalid values" do
       assert_raise Ash.Error.Invalid,
                    ~r/atom must be one of "update, update2", got: :create/,
