@@ -58,6 +58,18 @@ defmodule AshPhoenix.FormTest do
                "Unhandled error in form submission for AshPhoenix.Test.Comment.create_with_unknown_error"
     end
 
+    test "empty atom field" do
+      form =
+        Post
+        |> Form.for_create(:create,
+          domain: Domain,
+          params: %{}
+        )
+        |> Form.submit!(
+          params: %{"inline_atom_field" => "", "custom_atom_field" => "", "text" => "text"}
+        )
+    end
+
     test "update_form marks touched by default" do
       form =
         Post

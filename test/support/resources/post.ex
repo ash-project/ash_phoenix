@@ -16,6 +16,8 @@ defmodule AshPhoenix.Test.Post do
     attribute(:union_array, {:array, AshPhoenix.Test.UnionValue}, public?: true)
     attribute(:list_of_ints, {:array, :integer}, public?: true)
     attribute(:title, :string, public?: true)
+    attribute(:inline_atom_field, :atom, public?: true)
+    attribute(:custom_atom_field, AshPhoenix.Test.Action, public?: true)
   end
 
   actions do
