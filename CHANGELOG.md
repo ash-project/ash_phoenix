@@ -5,6 +5,23 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.0.4](https://github.com/ash-project/ash_phoenix/compare/v2.0.3...v2.0.4) (2024-06-13)
+
+
+
+
+### Bug Fixes:
+
+* various fixes for union form handling
+
+* properly fill union values on update
+
+* ensure changing union type is reflected in param transformer
+
+### Improvements:
+
+* honor `_union_type` when applying input
+
 ## [v2.0.3](https://github.com/ash-project/ash_phoenix/compare/v2.0.2...v2.0.3) (2024-06-05)
 
 
