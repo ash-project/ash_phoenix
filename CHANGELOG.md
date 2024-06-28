@@ -5,6 +5,23 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.3.7](https://github.com/ash-project/ash_phoenix/compare/v1.3.6...v1.3.7) (2024-06-28)
+
+
+
+
+### Bug Fixes:
+
+* ensure we `prepare_source` for all read action forms
+
+* Pass the tenant to `Ash.can/3` and `Ash.can?/3` (#166)
+
+* ensure nested form names are remapped on remove form
+
+* backport fix for form names from 3.0
+
+* ensure nested forms included as params when adding forms get proper names
+
 ## [v1.3.6](https://github.com/ash-project/ash_phoenix/compare/v1.3.5...v1.3.6) (2024-04-23)
 
 
