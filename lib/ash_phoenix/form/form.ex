@@ -1805,6 +1805,8 @@ defmodule AshPhoenix.Form do
               |> with_changeset(&form.api.read_one(&1, opts[:api_opts] || []))
             else
               form.resource
+              |> Ash.Query.new()
+              |> prepare_source.()
               |> Ash.Query.for_read(
                 form.source.action.name,
                 opts[:override_params] || params(form),
