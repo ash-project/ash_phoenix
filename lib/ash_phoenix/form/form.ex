@@ -1869,6 +1869,8 @@ defmodule AshPhoenix.Form do
               |> with_changeset(&Ash.read_one(&1, opts[:action_opts] || []))
             else
               form.resource
+              |> Ash.Query.new()
+              |> prepare_source.()
               |> Ash.Query.for_read(
                 form.source.action.name,
                 changeset_params,
