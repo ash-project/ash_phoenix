@@ -456,7 +456,7 @@ defmodule MyAshPhoenixAppWeb.PostsLive do
     end
   end
 
-  def handle_event("update_book", %{"form" => form_params}, socket) do
+  def handle_event("update_post", %{"form" => form_params}, socket) do
     case AshPhoenix.Form.submit(socket.assigns.update_form, params: form_params) do
       {:ok, _post} ->
         posts = Blog.list_posts!()
