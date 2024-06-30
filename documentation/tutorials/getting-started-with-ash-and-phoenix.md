@@ -444,20 +444,28 @@ defmodule MyAshPhoenixAppWeb.PostsLive do
     {:noreply, assign(socket, posts: posts, post_selector: post_selector(posts))}
   end
 
-  def handle_event("create_post", %{"form" => %{"title" => title}}, socket) do
-    Blog.create_post(%{title: title})
-    posts = Blog.list_posts!()
+  def handle_event("create_post", %{"form" => form_params}, socket) do
+    case AshPhoenix.Form.submit(socket.assigns.create_form, params: form_params) do
+      {:ok, _post} ->
+        posts = Blog.list_posts!()
 
-    {:noreply, assign(socket, posts: posts, post_selector: post_selector(posts))}
+        {:noreply, assign(socket, posts: posts, post_selector: post_selector(posts))}
+
+      {:error, create_form} ->
+        {:noreply, assign(socket, create_form: create_form)}
+    end
   end
 
-  def handle_event("update_post", %{"form" => form_params}, socket) do
-    %{"post_id" => post_id, "content" => content} = form_params
+  def handle_event("update_book", %{"form" => form_params}, socket) do
+    case AshPhoenix.Form.submit(socket.assigns.update_form, params: form_params) do
+      {:ok, _post} ->
+        posts = Blog.list_posts!()
 
-    post_id |> Blog.get_post!() |> Blog.update_post!(%{content: content})
-    posts = Blog.list_posts!()
+        {:noreply, assign(socket, posts: posts, post_selector: post_selector(posts))}
 
-    {:noreply, assign(socket, posts: posts, post_selector: post_selector(posts))}
+      {:error, update_form} ->
+        {:noreply, assign(socket, update_form: update_form)}
+    end
   end
 
   defp post_selector(posts) do
