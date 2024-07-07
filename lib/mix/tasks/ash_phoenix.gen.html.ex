@@ -157,7 +157,7 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
       name: attr.name,
       type: attr.type,
       writable?: Map.get(attr, :writable?, true),
-      private?: attr.private?
+      public?: attr.public?
     }
   end
 end
