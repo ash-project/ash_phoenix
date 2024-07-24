@@ -3,7 +3,7 @@ defmodule AshPhoenix.FormTest do
   import ExUnit.CaptureLog
 
   alias AshPhoenix.Form
-  alias AshPhoenix.Test.{Domain, Artist, Author, Comment, Post, PostWithDefault}
+  alias AshPhoenix.Test.{Domain, Artist, Author, Comment, Post, PostWithDefault, File}
   alias Phoenix.HTML.FormData
 
   defp form_for(form, _) do
@@ -1954,5 +1954,14 @@ defmodule AshPhoenix.FormTest do
       persisted_post = Post |> Ash.get!(post.id) |> Ash.load!(:comments)
       assert Enum.count(persisted_post.comments) == 1
     end
+  end
+
+  test "form file upload" do
+    form =
+      Form.for_create(File, :import, domain: Domain)
+
+    path = __ENV__.file
+
+    {:ok, %File{path: ^path}} = Form.submit(form, params: %{"file" => %Plug.Upload{path: path}})
   end
 end

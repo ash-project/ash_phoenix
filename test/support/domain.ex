@@ -6,6 +6,7 @@ defmodule AshPhoenix.Test.Domain do
     resource(AshPhoenix.Test.Artist)
     resource(AshPhoenix.Test.Author)
     resource(AshPhoenix.Test.Comment)
+    resource(AshPhoenix.Test.File)
     resource(AshPhoenix.Test.Post)
     resource(AshPhoenix.Test.PostLink)
     resource(AshPhoenix.Test.PostWithDefault)
