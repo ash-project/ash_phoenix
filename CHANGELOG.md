@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.0](https://github.com/ash-project/ash_phoenix/compare/v2.0.4...v2.1.0) (2024-07-26)
+
+
+
+
+### Bug Fixes:
+
+* ensure we `prepare_source` for all read action forms
+
 ## [v2.0.4](https://github.com/ash-project/ash_phoenix/compare/v2.0.3...v2.0.4) (2024-06-13)
 
 
