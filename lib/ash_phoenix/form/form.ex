@@ -1787,6 +1787,11 @@ defmodule AshPhoenix.Form do
   end
 
   def submit(form, opts) do
+    if opts[:api_opts] do
+      raise ArgumentError, """
+      The `api_opts` option has been renamed to `action_opts`. Please update your code accordingly.
+      """
+    end
     changeset_opts =
       Keyword.drop(form.opts, [:forms, :errors, :id, :method, :for, :as])
 
