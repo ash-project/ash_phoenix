@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.1](https://github.com/ash-project/ash_phoenix/compare/v2.1.0...v2.1.1) (2024-08-01)
+
+
+
+
+### Bug Fixes:
+
+* Use :public? instead of :private? (#221)
+
+### Improvements:
+
+* raise an error on usage of old option name
+
 ## [v2.1.0](https://github.com/ash-project/ash_phoenix/compare/v2.0.4...v2.1.0) (2024-07-26)
 
 

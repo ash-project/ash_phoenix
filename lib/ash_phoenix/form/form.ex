@@ -201,6 +201,10 @@ defmodule AshPhoenix.Form do
         }
 
   @for_opts [
+    actor: [
+      type: :any,
+      doc: "The actor performing the action. Passed through to the underlying action."
+    ],
     forms: [
       type: :keyword_list,
       doc: "Nested form configurations. See `for_create/3` \"Nested Form Options\" docs for more."
@@ -276,6 +280,10 @@ defmodule AshPhoenix.Form do
       empty fields are submitted as empty strings. This is problematic for fields that allow_nil
       or those that have default values.
       """
+    ],
+    tenant: [
+      type: :any,
+      doc: "The current tenant. Passed through to the underlying action."
     ]
   ]
 
@@ -457,11 +465,12 @@ defmodule AshPhoenix.Form do
   @doc """
   Creates a form corresponding to a create action on a resource.
 
-  Options:
-  #{Spark.Options.docs(@for_opts)}
 
-  Any *additional* options will be passed to the underlying call to `Ash.Changeset.for_create/4`. This means
-  you can set things like the tenant/actor. These will be retained, and provided again when `Form.submit/3` is called.
+  ## Options
+
+  Options not listed below are passed to the underlying call to build the changeset/query, i.e `Ash.Changeset.for_create/4`
+
+  #{Spark.Options.docs(@for_opts)}
 
   ## Nested Form Options
 
@@ -1792,6 +1801,7 @@ defmodule AshPhoenix.Form do
       The `api_opts` option has been renamed to `action_opts`. Please update your code accordingly.
       """
     end
+
     changeset_opts =
       Keyword.drop(form.opts, [:forms, :errors, :id, :method, :for, :as])
 
