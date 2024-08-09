@@ -200,6 +200,8 @@ defmodule AshPhoenix.Form do
           just_submitted?: boolean
         }
 
+  @type path :: String.t() | atom | list(String.t() | atom | integer)
+
   @for_opts [
     actor: [
       type: :any,
@@ -2166,9 +2168,8 @@ defmodule AshPhoenix.Form do
 
   This can be useful if you have a button that should modify a nested form in some way, for example.
   """
-  @spec update_form(t(), list(atom | integer) | String.t(), (t() -> t())) :: t()
-  @spec update_form(Phoenix.HTML.Form.t(), list(atom | integer) | String.t(), (t() -> t())) ::
-          Phoenix.HTML.Form.t()
+  @spec update_form(t(), path(), (t() -> t())) :: t()
+  @spec update_form(Phoenix.HTML.Form.t(), path(), (t() -> t())) :: Phoenix.HTML.Form.t()
   def update_form(form, path, func, opts \\ [])
 
   def update_form(%Phoenix.HTML.Form{} = form, path, func, opts) do
@@ -2239,7 +2240,7 @@ defmodule AshPhoenix.Form do
   @doc """
   Returns true if a given form path exists in the form
   """
-  @spec has_form?(t(), list(atom | integer) | String.t()) :: boolean
+  @spec has_form?(t(), path()) :: boolean
   def has_form?(form, path) do
     form = to_form!(form)
     not is_nil(get_form(form, path))
@@ -2251,7 +2252,7 @@ defmodule AshPhoenix.Form do
   @doc """
   Gets the form at the specified path
   """
-  @spec get_form(t() | Phoenix.HTML.Form.t(), list(atom | integer) | String.t()) :: t() | nil
+  @spec get_form(t() | Phoenix.HTML.Form.t(), path()) :: t() | nil
   def get_form(form, path) do
     form = to_form!(form)
 
@@ -2500,11 +2501,7 @@ defmodule AshPhoenix.Form do
   end
 
   @doc false
-  @spec errors_for(
-          t() | Phoenix.HTML.Form.t(),
-          list(atom | integer) | String.t(),
-          type :: :simple | :raw | :plaintext
-        ) ::
+  @spec errors_for(t() | Phoenix.HTML.Form.t(), path(), type :: :simple | :raw | :plaintext) ::
           [{atom, {String.t(), Keyword.t()}}] | [String.t()] | map | nil
   @deprecated "Use errors/2 instead"
   def errors_for(form, path, type \\ :raw) do
@@ -3094,9 +3091,8 @@ defmodule AshPhoenix.Form do
 
   #{Spark.Options.docs(@add_form_opts)}
   """
-  @spec add_form(t(), String.t() | atom | list(atom | integer), Keyword.t()) :: t()
-  @spec add_form(Phoenix.HTML.Form.t(), String.t() | atom | list(atom | integer), Keyword.t()) ::
-          Phoenix.HTML.Form.t()
+  @spec add_form(t(), path, Keyword.t()) :: t()
+  @spec add_form(Phoenix.HTML.Form.t(), path, Keyword.t()) :: Phoenix.HTML.Form.t()
   def add_form(form, path, opts \\ [])
 
   def add_form(%Phoenix.HTML.Form{} = form, path, opts) do
@@ -3149,6 +3145,8 @@ defmodule AshPhoenix.Form do
 
   #{Spark.Options.docs(@remove_form_opts)}
   """
+  @spec remove_form(t(), path, Keyword.t()) :: t()
+  @spec remove_form(Phoenix.HTML.Form.t(), path, Keyword.t()) :: Phoenix.HTML.Form.t()
   def remove_form(form, path, opts \\ [])
 
   def remove_form(%Phoenix.HTML.Form{} = form, path, opts) do
@@ -4165,11 +4163,7 @@ defmodule AshPhoenix.Form do
   [:comments, 0, :sub_comments, 0]
   ```
   """
-  @spec parse_path!(
-          t() | Phoenix.HTML.Form.t(),
-          String.t() | list(String.t() | atom | integer),
-          opts :: Keyword.t()
-        ) ::
+  @spec parse_path!(t() | Phoenix.HTML.Form.t(), path(), opts :: Keyword.t()) ::
           list(atom | integer) | no_return
   def parse_path!(%{name: name} = form, original_path, opts \\ []) do
     form = to_form!(form)
