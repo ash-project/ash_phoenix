@@ -2168,9 +2168,23 @@ defmodule AshPhoenix.Form do
 
   This can be useful if you have a button that should modify a nested form in some way, for example.
   """
-  @spec update_form(t(), path(), (t() -> t())) :: t()
-  @spec update_form(Phoenix.HTML.Form.t(), path(), (t() -> t())) :: Phoenix.HTML.Form.t()
+  @spec update_form(
+          t(),
+          list(atom | integer) | String.t() | atom,
+          (t() -> t()) | ([t()] -> [t()])
+        ) ::
+          t()
+  @spec update_form(
+          Phoenix.HTML.Form.t(),
+          list(atom | integer) | String.t(),
+          (t() -> t()) | ([t()] -> [t()])
+        ) ::
+          Phoenix.HTML.Form.t()
   def update_form(form, path, func, opts \\ [])
+
+  def update_form(form, path, func, opts) when is_atom(path) do
+    update_form(form, [path], func, opts)
+  end
 
   def update_form(%Phoenix.HTML.Form{} = form, path, func, opts) do
     form.source
