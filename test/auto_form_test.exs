@@ -435,6 +435,16 @@ defmodule AshPhoenix.AutoFormTest do
         |> AshPhoenix.Form.submit!()
       end
     end
+
+    test "should validate relationships after action changes" do
+      assert Post
+             |> AshPhoenix.Form.for_create(:create_with_default_comment, forms: [auto?: true])
+             |> AshPhoenix.Form.validate(%{
+               "text" => "text",
+               "comment" => %{}
+             })
+             |> AshPhoenix.Form.submit!()
+    end
   end
 
   defp auto_forms(resource, action) do
