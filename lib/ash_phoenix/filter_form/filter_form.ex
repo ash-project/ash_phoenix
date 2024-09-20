@@ -470,7 +470,7 @@ defmodule AshPhoenix.FilterForm do
   def errors(%Predicate{} = predicate, opts),
     do: AshPhoenix.FilterForm.Predicate.errors(predicate, opts[:transform_errors])
 
-  defp do_to_filter_expression(%__MODULE__{components: []}, _), do: {:ok, true}
+  defp do_to_filter_expression(%__MODULE__{components: []}, _), do: {:ok, %{}}
 
   defp do_to_filter_expression(
          %__MODULE__{components: components, operator: operator, negated?: negated?} = form,
