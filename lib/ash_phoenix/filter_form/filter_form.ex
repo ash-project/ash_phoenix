@@ -226,6 +226,11 @@ defmodule AshPhoenix.FilterForm do
       return a list of ash phoenix formatted errors, e.g `[{field :: atom, message :: String.t(), substituations :: Keyword.t()}]`
       """
     ],
+    warn_on_unhandled_errors?: [
+      type: :boolean,
+      default: true,
+      doc: "Whether or not to emit warning log on unhandled form errors"
+    ],
     remove_empty_groups?: [
       type: :boolean,
       doc: """
@@ -435,14 +440,7 @@ defmodule AshPhoenix.FilterForm do
       {:error, %__MODULE__{} = form} ->
         error =
           form
-          |> errors()
-          |> Enum.map(fn
-            {key, message, vars} ->
-              "#{key}: #{AshPhoenix.replace_vars(message, vars)}"
-
-            other ->
-              other
-          end)
+          |> raw_errors()
           |> Ash.Error.to_error_class()
 
         raise error
@@ -456,7 +454,9 @@ defmodule AshPhoenix.FilterForm do
   def to_filter!(form), do: to_filter_expression!(form)
 
   @doc """
-  Returns a flat list of all errors on all predicates in the filter.
+  Returns a flat list of all errors on all predicates in the filter, made safe for display in a form.
+
+  Only errors that implement the `AshPhoenix.FormData.Error` protocol are displayed.
   """
   def errors(form, opts \\ [])
 
@@ -470,6 +470,20 @@ defmodule AshPhoenix.FilterForm do
   def errors(%Predicate{} = predicate, opts),
     do: AshPhoenix.FilterForm.Predicate.errors(predicate, opts[:transform_errors])
 
+  @doc """
+  Returns a flat list of all errors on all predicates in the filter, without transforming.
+  """
+  def raw_errors(%__MODULE__{components: components}) do
+    Enum.flat_map(
+      components,
+      &raw_errors(&1)
+    )
+  end
+
+  def raw_errors(%Predicate{} = predicate) do
+    predicate.errors
+  end
+
   defp do_to_filter_expression(%__MODULE__{components: []}, _), do: {:ok, %{}}
 
   defp do_to_filter_expression(
@@ -482,8 +496,16 @@ defmodule AshPhoenix.FilterForm do
           {:ok, component_filter} ->
             {filters ++ [component_filter], components ++ [component], errors?}
 
-          {:error, component} ->
-            {filters, components ++ [component], true}
+          {:error, errors} ->
+            {filters,
+             components ++
+               [
+                 %{
+                   component
+                   | valid?: false,
+                     errors: List.wrap(component.errors) ++ List.wrap(errors)
+                 }
+               ], true}
         end
       end)
 
@@ -519,23 +541,42 @@ defmodule AshPhoenix.FilterForm do
          resource
        ) do
     ref =
-      case Ash.Resource.Info.public_calculation(Ash.Resource.Info.related(resource, path), field) do
+      case Ash.Resource.Info.public_calculation(
+             Ash.Resource.Info.related(resource, path),
+             field
+           ) do
         nil ->
           {:ok, Ash.Expr.expr(^Ash.Expr.ref(List.wrap(path), field))}
 
-        calc ->
-          case Ash.Query.validate_calculation_arguments(
-                 calc,
-                 arguments.input || %{}
-               ) do
-            {:ok, input} ->
-              {:ok,
-               %Ash.Query.Call{
-                 name: calc.name,
-                 args: [Map.to_list(input)],
-                 relationship_path: path
-               }}
-
+        %{calculation: {module, calc_opts}} = calc ->
+          with {:ok, input} <-
+                 Ash.Query.validate_calculation_arguments(
+                   calc,
+                   arguments.input || %{}
+                 ),
+               {:ok, calc} <-
+                 Ash.Query.Calculation.new(
+                   calc.name,
+                   module,
+                   calc_opts,
+                   calc.type,
+                   calc.constraints,
+                   arguments: input,
+                   async?: calc.async?,
+                   filterable?: calc.filterable?,
+                   sortable?: calc.sortable?,
+                   sensitive?: calc.sensitive?,
+                   load: calc.load,
+                   calc_name: calc.name,
+                   source_context: %{}
+                 ) do
+            {:ok, %Ash.Query.Ref{
+              attribute: calc,
+              relationship_path: path,
+              resource: Ash.Resource.Info.related(resource, path),
+              input?: true
+            }}
+          else
             {:error, error} ->
               {:error, error}
           end
@@ -610,7 +651,7 @@ defmodule AshPhoenix.FilterForm do
         "id" => params[:id] || params["id"] || Ash.UUID.generate(),
         "operator" => to_string(params[:operator] || params["operator"] || "eq"),
         "negated" => params[:negated] || params["negated"] || false,
-        "arguments" => params["arguments"],
+        "arguments" => params[:arguments] || params["arguments"],
         "field" => field,
         "value" => params[:value] || params["value"],
         "path" => path

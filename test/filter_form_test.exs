@@ -229,6 +229,28 @@ defmodule AshPhoenix.FilterFormTest do
              )
     end
 
+    test "predicates can have arguments" do
+      form =
+        FilterForm.new(Post,
+          params: %{
+            field: :text_plus_title,
+            operator: :eq,
+            arguments: %{
+              delimiter: "-"
+            },
+            value: "text-title"
+          }
+        )
+
+      assert %{id: match_id} = Ash.create!(Post, %{text: "text", title: "title"})
+      Ash.create!(Post, %{text: "no", title: "bad"})
+
+      assert [%{id: ^match_id}] =
+        Post
+        |> FilterForm.filter!(form)
+        |> Ash.read!()
+    end
+
     test "predicates can reference paths for to_filter_map" do
       form =
         FilterForm.new(Post,

@@ -1,6 +1,7 @@
 errors = [
   {Ash.Error.Invalid.InvalidPrimaryKey, 400},
   {Ash.Error.Query.InvalidArgument, 400},
+  {Ash.Error.Query.InvalidCalculationArgument, 400},
   {Ash.Error.Query.InvalidFilterValue, 400},
   {Ash.Error.Query.NotFound, 404},
   {Ash.Error.Forbidden.Policy, 403},

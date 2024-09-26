@@ -20,6 +20,13 @@ defmodule AshPhoenix.Test.Post do
     attribute(:custom_atom_field, AshPhoenix.Test.Action, public?: true)
   end
 
+  calculations do
+    calculate :text_plus_title, :string, expr(text <> ^arg(:delimiter) <> title) do
+      public? true
+      argument :delimiter, :string, allow_nil?: false
+    end
+  end
+
   actions do
     default_accept(:*)
     defaults([:read, :destroy])

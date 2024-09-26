@@ -29,7 +29,7 @@ defmodule AshPhoenix.FilterForm.Predicate do
       {_key, _value, _vars} ->
         true
 
-      _ ->
+      _unhandled ->
         false
     end)
     |> Enum.flat_map(
