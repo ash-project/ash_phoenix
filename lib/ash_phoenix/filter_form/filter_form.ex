@@ -570,12 +570,13 @@ defmodule AshPhoenix.FilterForm do
                    calc_name: calc.name,
                    source_context: %{}
                  ) do
-            {:ok, %Ash.Query.Ref{
-              attribute: calc,
-              relationship_path: path,
-              resource: Ash.Resource.Info.related(resource, path),
-              input?: true
-            }}
+            {:ok,
+             %Ash.Query.Ref{
+               attribute: calc,
+               relationship_path: path,
+               resource: Ash.Resource.Info.related(resource, path),
+               input?: true
+             }}
           else
             {:error, error} ->
               {:error, error}
