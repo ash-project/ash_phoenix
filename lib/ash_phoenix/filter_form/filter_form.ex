@@ -371,14 +371,21 @@ defmodule AshPhoenix.FilterForm do
            value: value,
            operator: operator,
            negated?: negated?,
+           arguments: arguments,
            path: path
          },
          _resource
        ) do
     expr =
-      put_at_path(%{}, Enum.map(path, &to_string/1), %{
-        to_string(field) => %{to_string(operator) => value}
-      })
+      if arguments && arguments.input not in [nil, %{}] do
+        put_at_path(%{}, Enum.map(path, &to_string/1), %{
+          to_string(field) => %{to_string(operator) => value, "input" => arguments.input}
+        })
+      else
+        put_at_path(%{}, Enum.map(path, &to_string/1), %{
+          to_string(field) => %{to_string(operator) => value}
+        })
+      end
 
     if negated? do
       {:ok, %{"not" => expr}}
@@ -577,9 +584,6 @@ defmodule AshPhoenix.FilterForm do
                resource: Ash.Resource.Info.related(resource, path),
                input?: true
              }}
-          else
-            {:error, error} ->
-              {:error, error}
           end
       end
 
