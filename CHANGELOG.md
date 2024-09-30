@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.4](https://github.com/ash-project/ash_phoenix/compare/v2.1.3...v2.1.4) (2024-09-30)
+
+
+
+
+### Bug Fixes:
+
+* properly include calc args in `to_filter_map`
+
 ## [v2.1.3](https://github.com/ash-project/ash_phoenix/compare/v2.1.2...v2.1.3) (2024-09-30)
 
 
