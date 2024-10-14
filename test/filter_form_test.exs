@@ -246,9 +246,9 @@ defmodule AshPhoenix.FilterFormTest do
       Ash.create!(Post, %{text: "no", title: "bad"})
 
       assert [%{id: ^match_id}] =
-        Post
-        |> FilterForm.filter!(form)
-        |> Ash.read!()
+               Post
+               |> FilterForm.filter!(form)
+               |> Ash.read!()
     end
 
     test "predicates can reference paths for to_filter_map" do

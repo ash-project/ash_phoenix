@@ -5,6 +5,8 @@ defmodule AshPhoenix.Test.Post do
     domain: AshPhoenix.Test.Domain,
     data_layer: Ash.DataLayer.Ets
 
+  require Ash.Query
+
   ets do
     private?(true)
   end
@@ -30,6 +32,16 @@ defmodule AshPhoenix.Test.Post do
   actions do
     default_accept(:*)
     defaults([:read, :destroy])
+
+    action :post_count, :integer do
+      argument :containing, :string, allow_nil?: false
+
+      run fn input, _ ->
+        __MODULE__
+        |> Ash.Query.filter(contains(text, ^input.arguments.containing))
+        |> Ash.count()
+      end
+    end
 
     create :create do
       primary?(true)
