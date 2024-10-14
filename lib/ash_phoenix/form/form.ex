@@ -175,24 +175,25 @@ defmodule AshPhoenix.Form do
 
   alias AshPhoenix.Form.InvalidPath
 
+  @type source :: Ash.Changeset.t() | Ash.Query.t() | Ash.Resource.record()
+
   @type t :: %__MODULE__{
           resource: Ash.Resource.t(),
           action: atom,
           type: :create | :update | :destroy | :read,
           params: map,
-          source: Ash.Changeset.t() | Ash.Query.t(),
+          source: source,
           transform_params: nil | (map -> term),
           data: nil | Ash.Resource.record(),
           form_keys: Keyword.t(),
           forms: map,
           method: String.t(),
           submit_errors: Keyword.t() | nil,
-          prepare_source:
-            nil | (Ash.Changeset.t() -> Ash.Changeset.t()) | (Ash.Query.t() -> Ash.Query.t()),
+          prepare_source: nil | (source -> source),
           opts: Keyword.t(),
           transform_errors:
             nil
-            | (Ash.Changeset.t() | Ash.Query.t(), error :: Ash.Error.t() ->
+            | (source, error :: Ash.Error.t() ->
                  [{field :: atom, message :: String.t(), substituations :: Keyword.t()}]),
           valid?: boolean,
           errors: boolean,
@@ -377,53 +378,25 @@ defmodule AshPhoenix.Form do
 
   import AshPhoenix.FormData.Helpers
 
-  @doc "Calls the corresponding `for_*` function depending on the action type"
-  def for_action(resource_or_data, action, opts \\ [])
+  @doc """
+  Creates a form corresponding to any given action on a resource.
 
-  def for_action(%Ash.Union{value: value, type: type} = union, action, opts) do
-    opts =
-      Keyword.put_new(opts, :transform_params, AshPhoenix.Form.Auto.union_param_transformer(type))
+  If given a create, read, update, or destroy action, the appropriate `for_*`
+  function will be called instead. So use this function when you don't know
+  the type of the action, or it is a generic action.
 
-    opts = update_opts(opts, union, opts[:params] || %{})
+  Options:
+  #{Spark.Options.docs(@for_opts)}
 
-    action_type =
-      if is_atom(action) do
-        Ash.Resource.Info.action(opts[:resource], action).type
-      else
-        action.type
-      end
+  Any *additional* options will be passed to the underlying call to build the source, i.e
+  `Ash.ActionInput.for_action/4`, or `Ash.Changeset.for_*`. This means you can set things
+  like the tenant/actor. These will be retained, and provided again when `Form.submit/3` is called.
 
-    data =
-      if opts[:resource] == AshPhoenix.Form.WrappedValue do
-        %AshPhoenix.Form.WrappedValue{value: union}
-      else
-        value
-      end
+  ## Nested Form Options
 
-    opts =
-      Keyword.update(
-        opts,
-        :params,
-        %{"_union_type" => to_string(type)},
-        &Map.put(&1, "_union_type", to_string(type))
-      )
-
-    case action_type do
-      :create ->
-        for_create(opts[:resource], action, opts)
-
-      :update ->
-        for_update(data, action, opts)
-
-      :destroy ->
-        for_destroy(data, action, opts)
-
-      :read ->
-        for_read(opts[:resource], action, opts)
-    end
-  end
-
-  def for_action(resource_or_data, action, opts) do
+  #{Spark.Options.docs(@nested_form_opts)}
+  """
+  def for_action(resource_or_data, action, opts \\ []) do
     {resource, data} =
       case resource_or_data do
         module when is_atom(resource_or_data) and not is_nil(resource_or_data) ->
@@ -461,7 +434,85 @@ defmodule AshPhoenix.Form do
 
       :read ->
         for_read(resource, action, opts)
+
+      :action ->
+        do_for_action(resource, action, opts)
     end
+  end
+
+  defp do_for_action(resource, action, opts) do
+    opts =
+      opts
+      |> add_auto(resource, action)
+      |> update_opts(opts[:data], opts[:params] || %{})
+      |> validate_opts_with_extra_keys(@for_opts)
+      |> forms_for_type(:action)
+
+    require_action!(resource, action, :action)
+
+    name = opts[:as] || "form"
+    id = opts[:id] || opts[:as] || "form"
+
+    {forms, params} =
+      handle_forms(
+        opts[:params] || %{},
+        opts[:forms] || [],
+        !!opts[:errors],
+        opts[:domain] || Ash.Resource.Info.domain(resource),
+        opts[:actor],
+        opts[:tenant],
+        [],
+        name,
+        id,
+        opts[:transform_errors],
+        opts[:warn_on_unhandled_errors?]
+      )
+
+    prepare_source = opts[:prepare_source] || (& &1)
+
+    query_opts =
+      drop_form_opts(opts)
+
+    source =
+      resource
+      |> Ash.ActionInput.new()
+      |> prepare_source.()
+      |> set_accessing_from(opts)
+
+    source =
+      Ash.ActionInput.for_action(
+        source,
+        action,
+        params || %{},
+        allow_all_keys_to_be_skipped(query_opts, params)
+      )
+      |> add_errors_for_unhandled_params(params)
+
+    %__MODULE__{
+      resource: resource,
+      action: action,
+      type: :action,
+      data: opts[:data],
+      params: params,
+      errors: opts[:errors],
+      transform_errors: opts[:transform_errors],
+      warn_on_unhandled_errors?: opts[:warn_on_unhandled_errors?],
+      name: name,
+      forms: forms,
+      form_keys: Keyword.new(List.wrap(opts[:forms])),
+      id: id,
+      domain: source.domain,
+      method: opts[:method] || form_for_method(:create),
+      opts: opts,
+      touched_forms: touched_forms(forms, params, opts),
+      transform_params: opts[:transform_params],
+      prepare_params: opts[:prepare_params],
+      prepare_source: opts[:prepare_source],
+      source: source
+    }
+    |> set_changed?()
+    |> set_validity()
+    |> carry_over_errors()
   end
 
   @doc """
@@ -496,19 +547,7 @@ defmodule AshPhoenix.Form do
 
     require_action!(resource, action, :create)
 
-    changeset_opts =
-      Keyword.drop(opts, [
-        :forms,
-        :transform_errors,
-        :errors,
-        :id,
-        :method,
-        :for,
-        :as,
-        :transform_params,
-        :prepare_params,
-        :prepare_source
-      ])
+    changeset_opts = drop_form_opts(opts)
 
     name = opts[:as] || "form"
     id = opts[:id] || opts[:as] || "form"
@@ -590,19 +629,7 @@ defmodule AshPhoenix.Form do
 
     require_action!(resource, action, :update)
 
-    changeset_opts =
-      Keyword.drop(opts, [
-        :forms,
-        :transform_errors,
-        :errors,
-        :id,
-        :method,
-        :for,
-        :as,
-        :transform_params,
-        :prepare_params,
-        :prepare_source
-      ])
+    changeset_opts = drop_form_opts(opts)
 
     name = opts[:as] || "form"
     id = opts[:id] || opts[:as] || "form"
@@ -729,18 +756,7 @@ defmodule AshPhoenix.Form do
     require_action!(resource, action, :destroy)
 
     changeset_opts =
-      Keyword.drop(opts, [
-        :forms,
-        :transform_errors,
-        :errors,
-        :id,
-        :method,
-        :for,
-        :as,
-        :transform_params,
-        :prepare_params,
-        :prepare_source
-      ])
+      drop_form_opts(opts)
 
     name = opts[:as] || "form"
     id = opts[:id] || opts[:as] || "form"
@@ -855,18 +871,7 @@ defmodule AshPhoenix.Form do
     prepare_source = opts[:prepare_source] || (& &1)
 
     query_opts =
-      Keyword.drop(opts, [
-        :forms,
-        :transform_errors,
-        :errors,
-        :id,
-        :method,
-        :for,
-        :as,
-        :transform_params,
-        :prepare_params,
-        :prepare_source
-      ])
+      drop_form_opts(opts)
 
     source =
       resource
@@ -942,6 +947,10 @@ defmodule AshPhoenix.Form do
 
   defp set_context(%Ash.Query{} = query, context) do
     Ash.Query.set_context(query, context)
+  end
+
+  defp set_context(%Ash.ActionInput{} = query, context) do
+    Ash.ActionInput.set_context(query, context)
   end
 
   defp add_errors_for_unhandled_params(%{action: nil} = query, _params), do: query
@@ -1113,16 +1122,7 @@ defmodule AshPhoenix.Form do
           nested_form.id == root_form.id <> "_#{key}_#{index}"
         end
 
-    source_opts =
-      Keyword.drop(form.opts, [
-        :forms,
-        :transform_errors,
-        :errors,
-        :id,
-        :method,
-        :for,
-        :as
-      ])
+    source_opts = drop_form_opts(form.opts)
 
     {forms, changeset_params} =
       validate_nested_forms(
@@ -1193,6 +1193,20 @@ defmodule AshPhoenix.Form do
             accessing_from: opts[:accessing_from] || form.opts[:accessing_from]
           )
           |> Ash.Query.for_read(
+            form.action,
+            Map.drop(changeset_params, ["_form_type", "_touched", "_union_type"]),
+            allow_all_keys_to_be_skipped(source_opts, changeset_params)
+          )
+          |> add_errors_for_unhandled_params(changeset_params)
+
+        :action ->
+          form.resource
+          |> Ash.ActionInput.new()
+          |> prepare_source.()
+          |> set_accessing_from(
+            accessing_from: opts[:accessing_from] || form.opts[:accessing_from]
+          )
+          |> Ash.ActionInput.for_action(
             form.action,
             Map.drop(changeset_params, ["_form_type", "_touched", "_union_type"]),
             allow_all_keys_to_be_skipped(source_opts, changeset_params)
@@ -1805,7 +1819,7 @@ defmodule AshPhoenix.Form do
     end
 
     changeset_opts =
-      Keyword.drop(form.opts, [:forms, :errors, :id, :method, :for, :as])
+      drop_form_opts(form.opts)
 
     form =
       if opts[:params] do
@@ -1896,6 +1910,18 @@ defmodule AshPhoenix.Form do
               |> before_submit.()
               |> with_changeset(&Ash.read(&1, opts[:action_opts] || []))
             end
+
+          :action ->
+            form.resource
+            |> Ash.ActionInput.new()
+            |> prepare_source.()
+            |> Ash.ActionInput.for_action(
+              form.source.action.name,
+              changeset_params,
+              allow_all_keys_to_be_skipped(changeset_opts, changeset_params)
+            )
+            |> before_submit.()
+            |> with_changeset(&Ash.run_action(&1, opts[:action_opts] || []))
         end
 
       case result do
@@ -1925,6 +1951,36 @@ defmodule AshPhoenix.Form do
             {:error,
              set_action_errors(
                %{form | source: query},
+               errors
+             )
+             |> carry_over_errors()
+             |> update_all_forms(fn form ->
+               %{form | just_submitted?: true, submitted_once?: true}
+             end)
+             |> set_changed?()}
+          end
+
+        {:error, %{action_input: action_input} = error} when form.type == :action_input ->
+          if opts[:raise?] do
+            errors =
+              if action_input do
+                action_input.errors
+              else
+                error
+              end
+
+            raise Ash.Error.to_error_class(errors, action_input: action_input)
+          else
+            errors =
+              error
+              |> List.wrap()
+              |> Enum.flat_map(&expand_error/1)
+
+            action_input = action_input || %{original_changeset_or_query | errors: errors}
+
+            {:error,
+             set_action_errors(
+               %{form | source: action_input},
                errors
              )
              |> carry_over_errors()
@@ -2590,6 +2646,9 @@ defmodule AshPhoenix.Form do
 
       %Ash.Query{} ->
         %{form | data: data}
+
+      %Ash.ActionInput{} ->
+        %{form | data: data}
     end
   end
 
@@ -2683,6 +2742,21 @@ defmodule AshPhoenix.Form do
     with :error <- get_nested(form, field),
          :error <- Ash.Query.fetch_argument(query, field),
          :error <- Map.fetch(query.params, to_string(field)),
+         :error <- Map.fetch(data || %{}, field) do
+      nil
+    else
+      {:ok, %Ash.NotLoaded{}} ->
+        nil
+
+      {:ok, value} ->
+        value
+    end
+  end
+
+  defp do_value(%{source: %Ash.ActionInput{} = action_input, data: data} = form, field) do
+    with :error <- get_nested(form, field),
+         :error <- Ash.ActionInput.fetch_argument(action_input, field),
+         :error <- Map.fetch(action_input.params, to_string(field)),
          :error <- Map.fetch(data || %{}, field) do
       nil
     else
@@ -3221,6 +3295,7 @@ defmodule AshPhoenix.Form do
   end
 
   defp attributes_changed?(%{source: %Ash.Query{}}), do: false
+  defp attributes_changed?(%{source: %Ash.ActionInput{}}), do: false
 
   defp attributes_changed?(form) do
     changeset = form.source
@@ -5377,6 +5452,16 @@ defmodule AshPhoenix.Form do
       end
     end
 
+    def input_validations(%{source: %Ash.ActionInput{} = action_input}, _, field) do
+      argument = get_argument(action_input.action, field)
+
+      if argument do
+        [required: !argument.allow_nil?] ++ type_validations(argument)
+      else
+        []
+      end
+    end
+
     defp type_validations(%{type: Ash.Types.Integer, constraints: constraints}) do
       constraints
       |> Kernel.||([])
@@ -5416,5 +5501,21 @@ defmodule AshPhoenix.Form do
     end
 
     defp type_validations(_), do: []
+  end
+
+  defp drop_form_opts(opts) do
+    Keyword.drop(opts, [
+      :forms,
+      :transform_errors,
+      :errors,
+      :id,
+      :method,
+      :for,
+      :as,
+      :transform_params,
+      :prepare_params,
+      :prepare_source,
+      :warn_on_unhandled_errors?
+    ])
   end
 end

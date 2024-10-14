@@ -14,6 +14,16 @@ defmodule AshPhoenix.FormTest do
     form[key].value
   end
 
+  describe "generic actions" do
+    test "generic actions can have forms made for them" do
+      assert 0 =
+               Post
+               |> Form.for_action(:post_count)
+               |> Form.validate(%{containing: "hello"})
+               |> Form.submit!()
+    end
+  end
+
   describe "validate_opts" do
     test "errors are not set on the parent and list child form" do
       form =
