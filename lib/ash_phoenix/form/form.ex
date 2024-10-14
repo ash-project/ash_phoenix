@@ -1706,7 +1706,7 @@ defmodule AshPhoenix.Form do
     action_opts: [
       type: :keyword_list,
       default: [],
-      doc: "Opts to pass to the call to Ash when calling the action"
+      doc: "Opts to pass to the call to Ash when calling the action."
     ],
     errors: [
       type: :boolean,
