@@ -220,7 +220,7 @@ defmodule AshPhoenix.Form do
     ],
     domain: [
       type: :atom,
-      doc: "The domain to use when calling the action"
+      doc: "The domain to use when calling the action."
     ],
     as: [
       type: :string,
@@ -320,7 +320,7 @@ defmodule AshPhoenix.Form do
     ],
     forms: [
       type: :keyword_list,
-      doc: "Forms nested inside the current nesting level in all cases"
+      doc: "Forms nested inside the current nesting level in all cases."
     ],
     for_type: [
       type: {:list, {:one_of, [:read, :create, :update]}},
@@ -1010,7 +1010,7 @@ defmodule AshPhoenix.Form do
     errors: [
       type: :boolean,
       default: true,
-      doc: "Set to false to hide errors after validation"
+      doc: "Set to false to hide errors after validation."
     ],
     target: [
       type: {:list, :string},
@@ -2067,7 +2067,7 @@ defmodule AshPhoenix.Form do
     mark_as_touched?: [
       type: :boolean,
       default: true,
-      doc: "Whether or not to mark the path to the updating form as touched"
+      doc: "Whether or not to mark the path to the updating form as touched."
     ]
   ]
 
