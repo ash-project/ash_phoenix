@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.6](https://github.com/ash-project/ash_phoenix/compare/v2.1.5...v2.1.6) (2024-10-17)
+
+
+
+
+### Improvements:
+
+* allow phoenix_live_view rc
+
 ## [v2.1.5](https://github.com/ash-project/ash_phoenix/compare/v2.1.4...v2.1.5) (2024-10-14)
 
 
