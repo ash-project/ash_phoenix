@@ -84,7 +84,7 @@ We might have a form like this:
 <.inputs_for :let={fc} field={@form[:content]}>
   <!-- Dropdown for setting the union type -->
   <.input
-    field={fc[:_union_type}
+    field={fc[:_union_type]}
     phx-change="type-changed"
     type="select"
     options={[Normal: "normal", Special: "special"]}
