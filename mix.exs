@@ -140,7 +140,9 @@ defmodule AshPhoenix.MixProject do
       {:dialyxir, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:sobelow, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:mix_audit, ">= 0.0.0", only: [:dev, :test], runtime: false},
-      {:mix_test_watch, "~> 1.0", only: [:dev, :test]}
+      {:mix_test_watch, "~> 1.0", only: [:dev, :test]},
+      # Code Generators
+      {:igniter, "~> 0.3 and >= 0.3.74"}
     ]
   end
 
