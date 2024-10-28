@@ -348,10 +348,7 @@ defmodule AshPhoenix.AutoFormTest do
         )
         |> Phoenix.HTML.FormData.to_form([])
 
-      assert Enum.at(form[:union].value, 0)[:value].value == %Ash.Union{
-               value: :update,
-               type: :predefined
-             }
+      assert Enum.at(form[:union].value, 0)[:value].value == :update
     end
   end
 
@@ -368,7 +365,8 @@ defmodule AshPhoenix.AutoFormTest do
       |> form_for("action")
     end
 
-    test "show correct values on for_update forms" do
+    test "
+show correct values on for_update forms" do
       a =
         Post
         |> AshPhoenix.Form.for_create(:create, domain: Domain, forms: [auto?: true])

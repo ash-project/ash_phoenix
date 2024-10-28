@@ -2787,8 +2787,12 @@ defmodule AshPhoenix.Form do
     get_data_value(value, field)
   end
 
-  defp get_data_value(%Ash.Union{value: value}, field) do
+  defp get_data_value(%Ash.Union{value: value}, field) when is_struct(value) do
     get_data_value(value, field)
+  end
+
+  defp get_data_value(%Ash.Union{value: value}, :value) do
+    {:ok, value}
   end
 
   defp get_data_value(value, field) when is_map(value) do
