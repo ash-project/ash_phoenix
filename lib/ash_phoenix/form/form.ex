@@ -1818,6 +1818,21 @@ defmodule AshPhoenix.Form do
       """
     end
 
+    if !Keyword.has_key?(opts, :params) do
+      IO.warn("""
+      The `params` option should be supplied at all times. This will be required in a future major release.
+      To silence this warning without providing `params`, you can pass `params: nil`.
+
+      For example:
+
+          def handle_event("submit", %{"form" => params}, socket) do
+            case AshPhoenix.Form.submit(socket.assigns.form, params: params) do
+              ...
+            end
+          end
+      """)
+    end
+
     changeset_opts =
       drop_form_opts(form.opts)
 
