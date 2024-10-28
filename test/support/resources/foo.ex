@@ -13,5 +13,7 @@ defmodule AshPhoenix.Test.Foo do
       constraints match: ~r/abc/
       public? true
     end
+
+    attribute :number, :integer, public?: true
   end
 end
