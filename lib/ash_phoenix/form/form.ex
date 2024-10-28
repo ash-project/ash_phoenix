@@ -2727,7 +2727,7 @@ defmodule AshPhoenix.Form do
          :error <- get_casted_value(changeset, field),
          :error <- Ash.Changeset.fetch_argument(changeset, field),
          :error <- get_non_attribute_non_argument_param(changeset, form, field),
-         :error <- Map.fetch(changeset.data, field) do
+         :error <- get_data_value(changeset.data, field) do
       nil
     else
       {:ok, %Ash.NotLoaded{}} ->
@@ -2767,6 +2767,20 @@ defmodule AshPhoenix.Form do
         value
     end
   end
+
+  defp get_data_value(%AshPhoenix.Form.WrappedValue{value: value}, field) do
+    get_data_value(value, field)
+  end
+
+  defp get_data_value(%Ash.Union{value: value}, field) do
+    get_data_value(value, field)
+  end
+
+  defp get_data_value(value, field) when is_map(value) do
+    Map.fetch(value, field)
+  end
+
+  defp get_data_value(_, _), do: :error
 
   defp get_nested(form, field) do
     Map.fetch(form.forms, field)
