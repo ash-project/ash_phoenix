@@ -368,6 +368,35 @@ defmodule AshPhoenix.AutoFormTest do
       |> form_for("action")
     end
 
+    test "show correct values on for_update forms" do
+      a =
+        Post
+        |> AshPhoenix.Form.for_create(:create, domain: Domain, forms: [auto?: true])
+        |> AshPhoenix.Form.add_form(:union_array,
+          params: %{"_union_type" => "foo"}
+        )
+        |> AshPhoenix.Form.add_form(:union_array,
+          params: %{"_union_type" => "foo"}
+        )
+        |> AshPhoenix.Form.submit!(
+          params: %{
+            "text" => "Test Post Text",
+            "union_array" => [
+              %{"_union_type" => "foo", "value" => "abc", "number" => 1},
+              %{"_union_type" => "foo", "value" => "abc", "number" => 2}
+            ]
+          }
+        )
+
+      form =
+        AshPhoenix.Form.for_update(a, :update, forms: [auto?: true])
+        |> Phoenix.HTML.FormData.to_form(as: :form)
+
+      [subform | _] = form.impl.to_form(form.source, form, :union_array, [])
+
+      assert(subform[:number].value == 1)
+    end
+
     test "a form can be removed from a union" do
       form =
         Post
