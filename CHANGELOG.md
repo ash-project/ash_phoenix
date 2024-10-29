@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.7](https://github.com/ash-project/ash_phoenix/compare/v2.1.6...v2.1.7) (2024-10-29)
+
+
+
+
+### Bug Fixes:
+
+* set _union_type param when unnesting a resource in a union
+
+* don't wrap resources inside of unions as WrappedValue
+
+* warn on missing `params` on submit
+
+* unwrap unions & wrapped values when fetching values
+
 ## [v2.1.6](https://github.com/ash-project/ash_phoenix/compare/v2.1.5...v2.1.6) (2024-10-17)
 
 
