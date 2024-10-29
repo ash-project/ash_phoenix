@@ -162,6 +162,7 @@ defmodule AshPhoenix.Form do
     :transform_params,
     :prepare_params,
     :prepare_source,
+    :raw_params,
     warn_on_unhandled_errors?: true,
     any_removed?: false,
     added?: false,
@@ -601,6 +602,7 @@ defmodule AshPhoenix.Form do
       type: :create,
       domain: source.domain,
       params: params,
+      raw_params: opts[:params] || %{},
       errors: opts[:errors],
       transform_errors: opts[:transform_errors],
       warn_on_unhandled_errors?: opts[:warn_on_unhandled_errors?],
@@ -685,6 +687,7 @@ defmodule AshPhoenix.Form do
       data: data,
       action: action,
       type: :update,
+      raw_params: opts[:params] || %{},
       domain: source.domain,
       params: params,
       errors: opts[:errors],
@@ -812,6 +815,7 @@ defmodule AshPhoenix.Form do
       action: action,
       type: :destroy,
       params: params,
+      raw_params: opts[:params] || %{},
       errors: opts[:errors],
       transform_errors: opts[:transform_errors],
       warn_on_unhandled_errors?: opts[:warn_on_unhandled_errors?],
@@ -904,6 +908,7 @@ defmodule AshPhoenix.Form do
       resource: resource,
       action: action,
       type: :read,
+      raw_params: opts[:params] || %{},
       data: opts[:data],
       params: params,
       errors: opts[:errors],
@@ -1066,6 +1071,7 @@ defmodule AshPhoenix.Form do
   end
 
   def validate(%{name: name} = form, new_params, opts) do
+    raw_params = new_params
     form = Map.update!(form, :opts, &update_opts(&1, form.data, new_params))
 
     form = %{
@@ -1089,21 +1095,32 @@ defmodule AshPhoenix.Form do
               touch(form, field)
 
             path ->
-              path =
-                Enum.map(path, fn item ->
-                  cond do
-                    is_integer(item) ->
-                      item
+              try do
+                path =
+                  Enum.map(path, fn item ->
+                    cond do
+                      is_integer(item) ->
+                        item
 
-                    is_binary(item) ->
-                      String.to_existing_atom(item)
+                      is_binary(item) ->
+                        case Integer.parse(item) do
+                          {integer, ""} ->
+                            integer
 
-                    true ->
-                      item
-                  end
-                end)
+                          _ ->
+                            String.to_existing_atom(item)
+                        end
 
-              update_form(form, path, &touch(&1, field))
+                      true ->
+                        item
+                    end
+                  end)
+
+                update_form(form, path, &touch(&1, field))
+              rescue
+                _ ->
+                  form
+              end
           end
 
         _ ->
@@ -1231,6 +1248,7 @@ defmodule AshPhoenix.Form do
       | source: new_source,
         forms: forms,
         params: changeset_params,
+        raw_params: raw_params,
         added?: form.added?,
         errors: !!opts[:errors],
         submit_errors: nil,
@@ -3783,6 +3801,8 @@ defmodule AshPhoenix.Form do
         key
       end
 
+    config = update_opts(config, opts[:data], opts[:params] || %{})
+
     {resource, action} = add_form_resource_and_action(opts, config, key, trail)
 
     data_or_resource =
@@ -4113,6 +4133,8 @@ defmodule AshPhoenix.Form do
     action =
       case opts[:type] || default do
         :create ->
+          config = update_opts(config, opts[:data], opts[:params] || %{})
+
           config[:create_action] ||
             raise AshPhoenix.Form.NoActionConfigured,
               path: Enum.reverse(trail, [key]),

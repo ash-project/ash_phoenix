@@ -268,6 +268,11 @@ defmodule AshPhoenix.Form.Auto do
     {type, config[:type], config[:constraints], config[:tag], config[:tag_value]}
   end
 
+  defp determine_type(constraints, _, %Ash.Union{type: type}) do
+    config = constraints[:types][type]
+    {type, config[:type], config[:constraints], config[:tag], config[:tag_value]}
+  end
+
   defp determine_type(constraints, %AshPhoenix.Form.WrappedValue{value: nil}, params)
        when params == %{} do
     determine_type(constraints, nil, params)
