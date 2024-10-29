@@ -402,12 +402,20 @@ defmodule AshPhoenix.Form do
         module when is_atom(resource_or_data) and not is_nil(resource_or_data) ->
           {module, module.__struct__()}
 
+        %Ash.Union{value: %resource{} = data} ->
+          if Ash.Resource.Info.resource?(resource) do
+            {resource, data}
+          else
+            {AshPhoenix.Form.WrappedValue, %AshPhoenix.Form.WrappedValue{value: data}}
+          end
+
         %resource{} = data ->
           if Ash.Resource.Info.resource?(resource) do
             {resource, data}
           else
             {AshPhoenix.Form.WrappedValue, %AshPhoenix.Form.WrappedValue{value: data}}
           end
+
 
         value ->
           {AshPhoenix.Form.WrappedValue, %AshPhoenix.Form.WrappedValue{value: value}}

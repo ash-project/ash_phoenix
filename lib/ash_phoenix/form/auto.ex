@@ -347,7 +347,7 @@ defmodule AshPhoenix.Form.Auto do
             Map.get(data, config[:tag]) == value
 
         value ->
-          data[config[:tag]] == value
+          Map.get(data, config[:tag]) == value
       end
     else
       false
