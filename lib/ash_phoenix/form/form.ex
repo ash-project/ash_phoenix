@@ -397,28 +397,32 @@ defmodule AshPhoenix.Form do
   #{Spark.Options.docs(@nested_form_opts)}
   """
   def for_action(resource_or_data, action, opts \\ []) do
-    {resource, data} =
+    {resource, data, opts} =
       case resource_or_data do
         module when is_atom(resource_or_data) and not is_nil(resource_or_data) ->
-          {module, module.__struct__()}
+          {module, module.__struct__(), opts}
 
-        %Ash.Union{value: %resource{} = data} ->
+        %Ash.Union{value: %resource{} = data, type: type} ->
           if Ash.Resource.Info.resource?(resource) do
-            {resource, data}
+            opts =
+              opts
+              |> Keyword.put_new(:params, %{})
+              |> Keyword.update!(:params, &Map.put(&1, "_union_type", to_string(type)))
+
+            {resource, data, opts}
           else
-            {AshPhoenix.Form.WrappedValue, %AshPhoenix.Form.WrappedValue{value: data}}
+            {AshPhoenix.Form.WrappedValue, %AshPhoenix.Form.WrappedValue{value: data}, opts}
           end
 
         %resource{} = data ->
           if Ash.Resource.Info.resource?(resource) do
-            {resource, data}
+            {resource, data, opts}
           else
-            {AshPhoenix.Form.WrappedValue, %AshPhoenix.Form.WrappedValue{value: data}}
+            {AshPhoenix.Form.WrappedValue, %AshPhoenix.Form.WrappedValue{value: data}, opts}
           end
 
-
         value ->
-          {AshPhoenix.Form.WrappedValue, %AshPhoenix.Form.WrappedValue{value: value}}
+          {AshPhoenix.Form.WrappedValue, %AshPhoenix.Form.WrappedValue{value: value}, opts}
       end
 
     opts = update_opts(opts, data, opts[:params] || %{})
