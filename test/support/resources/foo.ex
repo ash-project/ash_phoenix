@@ -15,5 +15,7 @@ defmodule AshPhoenix.Test.Foo do
     end
 
     attribute :number, :integer, public?: true
+
+    attribute :embeds, AshPhoenix.Test.EmbeddedArgument, public?: true
   end
 end

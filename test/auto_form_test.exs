@@ -365,8 +365,7 @@ defmodule AshPhoenix.AutoFormTest do
       |> form_for("action")
     end
 
-    test "
-show correct values on for_update forms" do
+    test "show correct values on for_update forms" do
       a =
         Post
         |> AshPhoenix.Form.for_create(:create, domain: Domain, forms: [auto?: true])
@@ -393,6 +392,38 @@ show correct values on for_update forms" do
       [subform | _] = form.impl.to_form(form.source, form, :union_array, [])
 
       assert(subform[:number].value == 1)
+    end
+
+    test "show correct values on for_update forms with deeply nested values" do
+      create_form =
+        Post
+        |> AshPhoenix.Form.for_create(:create, domain: Domain, forms: [auto?: true])
+        |> AshPhoenix.Form.add_form(:union_array,
+          params: %{"_union_type" => "foo", "value" => "abc", "number" => 1}
+        )
+        |> AshPhoenix.Form.add_form(:union_array,
+          params: %{"_union_type" => "foo", "value" => "abc", "number" => 2}
+        )
+        |> AshPhoenix.Form.add_form([:union_array, 0, :embeds], params: %{"value" => "meow"})
+        |> AshPhoenix.Form.add_form([:union_array, 0, :embeds, :nested_embeds],
+          params: %{
+            "limit" => 4,
+            "four_chars" => "four"
+          }
+        )
+
+      post =
+        AshPhoenix.Form.submit!(create_form,
+          params: Map.put(AshPhoenix.Form.params(create_form), "text", "Test Post Text")
+        )
+
+      form =
+        post
+        |> AshPhoenix.Form.for_update(:update, forms: [auto?: true])
+        |> AshPhoenix.Form.get_form([:union_array, 0, :embeds, :nested_embeds, 0])
+        |> Phoenix.HTML.FormData.to_form(as: :form)
+
+      assert(form[:limit].value == 4)
     end
 
     test "a form can be removed from a union" do
