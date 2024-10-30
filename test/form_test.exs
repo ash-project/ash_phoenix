@@ -119,6 +119,24 @@ defmodule AshPhoenix.FormTest do
     end
   end
 
+  describe "update_params/1" do
+    test "it sets new param values" do
+      form =
+        Post
+        |> Form.for_create(:create)
+        |> Form.validate(%{"text" => "text"})
+
+      assert Form.value(form, :text) == "text"
+      assert form.source.attributes == %{text: "text"}
+      assert form.source.params == %{"text" => "text"}
+      assert form.params == %{"text" => "text"}
+
+      form = Form.update_params(form, &Map.put(&1, "text", "new_text"))
+
+      assert Form.value(form, :text) == "new_text"
+    end
+  end
+
   describe "clear_value/1" do
     test "it clears attributes" do
       form =

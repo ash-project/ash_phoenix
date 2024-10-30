@@ -1054,6 +1054,52 @@ defmodule AshPhoenix.Form do
   ]
 
   @doc """
+  Update the previous params provided to the form, and revalidate.
+
+  Accepts the same options as `validate/2`, passing them through directly.
+
+  You should prefer to use `validate/2` when you have all of the params from the form.
+  This is meant for cases when some event has occured that should modify the params,
+  not as a replacement for `validate/2`.
+
+  This can be useful for things like customized inputs or buttons, that have special
+  handlers in your live view. For example, if you have an appointment that expresses
+  a list of available times in the UI, but the action just takes a single `time` argument,
+  you can make each available time a button, like so:
+
+  ```heex
+  <.button phx-click="time-selected" phx-value-time="<%= time %>" />
+  ```
+
+  and then have an event handler like this:
+
+  ```elixir
+  def handle_event("time-selected", %{"time" => time}, socket) do
+    form = AshPhoenix.Form.update_params(socket.assigns.form, &Map.put(&1, "time", time))
+    {:noreply, assign(socket, :form, form)}
+  end
+  ```
+  """
+  @spec update_params(t(), fun :: (map -> map), validate_opts :: Keyword.t()) :: t()
+  @spec update_params(Phoenix.HTML.Form.t(), params :: (map -> map), validate_opts :: Keyword.t()) ::
+          Phoenix.HTML.Form.t()
+  def update_params(form, func, validate_opts \\ [])
+
+  def update_params(%Phoenix.HTML.Form{} = form, func, validate_opts) do
+    form.source
+    |> update_params(func, validate_opts)
+    |> Phoenix.HTML.FormData.to_form(form.options)
+  end
+
+  def update_params(form, func, validate_opts) do
+    form.raw_params
+    |> func.()
+    |> then(fn params ->
+      AshPhoenix.Form.validate(form, params, validate_opts)
+    end)
+  end
+
+  @doc """
   Validates the parameters against the form.
 
   Options:
