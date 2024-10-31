@@ -1,17 +1,21 @@
 defmodule AshPhoenix.Gen.Live do
   @moduledoc false
 
-  def generate_from_cli(argv) do
-    {domain, resource, opts, _rest} = AshPhoenix.Gen.parse_opts(argv)
+  def generate_from_cli(%Igniter{} = igniter, options) do
+    domain = Keyword.fetch!(options, :domain)
+    resource = Keyword.fetch!(options, :resource)
+    _resourceplural = Keyword.fetch!(options, :resourceplural)
+    opts = []
 
     generate(
+      igniter,
       domain,
       resource,
       Keyword.put(opts, :interactive?, true)
     )
   end
 
-  def generate(domain, resource, opts \\ []) do
+  def generate(igniter, domain, resource, opts \\ []) do
     Code.ensure_compiled!(domain)
     Code.ensure_compiled!(resource)
 
@@ -55,13 +59,14 @@ defmodule AshPhoenix.Gen.Live do
       [
         domain: inspect(domain),
         resource: inspect(resource),
-        web_module: inspect(web_module()),
+        web_module: inspect(web_module(igniter)),
         actor: opts[:actor],
         actor_opt: actor_opt(opts)
       ]
       |> add_resource_assigns(resource, opts)
 
-    web_live = Path.join([web_path(), "live", "#{assigns[:resource_singular]}_live"])
+    # web_live should not be needed
+    web_live = Path.join([web_path(igniter), "live", "#{assigns[:resource_singular]}_live"])
 
     generate_opts =
       if opts[:interactive?] do
@@ -71,6 +76,7 @@ defmodule AshPhoenix.Gen.Live do
       end
 
     write_formatted_template(
+      igniter,
       "ash_phoenix.gen.live/index.ex.eex",
       "index.ex",
       web_live,
@@ -80,6 +86,7 @@ defmodule AshPhoenix.Gen.Live do
 
     if assigns[:update_action] || assigns[:create_action] do
       write_formatted_template(
+        igniter,
         "ash_phoenix.gen.live/form_component.ex.eex",
         "form_component.ex",
         web_live,
@@ -89,6 +96,7 @@ defmodule AshPhoenix.Gen.Live do
     end
 
     write_formatted_template(
+      igniter,
       "ash_phoenix.gen.live/show.ex.eex",
       "show.ex",
       web_live,
@@ -99,7 +107,7 @@ defmodule AshPhoenix.Gen.Live do
     if opts[:interactive?] do
       Mix.shell().info("""
 
-      Add the live routes to your browser scope in #{web_path()}/router.ex:
+      Add the live routes to your browser scope in #{web_path(igniter)}/router.ex:
 
       #{for line <- live_route_instructions(assigns), do: "    #{line}"}
       """)
@@ -123,7 +131,7 @@ defmodule AshPhoenix.Gen.Live do
     |> Enum.reject(&is_nil/1)
   end
 
-  defp write_formatted_template(path, destination, web_live, assigns, generate_opts) do
+  defp write_formatted_template(igniter, path, destination, web_live, assigns, generate_opts) do
     destination_path =
       web_live
       |> Path.join(destination)
@@ -137,7 +145,10 @@ defmodule AshPhoenix.Gen.Live do
       |> EEx.eval_file(assigns: assigns)
       |> formatter_function.()
 
-    Mix.Generator.create_file(destination_path, contents, generate_opts)
+    # igniter
+    Igniter.create_new_file(igniter, destination_path, contents, generate_opts)
+
+    # Mix.Generator.create_file(destination_path, contents, generate_opts)
   end
 
   defp add_resource_assigns(assigns, resource, opts) do
@@ -305,8 +316,8 @@ defmodule AshPhoenix.Gen.Live do
     end
   end
 
-  defp web_path do
-    web_module().module_info[:compile][:source]
+  defp web_path(igniter) do
+    web_module(igniter).module_info[:compile][:source]
     |> Path.relative_to(root_path())
     |> Path.rootname()
   end
@@ -316,19 +327,8 @@ defmodule AshPhoenix.Gen.Live do
     |> Path.dirname()
   end
 
-  defp web_module do
-    base = Mix.Phoenix.base()
-
-    cond do
-      Mix.Phoenix.context_app() != Mix.Phoenix.otp_app() ->
-        Module.concat([base])
-
-      String.ends_with?(base, "Web") ->
-        Module.concat([base])
-
-      true ->
-        Module.concat(["#{base}Web"])
-    end
+  defp web_module(igniter) do
+    Igniter.Libs.Phoenix.web_module(igniter)
   end
 
   defp template(path) do
