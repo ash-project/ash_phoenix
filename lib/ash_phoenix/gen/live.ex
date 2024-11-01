@@ -2,16 +2,16 @@ defmodule AshPhoenix.Gen.Live do
   @moduledoc false
 
   def generate_from_cli(%Igniter{} = igniter, options) do
-    domain = Keyword.fetch!(options, :domain)
-    resource = Keyword.fetch!(options, :resource)
-    _resourceplural = Keyword.fetch!(options, :resourceplural)
+    domain = Keyword.fetch!(options, :domain) |> String.to_existing_atom()
+    resource = Keyword.fetch!(options, :resource) |> String.to_existing_atom()
+    resource_plural = Keyword.fetch!(options, :resourceplural)
     opts = []
 
     generate(
       igniter,
       domain,
       resource,
-      Keyword.put(opts, :interactive?, true)
+      Keyword.put(opts, :interactive?, true) |> Keyword.put(:resource_plural, resource_plural)
     )
   end
 
@@ -75,25 +75,29 @@ defmodule AshPhoenix.Gen.Live do
         [force: true, quiet: true]
       end
 
-    write_formatted_template(
-      igniter,
-      "ash_phoenix.gen.live/index.ex.eex",
-      "index.ex",
-      web_live,
-      assigns,
-      generate_opts
-    )
-
-    if assigns[:update_action] || assigns[:create_action] do
+    igniter =
       write_formatted_template(
         igniter,
-        "ash_phoenix.gen.live/form_component.ex.eex",
-        "form_component.ex",
+        "ash_phoenix.gen.live/index.ex.eex",
+        "index.ex",
         web_live,
         assigns,
         generate_opts
       )
-    end
+
+    igniter =
+      if assigns[:update_action] || assigns[:create_action] do
+        write_formatted_template(
+          igniter,
+          "ash_phoenix.gen.live/form_component.ex.eex",
+          "form_component.ex",
+          web_live,
+          assigns,
+          generate_opts
+        )
+      else
+        igniter
+      end
 
     write_formatted_template(
       igniter,
@@ -112,6 +116,8 @@ defmodule AshPhoenix.Gen.Live do
       #{for line <- live_route_instructions(assigns), do: "    #{line}"}
       """)
     end
+
+    igniter
   end
 
   defp live_route_instructions(assigns) do
@@ -317,9 +323,8 @@ defmodule AshPhoenix.Gen.Live do
   end
 
   defp web_path(igniter) do
-    web_module(igniter).module_info[:compile][:source]
+    Igniter.Project.Module.proper_location(igniter, web_module(igniter))
     |> Path.relative_to(root_path())
-    |> Path.rootname()
   end
 
   defp root_path do

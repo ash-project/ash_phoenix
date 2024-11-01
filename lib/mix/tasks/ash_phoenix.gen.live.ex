@@ -45,14 +45,11 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Live do
   end
 
   def igniter(igniter, argv) do
-    # extract positional arguments according to `positional` above
-    {arguments, argv} = positional_args!(argv)
     # extract options according to `schema` and `aliases` above
-    options = options!(argv) |> dbg()
+    options = options!(argv)
 
     # Do your work here and return an updated igniter
     igniter
-    # |> AshPhoenix.Gen.Live.generate_from_cli1(options)
-    |> Igniter.add_warning("mix ash_phoenix.gen.live is under construction")
+    |> AshPhoenix.Gen.Live.generate_from_cli(options)
   end
 end
