@@ -51,7 +51,7 @@ defmodule AshPhoenix.Form.Auto do
       <%= text_input comment_form, :on_update_field %>
     <% end %>
 
-    <button phx-click="remove_form" phx-value-path="<%= comment_form.name %>">Add Comment</button>
+    <button phx-click="remove_form" phx-value-path="<%= comment_form.name %>">Remove Comment</button>
     <button phx-click="add_form" phx-value-path="<%= comment_form.name %>">Add Comment</button>
   <% end %>
   ```
