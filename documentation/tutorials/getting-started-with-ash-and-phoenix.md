@@ -71,12 +71,12 @@ We now need to add Ash, AshPhoenix and AshPostgres to our Phoenix project. We ne
   end
 ```
 
-Add `:ash`, `:ash_phoenix`, and `:ash_postgres` to your `.formatter.exs` file.
+Add `:ash` and `:ash_postgres` to your `.formatter.exs` file.
 
 ```elixir
 # .formatter.exs
 [
-  import_deps: [..., :ash, :ash_phoenix, :ash_postgres],
+  import_deps: [..., :ash, :ash_postgres],
   ...
 ]
 ```
