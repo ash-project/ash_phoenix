@@ -65,7 +65,6 @@ defmodule AshPhoenix.Gen.Live do
       ]
       |> add_resource_assigns(resource, opts)
 
-    # web_live should not be needed
     web_live = Path.join([web_path(igniter), "live", "#{assigns[:resource_singular]}_live"])
 
     generate_opts =
@@ -151,10 +150,7 @@ defmodule AshPhoenix.Gen.Live do
       |> EEx.eval_file(assigns: assigns)
       |> formatter_function.()
 
-    # igniter
     Igniter.create_new_file(igniter, destination_path, contents, generate_opts)
-
-    # Mix.Generator.create_file(destination_path, contents, generate_opts)
   end
 
   defp add_resource_assigns(assigns, resource, opts) do
