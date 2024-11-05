@@ -16,107 +16,124 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
     send(self(), {:mix_shell_input, :yes?, "n"})
     send(self(), {:mix_shell_input, :prompt, ""})
 
-    opts = [
-      files: %{
-        "lib/test/support/ticket/status.ex" => """
-        defmodule Test.Support.Ticket.Status do
-          use Ash.Type.Enum, values: [:open, :closed]
+    form_path = "lib/ash_phoenix_web.ex/live/artist_live/form_component.ex"
+
+    form_contents =
+      """
+      defmodule AshPhoenixWeb.ArtistLive.FormComponent do
+      use AshPhoenixWeb, :live_component
+
+      @impl true
+      def render(assigns) do
+       ~H\"\"\"
+       <div>
+          <.header>
+            <%= @title %>
+            <:subtitle>Use this form to manage artist records in your database.</:subtitle>
+          </.header>
+
+          <.simple_form
+            for={@form}
+            id="artist-form"
+            phx-target={@myself}
+            phx-change="validate"
+            phx-submit="save"
+          >
+
+
+                  <.input field={@form[:name]} type="text" label="Name" />
+
+
+            <:actions>
+              <.button phx-disable-with="Saving...">Save Artist</.button>
+            </:actions>
+          </.simple_form>
+        </div>
+        \"\"\"
+      end
+
+      @impl true
+      def update(assigns, socket) do
+        {:ok,
+         socket
+         |> assign(assigns)
+         |> assign_form()}
+      end
+
+      @impl true
+      def handle_event("validate", %{"artist" => artist_params}, socket) do
+        {:noreply, assign(socket, form: AshPhoenix.Form.validate(socket.assigns.form, artist_params))}
+      end
+
+      def handle_event("save", %{"artist" => artist_params}, socket) do
+        case AshPhoenix.Form.submit(socket.assigns.form, params: artist_params) do
+          {:ok, artist} ->
+            notify_parent({:saved, artist})
+
+            socket =
+              socket
+              |> put_flash(:info, "Artist \#{socket.assigns.form.source.type}d successfully")
+              |> push_patch(to: socket.assigns.patch)
+
+            {:noreply, socket}
+
+          {:error, form} ->
+            {:noreply, assign(socket, form: form)}
         end
-        """,
-        "lib/test/support/ticket.ex" => """
-        defmodule Test.Support.Ticket do
-          use Ash.Resource,
-          otp_app: :test,
-          domain: Test.Support,
-          data_layer: Ash.DataLayer.Ets
+      end
 
-          alias Test.Support.Ticket.Status
+      defp notify_parent(msg), do: send(self(), {__MODULE__, msg})
 
-          ets do
-            private? true
+      defp assign_form(%{assigns: %{artist: artist}} = socket) do
+        form =
+          if artist do
+            AshPhoenix.Form.for_update(artist, :update,
+              as: "artist",
+              actor: socket.assigns.current_user
+            )
+          else
+            AshPhoenix.Form.for_create(AshPhoenix.Test.Artist, :create,
+              as: "artist",
+              actor: socket.assigns.current_user
+            )
           end
 
-          actions do
-            defaults [:read, :destroy]
+        assign(socket, form: to_form(form))
+      end
+      end
+      """
+      |> format_contents(form_path)
+      |> indent()
+      |> Code.format_string!()
+      |> IO.iodata_to_binary()
 
-            create :create do
-              accept [:subject, :status]
-            end
-
-            create :open do
-              accept [:subject]
-            end
-
-            update :update do
-              primary? true
-              accept [:subject]
-            end
-
-            update :close do
-              accept []
-
-              validate attribute_does_not_equal(:status, :closed) do
-                message "Ticket is already closed"
-              end
-
-              change set_attribute(:status, :closed)
-            end
-
-            update :assign do
-              accept [:representative_id]
-            end
-          end
-
-
-          attributes do
-            uuid_primary_key :id
-
-            attribute :subject, :string do
-              allow_nil? false
-              public? true
-            end
-
-            attribute :status, Status do
-              default :open
-              allow_nil? false
-            end
-          end
-        end
-        """,
-        "lib/test/support.ex" => """
-        defmodule Test.Support do
-          use Ash.Domain
-
-          resources do
-            resource Test.Support.Ticket
-          end
-        end
-        """
-      }
-    ]
-
-    assert test_project(opts)
-           |> apply_igniter!()
-           |> compile()
-           |> Igniter.compose_task("ash_phoenix.gen.live", [
-             "--domain",
-             "Elixir.Test.Support",
-             "--resource",
-             "Elixir.Test.Support.Ticket",
-             "--resourceplural",
-             "Tickets"
-           ])
+    Igniter.new()
+    |> Igniter.include_glob("**/.formatter.exs")
+    |> Igniter.include_glob(".formatter.exs")
+    |> Igniter.compose_task("ash_phoenix.gen.live", [
+      "--domain",
+      "Elixir.AshPhoenix.Test.Domain",
+      "--resource",
+      "Elixir.AshPhoenix.Test.Artist",
+      "--resourceplural",
+      "Artists"
+    ])
+    |> assert_creates(
+      form_path,
+      form_contents
+    )
   end
 
-  def compile(igniter) do
-    igniter.rewrite
-    |> Stream.map(fn source ->
-      Kernel.ParallelCompiler.async(fn ->
-        Code.compile_string(Rewrite.Source.get(source, :content))
-      end)
-    end)
-    |> Enum.to_list()
+  defp format_contents(contents, path) do
+    {formatter_function, _options} =
+      Mix.Tasks.Format.formatter_for_file(path)
 
-    igniter
+    formatter_function.(contents)
+  end
+
+  defp indent(string) do
+    string
+    |> String.split("\n", trim: true)
+    |> Enum.map_join("\n", &"  #{&1}")
   end
 end

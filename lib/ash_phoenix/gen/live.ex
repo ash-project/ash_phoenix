@@ -147,8 +147,11 @@ defmodule AshPhoenix.Gen.Live do
     contents =
       path
       |> template()
-      |> EEx.eval_file(assigns: assigns)
+      |> EEx.eval_file([assigns: assigns], trim: true)
       |> formatter_function.()
+      |> indent()
+      |> Code.format_string!()
+      |> IO.iodata_to_binary()
 
     Igniter.create_new_file(igniter, destination_path, contents, generate_opts)
   end
@@ -426,4 +429,10 @@ defmodule AshPhoenix.Gen.Live do
   defp default_options(_), do: []
 
   defp label(key), do: Phoenix.Naming.humanize(to_string(key))
+
+  defp indent(string) do
+    string
+    |> String.split("\n", trim: true)
+    |> Enum.map_join("\n", &"  #{&1}")
+  end
 end
