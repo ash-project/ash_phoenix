@@ -323,12 +323,6 @@ defmodule AshPhoenix.Gen.Live do
 
   defp web_path(igniter) do
     Igniter.Project.Module.proper_location(igniter, web_module(igniter))
-    |> Path.relative_to(root_path())
-  end
-
-  defp root_path do
-    Mix.Project.get().module_info[:compile][:source]
-    |> Path.dirname()
   end
 
   defp web_module(igniter) do
