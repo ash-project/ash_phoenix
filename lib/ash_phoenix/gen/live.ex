@@ -98,7 +98,7 @@ defmodule AshPhoenix.Gen.Live do
         igniter
       end
 
-    write_formatted_template(
+    igniter = write_formatted_template(
       igniter,
       "ash_phoenix.gen.live/show.ex.eex",
       "show.ex",

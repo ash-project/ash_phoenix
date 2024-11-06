@@ -104,64 +104,159 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
       """
       |> format_contents(form_path)
 
-    index_path  = "lib/ash_phoenix_web/live/artist_live/index.ex"
-    index_contents = """
-     defmodule AshPhoenixWeb.ArtistLive.Index do
+    index_path = "lib/ash_phoenix_web/live/artist_live/index.ex"
+
+    index_contents =
+      """
+       defmodule AshPhoenixWeb.ArtistLive.Index do
+         use AshPhoenixWeb, :live_view
+
+         @impl true
+         def render(assigns) do
+           ~H\"\"\"
+           <.header>
+             Listing Artists
+             <:actions>
+               <.link patch={~p"/Artists/new"}>
+                 <.button>New Artist</.button>
+               </.link>
+             </:actions>
+           </.header>
+
+           <.table
+             id="Artists"
+             rows={@streams.Artists}
+             row_click={fn {_id, artist} -> JS.navigate(~p"/Artists/\#{artist}") end}
+           >
+             <:col :let={{_id, artist}} label="Id"><%= artist.id %></:col>
+
+             <:col :let={{_id, artist}} label="Name"><%= artist.name %></:col>
+
+             <:action :let={{_id, artist}}>
+               <div class="sr-only">
+                 <.link navigate={~p"/Artists/\#{artist}"}>Show</.link>
+               </div>
+
+               <.link patch={~p"/Artists/\#{artist}/edit"}>Edit</.link>
+             </:action>
+
+             <:action :let={{id, artist}}>
+               <.link
+                 phx-click={JS.push("delete", value: %{id: artist.id}) |> hide("#\#{id}")}
+                 data-confirm="Are you sure?"
+               >
+                 Delete
+               </.link>
+             </:action>
+           </.table>
+
+           <.modal
+             :if={@live_action in [:new, :edit]}
+             id="artist-modal"
+             show
+             on_cancel={JS.patch(~p"/Artists")}
+           >
+             <.live_component
+               module={AshPhoenixWeb.ArtistLive.FormComponent}
+               id={(@artist && @artist.id) || :new}
+               title={@page_title}
+               current_user={@current_user}
+               action={@live_action}
+               artist={@artist}
+               patch={~p"/Artists"}
+             />
+           </.modal>
+           \"\"\"
+         end
+
+         @impl true
+         def mount(_params, _session, socket) do
+           {:ok,
+            socket
+            |> stream(:Artists, Ash.read!(AshPhoenix.Test.Artist, actor: socket.assigns[:current_user]))
+            |> assign_new(:current_user, fn -> nil end)}
+         end
+
+         @impl true
+         def handle_params(params, _url, socket) do
+           {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+         end
+
+         defp apply_action(socket, :edit, %{"id" => id}) do
+           socket
+           |> assign(:page_title, "Edit Artist")
+           |> assign(:artist, Ash.get!(AshPhoenix.Test.Artist, id, actor: socket.assigns.current_user))
+         end
+
+         defp apply_action(socket, :new, _params) do
+           socket
+           |> assign(:page_title, "New Artist")
+           |> assign(:artist, nil)
+         end
+
+         defp apply_action(socket, :index, _params) do
+           socket
+           |> assign(:page_title, "Listing Artists")
+           |> assign(:artist, nil)
+         end
+
+         @impl true
+         def handle_info({AshPhoenixWeb.ArtistLive.FormComponent, {:saved, artist}}, socket) do
+           {:noreply, stream_insert(socket, :Artists, artist)}
+         end
+
+         @impl true
+         def handle_event("delete", %{"id" => id}, socket) do
+           artist = Ash.get!(AshPhoenix.Test.Artist, id, actor: socket.assigns.current_user)
+           Ash.destroy!(artist, actor: socket.assigns.current_user)
+
+           {:noreply, stream_delete(socket, :Artists, artist)}
+         end
+       end
+      """
+      |> format_contents(index_path)
+
+    show_path = "lib/ash_phoenix_web/live/artist_live/show.ex"
+    show_contents = """
+     defmodule AshPhoenixWeb.ArtistLive.Show do
        use AshPhoenixWeb, :live_view
 
        @impl true
        def render(assigns) do
          ~H\"\"\"
          <.header>
-           Listing Artists
+           Artist <%= @artist.id %>
+           <:subtitle>This is a artist record from your database.</:subtitle>
+
            <:actions>
-             <.link patch={~p"/Artists/new"}>
-               <.button>New Artist</.button>
+             <.link patch={~p"/Artists/\#{@artist}/show/edit"} phx-click={JS.push_focus()}>
+               <.button>Edit artist</.button>
              </.link>
            </:actions>
          </.header>
 
-         <.table
-           id="Artists"
-           rows={@streams.Artists}
-           row_click={fn {_id, artist} -> JS.navigate(~p"/Artists/\#{artist}") end}
-         >
-           <:col :let={{_id, artist}} label="Id"><%= artist.id %></:col>
+         <.list>
+           <:item title="Id"><%= @artist.id %></:item>
 
-           <:col :let={{_id, artist}} label="Name"><%= artist.name %></:col>
+           <:item title="Name"><%= @artist.name %></:item>
+         </.list>
 
-           <:action :let={{_id, artist}}>
-             <div class="sr-only">
-               <.link navigate={~p"/Artists/\#{artist}"}>Show</.link>
-             </div>
-
-             <.link patch={~p"/Artists/\#{artist}/edit"}>Edit</.link>
-           </:action>
-
-           <:action :let={{id, artist}}>
-             <.link
-               phx-click={JS.push("delete", value: %{id: artist.id}) |> hide("#\#{id}")}
-               data-confirm="Are you sure?"
-             >
-               Delete
-             </.link>
-           </:action>
-         </.table>
+         <.back navigate={~p"/Artists"}>Back to Artists</.back>
 
          <.modal
-           :if={@live_action in [:new, :edit]}
+           :if={@live_action == :edit}
            id="artist-modal"
            show
-           on_cancel={JS.patch(~p"/Artists")}
+           on_cancel={JS.patch(~p"/Artists/\#{@artist}")}
          >
            <.live_component
              module={AshPhoenixWeb.ArtistLive.FormComponent}
-             id={(@artist && @artist.id) || :new}
+             id={@artist.id}
              title={@page_title}
-             current_user={@current_user}
              action={@live_action}
+             current_user={@current_user}
              artist={@artist}
-             patch={~p"/Artists"}
+             patch={~p"/Artists/\#{@artist}"}
            />
          </.modal>
          \"\"\"
@@ -169,53 +264,24 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
 
        @impl true
        def mount(_params, _session, socket) do
-         {:ok,
+         {:ok, socket}
+       end
+
+       @impl true
+       def handle_params(%{"id" => id}, _, socket) do
+         {:noreply,
           socket
-          |> stream(:Artists, Ash.read!(AshPhoenix.Test.Artist, actor: socket.assigns[:current_user]))
-          |> assign_new(:current_user, fn -> nil end)}
+          |> assign(:page_title, page_title(socket.assigns.live_action))
+          |> assign(:artist, Ash.get!(AshPhoenix.Test.Artist, id, actor: socket.assigns.current_user))}
        end
 
-       @impl true
-       def handle_params(params, _url, socket) do
-         {:noreply, apply_action(socket, socket.assigns.live_action, params)}
-       end
-
-       defp apply_action(socket, :edit, %{"id" => id}) do
-         socket
-         |> assign(:page_title, "Edit Artist")
-         |> assign(:artist, Ash.get!(AshPhoenix.Test.Artist, id, actor: socket.assigns.current_user))
-       end
-
-       defp apply_action(socket, :new, _params) do
-         socket
-         |> assign(:page_title, "New Artist")
-         |> assign(:artist, nil)
-       end
-
-       defp apply_action(socket, :index, _params) do
-         socket
-         |> assign(:page_title, "Listing Artists")
-         |> assign(:artist, nil)
-       end
-
-       @impl true
-       def handle_info({AshPhoenixWeb.ArtistLive.FormComponent, {:saved, artist}}, socket) do
-         {:noreply, stream_insert(socket, :Artists, artist)}
-       end
-
-       @impl true
-       def handle_event("delete", %{"id" => id}, socket) do
-         artist = Ash.get!(AshPhoenix.Test.Artist, id, actor: socket.assigns.current_user)
-         Ash.destroy!(artist, actor: socket.assigns.current_user)
-
-         {:noreply, stream_delete(socket, :Artists, artist)}
-       end
+       defp page_title(:show), do: "Show Artist"
+       defp page_title(:edit), do: "Edit Artist"
      end
     """
-    |> format_contents(index_path)
+    |> format_contents(show_path)
 
-
-    Igniter.new()
+    assert Igniter.new()
     |> Igniter.compose_task("ash_phoenix.gen.live", [
       "--domain",
       "Elixir.AshPhoenix.Test.Domain",
@@ -229,7 +295,7 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
       form_contents
     )
     |> assert_creates(index_path, index_contents)
-
+    |> assert_creates(show_path, show_contents)
   end
 
   defp format_contents(contents, path) do
@@ -238,5 +304,4 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
 
     formatter_function.(contents)
   end
-
 end
