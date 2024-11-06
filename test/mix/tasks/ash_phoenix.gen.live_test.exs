@@ -103,9 +103,6 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
       end
       """
       |> format_contents(form_path)
-      |> indent()
-      |> Code.format_string!()
-      |> IO.iodata_to_binary()
 
     Igniter.new()
     |> Igniter.include_glob("**/.formatter.exs")
@@ -131,9 +128,4 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
     formatter_function.(contents)
   end
 
-  defp indent(string) do
-    string
-    |> String.split("\n", trim: true)
-    |> Enum.map_join("\n", &"  #{&1}")
-  end
 end
