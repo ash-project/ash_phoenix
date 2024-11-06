@@ -98,14 +98,15 @@ defmodule AshPhoenix.Gen.Live do
         igniter
       end
 
-    igniter = write_formatted_template(
-      igniter,
-      "ash_phoenix.gen.live/show.ex.eex",
-      "show.ex",
-      web_live,
-      assigns,
-      generate_opts
-    )
+    igniter =
+      write_formatted_template(
+        igniter,
+        "ash_phoenix.gen.live/show.ex.eex",
+        "show.ex",
+        web_live,
+        assigns,
+        generate_opts
+      )
 
     if opts[:interactive?] do
       Mix.shell().info("""
@@ -147,7 +148,7 @@ defmodule AshPhoenix.Gen.Live do
     contents =
       path
       |> template()
-      |> EEx.eval_file([assigns: assigns])
+      |> EEx.eval_file(assigns: assigns)
       |> formatter_function.()
 
     Igniter.create_new_file(igniter, destination_path, contents, generate_opts)
@@ -423,5 +424,4 @@ defmodule AshPhoenix.Gen.Live do
   defp default_options(_), do: []
 
   defp label(key), do: Phoenix.Naming.humanize(to_string(key))
-
 end
