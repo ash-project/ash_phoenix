@@ -16,7 +16,7 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
     send(self(), {:mix_shell_input, :yes?, "n"})
     send(self(), {:mix_shell_input, :prompt, ""})
 
-    form_path = "lib/ash_phoenix_web.ex/live/artist_live/form_component.ex"
+    form_path = "lib/ash_phoenix_web/live/artist_live/form_component.ex"
 
     form_contents =
       """
@@ -104,9 +104,118 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
       """
       |> format_contents(form_path)
 
+    index_path  = "lib/ash_phoenix_web/live/artist_live/index.ex"
+    index_contents = """
+     defmodule AshPhoenixWeb.ArtistLive.Index do
+       use AshPhoenixWeb, :live_view
+
+       @impl true
+       def render(assigns) do
+         ~H\"\"\"
+         <.header>
+           Listing Artists
+           <:actions>
+             <.link patch={~p"/Artists/new"}>
+               <.button>New Artist</.button>
+             </.link>
+           </:actions>
+         </.header>
+
+         <.table
+           id="Artists"
+           rows={@streams.Artists}
+           row_click={fn {_id, artist} -> JS.navigate(~p"/Artists/\#{artist}") end}
+         >
+           <:col :let={{_id, artist}} label="Id"><%= artist.id %></:col>
+
+           <:col :let={{_id, artist}} label="Name"><%= artist.name %></:col>
+
+           <:action :let={{_id, artist}}>
+             <div class="sr-only">
+               <.link navigate={~p"/Artists/\#{artist}"}>Show</.link>
+             </div>
+
+             <.link patch={~p"/Artists/\#{artist}/edit"}>Edit</.link>
+           </:action>
+
+           <:action :let={{id, artist}}>
+             <.link
+               phx-click={JS.push("delete", value: %{id: artist.id}) |> hide("#\#{id}")}
+               data-confirm="Are you sure?"
+             >
+               Delete
+             </.link>
+           </:action>
+         </.table>
+
+         <.modal
+           :if={@live_action in [:new, :edit]}
+           id="artist-modal"
+           show
+           on_cancel={JS.patch(~p"/Artists")}
+         >
+           <.live_component
+             module={AshPhoenixWeb.ArtistLive.FormComponent}
+             id={(@artist && @artist.id) || :new}
+             title={@page_title}
+             current_user={@current_user}
+             action={@live_action}
+             artist={@artist}
+             patch={~p"/Artists"}
+           />
+         </.modal>
+         \"\"\"
+       end
+
+       @impl true
+       def mount(_params, _session, socket) do
+         {:ok,
+          socket
+          |> stream(:Artists, Ash.read!(AshPhoenix.Test.Artist, actor: socket.assigns[:current_user]))
+          |> assign_new(:current_user, fn -> nil end)}
+       end
+
+       @impl true
+       def handle_params(params, _url, socket) do
+         {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+       end
+
+       defp apply_action(socket, :edit, %{"id" => id}) do
+         socket
+         |> assign(:page_title, "Edit Artist")
+         |> assign(:artist, Ash.get!(AshPhoenix.Test.Artist, id, actor: socket.assigns.current_user))
+       end
+
+       defp apply_action(socket, :new, _params) do
+         socket
+         |> assign(:page_title, "New Artist")
+         |> assign(:artist, nil)
+       end
+
+       defp apply_action(socket, :index, _params) do
+         socket
+         |> assign(:page_title, "Listing Artists")
+         |> assign(:artist, nil)
+       end
+
+       @impl true
+       def handle_info({AshPhoenixWeb.ArtistLive.FormComponent, {:saved, artist}}, socket) do
+         {:noreply, stream_insert(socket, :Artists, artist)}
+       end
+
+       @impl true
+       def handle_event("delete", %{"id" => id}, socket) do
+         artist = Ash.get!(AshPhoenix.Test.Artist, id, actor: socket.assigns.current_user)
+         Ash.destroy!(artist, actor: socket.assigns.current_user)
+
+         {:noreply, stream_delete(socket, :Artists, artist)}
+       end
+     end
+    """
+    |> format_contents(index_path)
+
+
     Igniter.new()
-    |> Igniter.include_glob("**/.formatter.exs")
-    |> Igniter.include_glob(".formatter.exs")
     |> Igniter.compose_task("ash_phoenix.gen.live", [
       "--domain",
       "Elixir.AshPhoenix.Test.Domain",
@@ -119,6 +228,8 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
       form_path,
       form_contents
     )
+    |> assert_creates(index_path, index_contents)
+
   end
 
   defp format_contents(contents, path) do

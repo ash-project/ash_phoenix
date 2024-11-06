@@ -319,7 +319,10 @@ defmodule AshPhoenix.Gen.Live do
   end
 
   defp web_path(igniter) do
-    Igniter.Project.Module.proper_location(igniter, web_module(igniter))
+    web_module_path = Igniter.Project.Module.proper_location(igniter, web_module(igniter))
+    lib_dir = Path.dirname(web_module_path)
+
+    Path.join([lib_dir, Path.basename(web_module_path, ".ex")])
   end
 
   defp web_module(igniter) do
