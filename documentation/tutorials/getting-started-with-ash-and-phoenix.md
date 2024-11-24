@@ -512,4 +512,4 @@ See the power Ash can bring to your web app or API. [Get authentication working 
 
 ### Add an API (or two)
 
-Check out the [AshJsonApi](https://hexdocs.pm/ash_json_api/getting-started-with-json-api.html) and [AshGraphql](https://hexdocs.pm/ash_graphql/getting-started-with-graphql.html) extensions to effortlessly build APIs around your resources.
+Check out the [AshJsonApi](https://hexdocs.pm/ash_json_api/getting-started-with-ash-json-api.html) and [AshGraphql](https://hexdocs.pm/ash_graphql/getting-started-with-graphql.html) extensions to effortlessly build APIs around your resources.
