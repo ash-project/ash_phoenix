@@ -53,60 +53,10 @@ $ cd my_ash_phoenix_app
 
 ### Add Dependencies
 
-We now need to add Ash, AshPhoenix and AshPostgres to our Phoenix project. We need to add the dependencies to the `deps` function in our `mix.exs`. We'll also need to add dependencies to our `.formatter.exs` to ensure consistent formatting when using `mix format`.
-
-```elixir
-# mix.exs
-
-  def deps do
-    [
-      # use `mix hex.info <library_name>` to get the latest versions of each dependency, for example, `mix hex.info phoenix`
-      {:phoenix, "~> x.x"},
-      # ...
-      {:ash, "~> x.x"},
-      {:picosat_elixir, "~> x.x"},
-      {:ash_postgres, "~> x.x"},
-      {:ash_phoenix, "~> x.x"}
-    ]
-  end
-```
-
-Add `:ash` and `:ash_postgres` to your `.formatter.exs` file.
-
-```elixir
-# .formatter.exs
-[
-  import_deps: [..., :ash, :ash_postgres],
-  ...
-]
-```
-
-Now in the terminal install these new dependencies.
+We now need to add Ash, AshPhoenix and AshPostgres to our Phoenix project. In the terminal install these new dependencies.
 
 ```bash
 $ mix deps.get
-```
-
-> ### Picosat installation issues? {: .info}
->
-> If you have trouble compiling `picosat_elixir`, then replace `{:picosat_elixir, "~> 0.2"}` with `{:simple_sat, "~> 0.1"}` to use a simpler (but mildly slower) solver. You can always switch back to `picosat_elixir` later once you're done with the tutorial.
-
-### Use `AshPostgres.Repo`
-
-We need to swap `Ecto.Repo` for `AshPostgres.Repo`. `AshPostgres.Repo` enriches your repo with additional AshPostgres specific behaviour, but is essentially a thin wrapper around `Ecto.Repo`.
-To use `AshPostgres.Repo` change your repo module to look like this:
-
-```elixir
-# lib/my_ash_phoenix_app/repo.ex
-
-defmodule MyAshPhoenixApp.Repo do
-  use AshPostgres.Repo, otp_app: :my_ash_phoenix_app
-
-  # Installs extensions that ash commonly uses
-  def installed_extensions do
-    ["ash-functions", "uuid-ossp", "citext"]
-  end
-end
 ```
 
 ### Edit Config
