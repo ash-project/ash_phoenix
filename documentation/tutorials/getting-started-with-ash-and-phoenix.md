@@ -51,14 +51,6 @@ $ cd my_ash_phoenix_app
 >
 > Do _not_ run `mix ecto.create`, (as it asks you to) we will do this the Ash way later.
 
-### Add Dependencies
-
-We now need to add Ash, AshPhoenix and AshPostgres to our Phoenix project. In the terminal install these new dependencies.
-
-```bash
-$ mix deps.get
-```
-
 ### Edit Config
 
 We need to specify the Ash domains that our application uses.
