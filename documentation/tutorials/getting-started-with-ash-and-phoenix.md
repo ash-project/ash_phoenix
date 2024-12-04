@@ -41,7 +41,7 @@ First we need to install the Phoenix project generator, then we'll run the gener
 $ mix archive.install hex phx_new
 
 # generate Phoenix project
-$ mix phx.new my_ash_phoenix_app
+$ mix igniter.new my_ash_phoenix_app --install ash,ash_phoenix,ash_postgres --with phx.new
 
 # cd into project
 $ cd my_ash_phoenix_app
