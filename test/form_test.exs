@@ -315,6 +315,14 @@ defmodule AshPhoenix.FormTest do
     assert form.valid? == false
   end
 
+  test "validation errors in before action hooks result in valid? false form" do
+    form = Form.for_create(Post, :create_with_before_action, domain: Domain)
+    form = AshPhoenix.Form.validate(form, %{"text" => "text"})
+    {:error, form} = Form.submit(form, params: %{"text" => "text2"})
+
+    refute form.valid?
+  end
+
   test "blank form values unset - helps support dead view forms" do
     form =
       Form.for_create(PostWithDefault, :create,

@@ -2044,6 +2044,7 @@ defmodule AshPhoenix.Form do
                %{form | source: query},
                errors
              )
+             |> Map.put(:valid?, false)
              |> carry_over_errors()
              |> update_all_forms(fn form ->
                %{form | just_submitted?: true, submitted_once?: true}
@@ -2075,6 +2076,7 @@ defmodule AshPhoenix.Form do
                errors
              )
              |> carry_over_errors()
+             |> Map.put(:valid?, false)
              |> update_all_forms(fn form ->
                %{form | just_submitted?: true, submitted_once?: true}
              end)
@@ -2105,6 +2107,7 @@ defmodule AshPhoenix.Form do
                %{form | source: changeset},
                errors
              )
+             |> Map.put(:valid?, false)
              |> carry_over_errors()
              |> update_all_forms(fn form ->
                %{form | just_submitted?: true, submitted_once?: true}
@@ -2135,7 +2138,8 @@ defmodule AshPhoenix.Form do
          form
          |> update_all_forms(fn form -> %{form | submitted_once?: true, just_submitted?: true} end)
          |> synthesize_action_errors()
-         |> carry_over_errors()}
+         |> carry_over_errors()
+         |> Map.put(:valid?, false)}
       end
     end
   end
