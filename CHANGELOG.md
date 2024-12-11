@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.9](https://github.com/ash-project/ash_phoenix/compare/v2.1.8...v2.1.9) (2024-12-11)
+
+
+
+
+### Bug Fixes:
+
+* ensure that errors on before_action hooks invalidate the form
+
+### Improvements:
+
+* Migrate phoenix gen to igniter (#261)
+
+* add `AshPhoenix.Form.update_params/1`
+
 ## [v2.1.8](https://github.com/ash-project/ash_phoenix/compare/v2.1.7...v2.1.8) (2024-10-29)
 
 
