@@ -62,6 +62,30 @@ defmodule AshPhoenix.Form do
     |> to_form()
   ```
 
+  ## Working with compound types
+  Compound types, such as `Ash.Money`, will need some extra work to make it work.
+
+  For instance, when working with the `Transfer` type in `AshDoubleEntry.Transfer`, it will have the `Ash.Money` type for `amount`. When rendering the forms, you should do as follows:
+  ```
+  <.input
+      name={@form[:amount].name <> "[amount]"}
+      id={@form[:amount].id <> "_amount"}
+      label="Amount"
+      value={if(@form[:amount].value, do: @form[:amount].value.amount)}
+    />
+    <.input
+      type="select"
+      name={@form[:amount].name <> "[currency]"}
+      id={@form[:amount].id <> "_currency"}
+      options={[:USD, :HKD, :EUR]}
+      label="Currency"
+      value={if(@form[:amount].value, do: @form[:amount].value.currency)}
+    />
+  ```
+
+  The above will allow the fields to be used by the `AshPhoenix.Form` when creating or updating a Transfer.
+  You can follow the same style with other compound types.
+
   ## LiveView
   `AshPhoenix.Form` (unlike ecto changeset based forms) expects to be reused throughout the lifecycle of the liveview.
 
