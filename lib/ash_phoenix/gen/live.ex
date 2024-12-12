@@ -2,8 +2,8 @@ defmodule AshPhoenix.Gen.Live do
   @moduledoc false
 
   def generate_from_cli(%Igniter{} = igniter, options) do
-    domain = Keyword.fetch!(options, :domain) |> String.to_existing_atom()
-    resource = Keyword.fetch!(options, :resource) |> String.to_existing_atom()
+    domain = Keyword.fetch!(options, :domain) |> Igniter.Project.Module.parse()
+    resource = Keyword.fetch!(options, :resource) |> Igniter.Project.Module.parse()
     resource_plural = Keyword.fetch!(options, :resourceplural)
     opts = []
 
