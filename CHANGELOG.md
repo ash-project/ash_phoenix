@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.10](https://github.com/ash-project/ash_phoenix/compare/v2.1.9...v2.1.10) (2024-12-12)
+
+
+
+
+### Bug Fixes:
+
+* use Igniter.Project.Module.parse to get module names for generator (#274)
+
 ## [v2.1.9](https://github.com/ash-project/ash_phoenix/compare/v2.1.8...v2.1.9) (2024-12-11)
 
 
