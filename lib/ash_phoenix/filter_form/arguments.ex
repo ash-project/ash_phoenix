@@ -22,13 +22,13 @@ defmodule AshPhoenix.FilterForm.Arguments do
 
       cond do
         Ash.Expr.expr?(value) && argument.allow_expr? ->
-          {Map.put(arg_values, argument.name, nil), errors}
+          {arg_values, errors}
 
         Ash.Expr.expr?(value) ->
           {arg_values, ["Argument #{argument.name} does not support expressions!" | errors]}
 
         is_nil(value) && argument.allow_nil? ->
-          {Map.put(arg_values, argument.name, nil), errors}
+          {arg_values, errors}
 
         is_nil(value) ->
           {arg_values, ["Argument #{argument.name} is required" | errors]}

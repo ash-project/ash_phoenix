@@ -3257,20 +3257,22 @@ defmodule AshPhoenix.Form do
   This can be used for adding errors from different sources to a form. Keep in mind, if they don't match
   a field on the form (typically extracted via the `field` key in the error), they won't be displayed by default.
 
+  See `Ash.Error.to_ash_error/3` for more on supported values for `error`.
+
   # Options
 
   - `:path` - The path to add the error to. If the error(s) already have a path, don't specify a path yourself.
   """
-  def add_error(form, path, opts \\ [])
+  def add_error(form, error, opts \\ [])
 
-  def add_error(%Phoenix.HTML.Form{} = form, path, opts) do
+  def add_error(%Phoenix.HTML.Form{} = form, error, opts) do
     form.source
-    |> add_error(path, opts)
+    |> add_error(error, opts)
     |> Phoenix.HTML.FormData.to_form(form.options)
   end
 
   def add_error(form, error, opts) do
-    error = Ash.Error.to_error_class(error)
+    error = Ash.Error.to_ash_error(error)
 
     error =
       if opts[:path] do
@@ -3291,8 +3293,7 @@ defmodule AshPhoenix.Form do
           Ash.ActionInput.add_error(form.source, error)
       end
 
-    %{form | source: new_source}
-    |> set_validity()
+    %{form | source: new_source, valid?: false}
     |> carry_over_errors()
   end
 
