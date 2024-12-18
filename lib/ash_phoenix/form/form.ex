@@ -758,16 +758,16 @@ defmodule AshPhoenix.Form do
            tenant: form.source.tenant
          ) do
       {:ok, false, %{stacktrace: %{stacktrace: stacktrace}} = exception} ->
-        reraise exception, stacktrace
+        reraise Ash.Error.to_error_class(exception, stacktrace: stacktrace), stacktrace
 
       {:error, %{stacktrace: %{stacktrace: stacktrace}} = exception} ->
-        reraise exception, stacktrace
+        reraise Ash.Error.to_error_class(exception, stacktrace: stacktrace), stacktrace
 
       {:ok, false, exception} ->
-        raise exception
+        raise Ash.Error.to_error_class(exception)
 
       {:error, exception} ->
-        raise exception
+        raise Ash.Error.to_error_class(exception)
 
       {:ok, true} ->
         form
