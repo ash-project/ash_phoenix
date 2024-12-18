@@ -3293,7 +3293,7 @@ defmodule AshPhoenix.Form do
           Ash.ActionInput.add_error(form.source, error)
       end
 
-    %{form | source: new_source, valid?: false}
+    %{form | source: new_source, valid?: false, errors: true}
     |> carry_over_errors()
   end
 

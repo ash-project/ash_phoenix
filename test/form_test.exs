@@ -981,6 +981,27 @@ defmodule AshPhoenix.FormTest do
                 ]}
              ]
     end
+
+    test "add_error" do
+      error =
+        Ash.Error.Changes.InvalidAttribute.exception(
+          field: :name,
+          message: "is invalid"
+        )
+
+      form =
+        Artist
+        |> Form.for_action(:create)
+        |> Form.validate(%{name: "name"})
+
+      [] = Form.errors(form)
+
+      form =
+        form
+        |> Form.add_error(error)
+
+      assert Form.errors(form) == [name: "is invalid"]
+    end
   end
 
   describe "data" do
