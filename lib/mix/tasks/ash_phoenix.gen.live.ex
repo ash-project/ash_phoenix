@@ -63,17 +63,16 @@ else
     Generates liveviews for a given domain and resource.
     """
 
-  def run(_argv) do
-    Mix.shell().error("""
-    The task 'ash_phoenix.gen.live' requires igniter to be run.
+    def run(_argv) do
+      Mix.shell().error("""
+      The task 'ash_phoenix.gen.live' requires igniter to be run.
 
-    Please install igniter and try again.
+      Please install igniter and try again.
 
-    For more information, see: https://hexdocs.pm/igniter
-    """)
+      For more information, see: https://hexdocs.pm/igniter
+      """)
 
-    exit({:shutdown, 1})
+      exit({:shutdown, 1})
+    end
   end
-end
-
 end
