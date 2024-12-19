@@ -3256,6 +3256,7 @@ defmodule AshPhoenix.Form do
 
   This can be used for adding errors from different sources to a form. Keep in mind, if they don't match
   a field on the form (typically extracted via the `field` key in the error), they won't be displayed by default.
+  Ensure that the `errors` field of the form is set to `true` if you want the errors to be visible.
 
   See `Ash.Error.to_ash_error/3` for more on supported values for `error`.
 
