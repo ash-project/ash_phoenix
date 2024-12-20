@@ -5,6 +5,23 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.11](https://github.com/ash-project/ash_phoenix/compare/v2.1.10...v2.1.11) (2024-12-20)
+
+
+
+
+### Bug Fixes:
+
+* only ever raise error classes
+
+### Improvements:
+
+* make igniter optional
+
+* simplify setting valid on `AshPhoenix.Form.add_error/3`
+
+* don't populate args that aren't set
+
 ## [v2.1.10](https://github.com/ash-project/ash_phoenix/compare/v2.1.9...v2.1.10) (2024-12-12)
 
 
