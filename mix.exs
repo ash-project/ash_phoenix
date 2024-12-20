@@ -62,6 +62,7 @@ defmodule AshPhoenix.MixProject do
         {"README.md", title: "Home"},
         "documentation/tutorials/getting-started-with-ash-and-phoenix.md",
         "documentation/topics/union-forms.md",
+        "documentation/dsls/DSL-AshPhoenix.md",
         "CHANGELOG.md"
       ],
       groups_for_extras: [
@@ -70,6 +71,10 @@ defmodule AshPhoenix.MixProject do
         Topics: ~r'documentation/topics',
         "About AshPhoenix": [
           "CHANGELOG.md"
+        ],
+        Reference: [
+          ~r"documentation/topics/reference",
+          ~r"documentation/dsls"
         ]
       ],
       before_closing_head_tag: fn type ->
@@ -132,6 +137,7 @@ defmodule AshPhoenix.MixProject do
       {:phoenix, "~> 1.5.6 or ~> 1.6"},
       {:phoenix_html, "~> 4.0"},
       {:phoenix_live_view, "~> 0.20.3 or ~> 1.0 or ~> 1.0.0-rc.1"},
+      {:spark, "~> 2.1 and >= 2.2.29"},
       {:simple_sat, "~> 0.1", only: [:dev, :test]},
       {:git_ops, "~> 2.5", only: [:dev, :test]},
       {:ex_doc, "~> 0.32", only: [:dev, :test], override: true},
@@ -157,8 +163,18 @@ defmodule AshPhoenix.MixProject do
 
   defp aliases do
     [
-      docs: ["docs", "spark.replace_doc_links"],
-      sobelow: "sobelow --skip -i Config.Secrets --ignore-files lib/ash_phoenix/gen/live.ex"
+      sobelow: "sobelow --skip -i Config.Secrets --ignore-files lib/ash_phoenix/gen/live.ex",
+      docs: [
+        "spark.cheat_sheets",
+        "docs",
+        "spark.replace_doc_links",
+        "spark.cheat_sheets_in_search"
+      ],
+      credo: "credo --strict",
+      format: "format",
+      "spark.cheat_sheets_in_search": "spark.cheat_sheets_in_search --extensions AshPhoenix",
+      "spark.formatter": "spark.formatter --extensions AshPhoenix",
+      "spark.cheat_sheets": "spark.cheat_sheets --extensions AshPhoenix"
     ]
   end
 end

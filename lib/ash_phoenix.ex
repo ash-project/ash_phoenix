@@ -2,6 +2,8 @@ defmodule AshPhoenix do
   @moduledoc """
   An extension to add form builders to the code interface.
 
+  There is currently no DSL for this extension.
+
   This defines a `form_to_<name>` function for each code interface
   function. Positional arguments are ignored, given that in forms,
   all input typically comes from the `params` map.
