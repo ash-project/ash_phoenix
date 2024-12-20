@@ -1,6 +1,6 @@
 defmodule AshPhoenix.Test.Domain do
   @moduledoc false
-  use Ash.Domain
+  use Ash.Domain, extensions: [AshPhoenix]
 
   resources do
     resource(AshPhoenix.Test.Artist)
@@ -9,7 +9,11 @@ defmodule AshPhoenix.Test.Domain do
     resource(AshPhoenix.Test.Post)
     resource(AshPhoenix.Test.PostLink)
     resource(AshPhoenix.Test.PostWithDefault)
-    resource(AshPhoenix.Test.User)
+
+    resource AshPhoenix.Test.User do
+      define :update_user, action: :update
+    end
+
     resource(AshPhoenix.Test.DeepNestedUnionResource)
     resource(AshPhoenix.Test.SimplePost)
   end

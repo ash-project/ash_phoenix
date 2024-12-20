@@ -3,7 +3,8 @@ defmodule AshPhoenix.Test.User do
 
   use Ash.Resource,
     domain: AshPhoenix.Test.Domain,
-    data_layer: Ash.DataLayer.Ets
+    data_layer: Ash.DataLayer.Ets,
+    extensions: [AshPhoenix]
 
   ets do
     private?(true)
@@ -12,6 +13,10 @@ defmodule AshPhoenix.Test.User do
   attributes do
     uuid_primary_key(:id)
     attribute(:email, :string, allow_nil?: false, public?: true)
+  end
+
+  code_interface do
+    define :create, args: [:email]
   end
 
   actions do

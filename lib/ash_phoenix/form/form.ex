@@ -21,6 +21,74 @@ defmodule AshPhoenix.Form do
     false positive, specifically if a nested form is removed and then a new one is added with the exact same values.
   - `.touched_forms` - A MapSet containing all keys in the form that have been modified. When submitting a form, only these keys are included in the parameters.
 
+  ### Forms in the code interface
+
+  Throughout this documentation you will see forms created with `AshPhoenix.Form.for_create/3` and other functions like it.
+  This is perfectly fine to do, however there is a way to use `AshPhoenix.Form` in a way that adds clarity to its usage
+  and makes it easier to find usage of each action. Code interfaces allow us to do this for standard action calls, i.e:
+
+  ```elixir
+  resources do
+    resource MyApp.Accounts.User do
+      define :register_with_password, args: [:email, :password]
+      define :update_user, action: :update, args: [:email, :password]
+    end
+  end
+  ```
+
+  Adding the `AshPhoenix` extension to our domains and resources, like so:
+
+  ```elixir
+  use Ash.Domain,
+    extensions: [AshPhoenix]
+  ```
+
+  will cause another function to be generated for each definition, beginning with `form_to_`.
+
+  With this extension, the standard setup for forms looks something like this:
+
+  ```elixir
+  def render(assigns) do
+    ~H\"""
+    <.form for={@form} phx-change="validate" phx-submit="submit">
+      <.input field={@form[:email]} />
+      <.input field={@form[:password]} />
+      <.button type="submit" />
+    </.form>
+    \"""
+  end
+
+  def mount(_params, _session, socket) do
+    # Here we call our new generated function to create the form
+    {:ok, assign(socket, form: MyApp.Accounts.form_to_register_with_password())}
+  end
+
+  def handle_event(socket, "validate", %{"form" => params}) do
+    form = AshPhoenix.Form.validate(socket.assigns.form, params)
+    {:noreply, assign(socket, :form, form)}
+  end
+
+  def handle_event(socket, "submit", %{"form" => params}) do
+    case AshPhoenix.Form.submit(socket.assigns.form, params: params) do
+      {:ok, _user} ->
+        socket =
+          socket
+          |> put_flash(:success, "User registered successfully")
+          |> push_navigate(to: ~p"/")
+
+        {:noreply, socket}
+
+      {:error, form} ->
+        socket =
+          socket
+          |> put_flash(:error, "Something went wrong")
+          |> assign(:form, form)
+
+        {:noreply, socket}
+    end
+  end
+  ```
+
   ### Working with related data
 
   If your resource action accepts related data, (for example a managed relationship argument, or an embedded resource attribute), you can
@@ -391,6 +459,11 @@ defmodule AshPhoenix.Form do
     ]
   ]
 
+  @doc false
+  def for_opts, do: @for_opts
+  @doc false
+  def nested_form_opts, do: @nested_form_opts
+
   defp validate_opts_with_extra_keys(opts, schema) do
     keys = Keyword.keys(schema)
 
@@ -410,7 +483,8 @@ defmodule AshPhoenix.Form do
   function will be called instead. So use this function when you don't know
   the type of the action, or it is a generic action.
 
-  Options:
+  ## Options
+
   #{Spark.Options.docs(@for_opts)}
 
   Any *additional* options will be passed to the underlying call to build the source, i.e
