@@ -85,7 +85,6 @@ defmodule MyAshPhoenixApp.Blog do
       # Define an interface for calling resource actions.
       define :create_post, action: :create
       define :list_posts, action: :read
-      define :update_post, action: :update
       define :destroy_post, action: :destroy
       define :get_post, args: [:id], action: :by_id
     end
@@ -355,13 +354,6 @@ defmodule MyAshPhoenixAppWeb.PostsLive do
       <.input type="text" field={f[:title]} placeholder="input title" />
       <.button class="mt-2" type="submit">Create</.button>
     </.form>
-    <h2 class="mt-8 text-lg">Update Post</h2>
-    <.form :let={f} for={@update_form} phx-submit="update_post">
-      <.label>Post Name</.label>
-      <.input type="select" field={f[:post_id]} options={@post_selector} />
-      <.input type="text" field={f[:content]} placeholder="input content" />
-      <.button class="mt-2" type="submit">Update</.button>
-    </.form>
     """
   end
 
@@ -372,8 +364,7 @@ defmodule MyAshPhoenixAppWeb.PostsLive do
       assign(socket,
         posts: posts,
         post_selector: post_selector(posts),
-        create_form: AshPhoenix.Form.for_create(Post, :create) |> to_form(),
-        update_form: AshPhoenix.Form.for_update(List.first(posts, %Post{}), :update) |> to_form()
+        create_form: AshPhoenix.Form.for_create(Post, :create) |> to_form()
       )
 
     {:ok, socket}
@@ -395,18 +386,6 @@ defmodule MyAshPhoenixAppWeb.PostsLive do
 
       {:error, create_form} ->
         {:noreply, assign(socket, create_form: create_form)}
-    end
-  end
-
-  def handle_event("update_post", %{"form" => form_params}, socket) do
-    case AshPhoenix.Form.submit(socket.assigns.update_form, params: form_params) do
-      {:ok, _post} ->
-        posts = Blog.list_posts!()
-
-        {:noreply, assign(socket, posts: posts, post_selector: post_selector(posts))}
-
-      {:error, update_form} ->
-        {:noreply, assign(socket, update_form: update_form)}
     end
   end
 
