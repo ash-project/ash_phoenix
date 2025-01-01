@@ -325,7 +325,7 @@ accepting any default values and following the instructions listed at the end fo
 the liveview to your router.
 
 ```bash
-mix ash_phoenix.gen.live MyAshPhoenixApp.Blog MyAshPhoenixApp.Blog.Post --resource-plural posts
+mix ash_phoenix.gen.live --domain MyAshPhoenixApp.Blog --resource MyAshPhoenixApp.Blog.Post --resourceplural posts
 ```
 
 Now, start the web server by running `mix phx.server`. Then, visit the posts route that you added in your browser to see what we have just created.
