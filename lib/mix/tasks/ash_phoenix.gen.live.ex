@@ -2,7 +2,7 @@ if Code.ensure_loaded?(Igniter) do
   defmodule Mix.Tasks.AshPhoenix.Gen.Live do
     use Igniter.Mix.Task
 
-    @example "mix ash_phoenix.gen.live --domain ExistingDomainName --resource ExistingResourceName --resource-plural ExistingResourceNames"
+    @example "mix ash_phoenix.gen.live --domain ExistingDomainName --resource ExistingResourceName --resourceplural ExistingResourceNames"
 
     @shortdoc "Generates liveviews for a given domain and resource."
 
