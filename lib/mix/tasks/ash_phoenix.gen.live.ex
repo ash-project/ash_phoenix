@@ -9,8 +9,6 @@ if Code.ensure_loaded?(Igniter) do
     @moduledoc """
     #{@shortdoc}
 
-    Generates liveviews for a given domain and resource.
-
     The domain and resource must already exist, this task does not define them.
 
     ## Example
