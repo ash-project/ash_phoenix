@@ -321,8 +321,8 @@ Now isn't that more convenient?
 
 Now we know how to interact with our resource, we can generate a liveview for it!
 let's run `mix ash_phoenix.gen.live` to generate a liveview! Run the following command,
-accepting any default values and following the instructions listed at the end for adding
-the liveview to your router.
+declining to name your actor, accepting any other default values, and following the 
+instructions listed at the end for adding the liveview to your router.
 
 ```bash
 mix ash_phoenix.gen.live --domain MyAshPhoenixApp.Blog --resource MyAshPhoenixApp.Blog.Post --resourceplural posts
