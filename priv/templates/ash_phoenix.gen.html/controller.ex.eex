@@ -4,7 +4,7 @@ defmodule <%= @app_name %>Web.<%= @resource %>Controller do
   alias <%= inspect @full_resource %>
 
   def index(conn, _params) do
-    <%= @plural %> = <%= @resource %>.read!()
+    <%= @plural %> = Ash.read!(<%= @resource %>)
     render(conn, :index, <%= @plural %>: <%= @plural %>)
   end
 
@@ -30,18 +30,18 @@ defmodule <%= @app_name %>Web.<%= @resource %>Controller do
   end
 
   def show(conn, %{"id" => id}) do
-    <%= @singular %> = <%= @resource %>.by_id!(id)
+    <%= @singular %> = Ash.get!(<%= @resource %>, id)
     render(conn, :show, <%= @singular %>: <%= @singular %>)
   end
 
   def edit(conn, %{"id" => id}) do
-    <%= @singular %> = <%= @resource %>.by_id!(id)
+    <%= @singular %> = Ash.get!(<%= @resource %>, id)
 
     render(conn, :edit, <%= @singular %>: <%= @singular %>, form: update_form(<%= @singular %>))
   end
 
   def update(conn, %{"<%= @singular %>" => <%= @singular %>_params, "id" => id}) do
-    <%= @singular %> = <%= @resource %>.by_id!(id)
+    <%= @singular %> = Ash.get!(<%= @resource %>, id)
 
     <%= @singular %>
     |> update_form(<%= @singular %>_params)
@@ -60,8 +60,8 @@ defmodule <%= @app_name %>Web.<%= @resource %>Controller do
   end
 
   def delete(conn, %{"id" => id}) do
-    <%= @singular %> = <%= @resource %>.by_id!(id)
-    :ok = <%= @resource %>.destroy(<%= @singular %>)
+    <%= @singular %> = Ash.get!(<%= @resource %>, id)
+    Ash.destroy!(<%= @singular %>)
 
     conn
     |> put_flash(:info, "<%= @resource %> deleted successfully.")

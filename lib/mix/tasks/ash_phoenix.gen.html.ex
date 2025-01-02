@@ -81,14 +81,14 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
     app_web_path = "lib/#{app_name_underscore()}_web"
 
     %{
-      "index.html.heex" => "#{app_web_path}/controllers/#{resource_html_dir}/index.html.heex",
-      "show.html.heex" => "#{app_web_path}/controllers/#{resource_html_dir}/show.html.heex",
-      "resource_form.html.heex" =>
+      "index.html.heex.eex" => "#{app_web_path}/controllers/#{resource_html_dir}/index.html.heex",
+      "show.html.heex.eex" => "#{app_web_path}/controllers/#{resource_html_dir}/show.html.heex",
+      "resource_form.html.heex.eex" =>
         "#{app_web_path}/controllers/#{resource_html_dir}/#{opts[:singular]}_form.html.heex",
-      "new.html.heex" => "#{app_web_path}/controllers/#{resource_html_dir}/new.html.heex",
-      "edit.html.heex" => "#{app_web_path}/controllers/#{resource_html_dir}/edit.html.heex",
-      "controller.ex" => "#{app_web_path}/controllers/#{opts[:singular]}_controller.ex",
-      "html.ex" => "#{app_web_path}/controllers/#{opts[:singular]}_html.ex"
+      "new.html.heex.eex" => "#{app_web_path}/controllers/#{resource_html_dir}/new.html.heex",
+      "edit.html.heex.eex" => "#{app_web_path}/controllers/#{resource_html_dir}/edit.html.heex",
+      "controller.ex.eex" => "#{app_web_path}/controllers/#{opts[:singular]}_controller.ex",
+      "html.ex.eex" => "#{app_web_path}/controllers/#{opts[:singular]}_html.ex"
     }
   end
 

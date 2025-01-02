@@ -3,7 +3,7 @@ defmodule AshPhoenix.FormTest do
   import ExUnit.CaptureLog
 
   alias AshPhoenix.Form
-  alias AshPhoenix.Test.{Domain, Artist, Author, Comment, Post, PostWithDefault}
+  alias AshPhoenix.Test.{Artist, Author, Comment, Domain, Post, PostWithDefault}
   alias Phoenix.HTML.FormData
 
   defp form_for(form, _) do
@@ -968,8 +968,6 @@ defmodule AshPhoenix.FormTest do
         )
         |> List.first()
 
-      # Note: I'm not 100% which of the 3 errors messages are preferred. The opts are get_text bindings for error translation
-      # In the Phoenix core components the error translation is done `Gettext.dpgettext(MyApp.Gettext, domain, msgctxt, msgid, bindings)` with our tuple being `{msgid, bindings}`
       assert Keyword.get_values(inputs_for_nested_form.errors, :limit) == [
                {"is invalid", []}
              ]
