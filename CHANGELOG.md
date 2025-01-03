@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.13](https://github.com/ash-project/ash_phoenix/compare/v2.1.12...v2.1.13) (2025-01-03)
+
+
+
+
+### Bug Fixes:
+
+* ensure that form interfaces properly set data
+
+* update html generators to properly call actions
+
 ## [v2.1.12](https://github.com/ash-project/ash_phoenix/compare/v2.1.11...v2.1.12) (2024-12-22)
 
 
