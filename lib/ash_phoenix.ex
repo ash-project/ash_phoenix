@@ -119,7 +119,7 @@ defmodule AshPhoenix do
                    |> Ash.CodeInterface.trim_double_newlines()
 
               def unquote(name)(record, opts \\ []) do
-                AshPhoenix.Form.for_action(struct(unquote(resource)), unquote(action.name), opts)
+                AshPhoenix.Form.for_action(record, unquote(action.name), opts)
               end
             end
 
