@@ -7,7 +7,9 @@ defmodule AshPhoenixTest do
   end
 
   test "extension defines functions on the domain" do
-    assert %AshPhoenix.Form{} =
-             AshPhoenix.Test.Domain.form_to_update_user(%AshPhoenix.Test.User{})
+    id = Ash.UUID.generate()
+
+    assert %AshPhoenix.Form{data: %{id: ^id}} =
+             AshPhoenix.Test.Domain.form_to_update_user(%AshPhoenix.Test.User{id: id})
   end
 end
