@@ -215,7 +215,7 @@ we pass the full path to the form being removed.
   <.inputs_for :let={location} field={@form[:locations]}>
     <.input field={location[:name]} />
 
-    <.button type="button" phx-click="add-form" phx-value-path={location.name}>
+    <.button type="button" phx-click="remove-form" phx-value-path={location.name}>
       <.icon name="hero-x-mark" />
     </.button>
   </.inputs_for>
@@ -223,7 +223,7 @@ we pass the full path to the form being removed.
 ```
 
 ```elixir
-def handle_event("add-form", %{"path" => path}, socket) do
+def handle_event("remove-form", %{"path" => path}, socket) do
   form = AshPhoenix.Form.remove_form(socket.assigns.form, path)
 
   {:noreply, assign(socket, :form, form)}
