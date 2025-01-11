@@ -64,7 +64,7 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 * Migrate phoenix gen to igniter (#261)
 
-* add `AshPhoenix.Form.update_params/1`
+* add `AshPhoenix.Form.update_params/2`
 
 ## [v2.1.8](https://github.com/ash-project/ash_phoenix/compare/v2.1.7...v2.1.8) (2024-10-29)
 

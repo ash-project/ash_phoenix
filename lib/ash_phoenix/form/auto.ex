@@ -420,7 +420,7 @@ defmodule AshPhoenix.Form.Auto do
         type: type,
         forms: [],
         sparse?: auto_opts[:sparse_lists?],
-        managed_relationship: {relationship.source, relationship.name},
+        managed_relationship: {relationship.source, relationship.name, manage_opts},
         must_load?:
           Ash.Changeset.ManagedRelationshipHelpers.must_load?(manage_opts, must_load_opts),
         updater: fn opts ->
@@ -579,7 +579,8 @@ defmodule AshPhoenix.Form.Auto do
                     {:_update,
                      [
                        resource: resource,
-                       managed_relationship: {relationship.source, relationship.name},
+                       managed_relationship:
+                         {relationship.source, relationship.name, manage_opts},
                        type: :single,
                        data: resource.__struct__(),
                        update_action: update_action
@@ -595,7 +596,8 @@ defmodule AshPhoenix.Form.Auto do
                     {:_update,
                      [
                        resource: resource,
-                       managed_relationship: {relationship.source, relationship.name},
+                       managed_relationship:
+                         {relationship.source, relationship.name, manage_opts},
                        type: :single,
                        data: resource.__struct__(),
                        update_action: update_action
@@ -627,7 +629,7 @@ defmodule AshPhoenix.Form.Auto do
           &(&1 ++
               auto(resource, action_name, auto_opts))
         )
-        |> add_join_form(relationship, rest)
+        |> add_join_form(relationship, rest, manage_opts)
     end
   end
 
@@ -651,7 +653,7 @@ defmodule AshPhoenix.Form.Auto do
           &(&1 ++
               auto(resource, action_name, auto_opts))
         )
-        |> add_join_form(relationship, rest)
+        |> add_join_form(relationship, rest, manage_opts)
     end
   end
 
@@ -665,7 +667,7 @@ defmodule AshPhoenix.Form.Auto do
         opts
 
       [{:join, _action_name, _fields} = join_action] ->
-        add_join_form(opts, relationship, [join_action])
+        add_join_form(opts, relationship, [join_action], manage_opts)
 
       [{source_dest_or_join, action_name} | rest] ->
         resource = rel_to_resource(source_dest_or_join, relationship)
@@ -678,13 +680,13 @@ defmodule AshPhoenix.Form.Auto do
           &(&1 ++
               auto(resource, action_name, auto_opts))
         )
-        |> add_join_form(relationship, rest)
+        |> add_join_form(relationship, rest, manage_opts)
     end
   end
 
-  defp add_join_form(opts, _relationship, []), do: opts
+  defp add_join_form(opts, _relationship, [], _), do: opts
 
-  defp add_join_form(opts, relationship, [{:join, action, fields}]) do
+  defp add_join_form(opts, relationship, [{:join, action, fields}], manage_opts) do
     action = Ash.Resource.Info.action(relationship.through, action)
 
     case action.type do
@@ -692,7 +694,7 @@ defmodule AshPhoenix.Form.Auto do
         Keyword.update!(opts, :forms, fn forms ->
           update_join_forms(forms,
             resource: relationship.through,
-            managed_relationship: {relationship.source, relationship.name},
+            managed_relationship: {relationship.source, relationship.name, manage_opts},
             type: :single,
             data: &get_join(&1, &2, relationship),
             update_fields: fields,
@@ -706,7 +708,7 @@ defmodule AshPhoenix.Form.Auto do
           update_join_forms(forms,
             resource: relationship.through,
             type: :single,
-            managed_relationship: {relationship.source, relationship.name},
+            managed_relationship: {relationship.source, relationship.name, manage_opts},
             create_fields: fields,
             merge?: true,
             create_action: action.name
@@ -717,7 +719,7 @@ defmodule AshPhoenix.Form.Auto do
         Keyword.update!(opts, :forms, fn forms ->
           update_join_forms(forms,
             resource: relationship.through,
-            managed_relationship: {relationship.source, relationship.name},
+            managed_relationship: {relationship.source, relationship.name, manage_opts},
             type: :single,
             data: &get_join(&1, &2, relationship),
             destroy_fields: fields,
@@ -898,19 +900,11 @@ defmodule AshPhoenix.Form.Auto do
 
   @doc false
   def accepted_attributes(resource, action) do
+    inputs = Ash.Resource.Info.action_inputs(resource, action.name)
+
     resource
     |> Ash.Resource.Info.attributes()
-    |> only_accepted(action)
-  end
-
-  defp only_accepted(_attributes, %{type: :read}), do: []
-
-  defp only_accepted(attributes, %{accept: nil, reject: reject}) do
-    Enum.filter(attributes, &(&1.name not in reject || []))
-  end
-
-  defp only_accepted(attributes, %{accept: accept}) do
-    Enum.filter(attributes, &(&1.name in accept))
+    |> Enum.filter(&(&1.name in inputs))
   end
 
   defp find_manage_change(argument, action) do

@@ -89,46 +89,9 @@ defmodule AshPhoenix.Form do
   end
   ```
 
-  ### Working with related data
+  ## Working with related or embedded data
 
-  If your resource action accepts related data, (for example a managed relationship argument, or an embedded resource attribute), you can
-  use Phoenix's `inputs_for` for that field, *but* you must do one of two things:
-
-  1. Tell AshPhoenix.Form to automatically derive this behavior from your action, for example:
-
-  ```elixir
-  form =
-    user
-    |> AshPhoenix.Form.for_update(:update, forms: [auto?: true])
-    |> to_form()
-  ```
-
-  2. Explicitly configure the behavior of it using the `forms` option. See `for_create/3` for more.
-
-  For example:
-
-  ```elixir
-  form =
-    user
-    |> AshPhoenix.Form.for_update(:update,
-      forms: [
-        profile: [
-          resource: MyApp.Profile,
-          data: user.profile,
-          create_action: :create,
-          update_action: :update
-          forms: [
-            emails: [
-              data: user.profile.emails,
-              resource: MyApp.UserEmail,
-              create_action: :create,
-              update_action: :update
-            ]
-          ]
-        ]
-      ])
-    |> to_form()
-  ```
+  See the [nested forms guide](/documentation/topics/nested-forms.md)
 
   ## Working with compound types
   Compound types, such as `Ash.Money`, will need some extra work to make it work.
@@ -153,84 +116,6 @@ defmodule AshPhoenix.Form do
 
   The above will allow the fields to be used by the `AshPhoenix.Form` when creating or updating a Transfer.
   You can follow the same style with other compound types.
-
-  ## LiveView
-  `AshPhoenix.Form` (unlike ecto changeset based forms) expects to be reused throughout the lifecycle of the liveview.
-
-  You can use Phoenix events to add and remove form entries and `submit/2` to submit the form, like so:
-
-  ```elixir
-  def render(assigns) do
-    ~H\"\"\"
-    <.simple_form for={@form} phx-change="validate" phx-submit="submit">
-      <%!-- Attributes for the parent resource --%>
-      <.input type="email" label="Email" field={@form[:email]} />
-      <%!-- Render nested forms for related data --%>
-      <.inputs_for :let={item_form} field={@form[:items]}>
-        <.input type="text" label="Item" field={item_form[:name]} />
-        <.input type="number" label="Amount" field={item_form[:amount]} />
-        <.button type="button" phx-click="remove_form" phx-value-path={item_form.name}>
-          Remove
-        </.button>
-      </.inputs_for>
-      <:actions>
-        <.button type="button" phx-click="add_form" phx-value-path={@form[:items].name}>
-          Add Item
-        </.button>
-        <.button>Save</.button>
-      </:actions>
-    </.simple_form>
-    \"\"\"
-  end
-
-  def mount(_params, _session, socket) do
-    form =
-      MyApp.Grocery.Order
-      |> AshPhoenix.Form.for_create(:create,
-        forms: [
-          items: [
-            type: :list,
-            resource: MyApp.Grocery.Item,
-            create_action: :create
-          ]
-        ]
-      )
-      |> AshPhoenix.Form.add_form([:items])
-      |> to_form()
-
-    {:ok, assign(socket, form: form)}
-  end
-
-  # In order to use the `add_form` and `remove_form` helpers, you
-  # need to make sure that you are validating the form on change
-  def handle_event("validate", %{"form" => params}, socket) do
-    form = AshPhoenix.Form.validate(socket.assigns.form, params)
-    {:noreply, assign(socket, form: form)}
-  end
-
-  def handle_event("submit", %{"form" => params}, socket) do
-    case AshPhoenix.Form.submit(socket.assigns.form, params: params) do
-      {:ok, order} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Saved order for \#{order.email}!")
-         |> push_navigate(to: ~p"/")}
-
-      {:error, form} ->
-        {:noreply, assign(socket, form: form)}
-    end
-  end
-
-  def handle_event("add_form", %{"path" => path}, socket) do
-    form = AshPhoenix.Form.add_form(socket.assigns.form, path)
-    {:noreply, assign(socket, form: form)}
-  end
-
-  def handle_event("remove_form", %{"path" => path}, socket) do
-    form = AshPhoenix.Form.remove_form(socket.assigns.form, path)
-    {:noreply, assign(socket, form: form)}
-  end
-  ```
   """
 
   @derive {Inspect, except: [:opts]}
@@ -638,12 +523,9 @@ defmodule AshPhoenix.Form do
 
   ## Nested Form Options
 
-  To automatically determine the nested forms available for a given form, use `forms: [auto?: true]`.
-  You can add additional nested forms by including them in the `forms` config alongside `auto?: true`.
-  See the module documentation of `AshPhoenix.Form.Auto` for more information. If you want to do some
-  manipulation of the auto forms, you can also call `AshPhoenix.Form.Auto.auto/2`, and then manipulate the
-  result and pass it to the `forms` option. To pass options, use `auto?: [option1: :value]`. See the
-  documentation of `AshPhoenix.Form.Auto` for more.
+  `AshPhoenix.Form` automatically determines the nested forms available based on an action's usage of
+  `change manage_relationship(...)`. See the [Related Forms](/documentation/topics/nested-forms.md)
+  for more.
 
   #{Spark.Options.docs(@nested_form_opts)}
   """
@@ -729,6 +611,14 @@ defmodule AshPhoenix.Form do
 
   Any *additional* options will be passed to the underlying call to `Ash.Changeset.for_update/4`. This means
   you can set things like the tenant/actor. These will be retained, and provided again when `Form.submit/3` is called.
+
+  ## Nested Form Options
+
+  `AshPhoenix.Form` automatically determines the nested forms available based on an action's usage of
+  `change manage_relationship(...)`. See the [Related Forms](/documentation/topics/nested-forms.md)
+  for more.
+
+  #{Spark.Options.docs(@nested_form_opts)}
   """
   @spec for_update(Ash.Resource.record(), action :: atom, opts :: Keyword.t()) :: t()
   def for_update(%resource{} = data, action, opts \\ []) do
@@ -856,6 +746,14 @@ defmodule AshPhoenix.Form do
 
   Any *additional* options will be passed to the underlying call to `Ash.Changeset.for_destroy/4`. This means
   you can set things like the tenant/actor. These will be retained, and provided again when `Form.submit/3` is called.
+
+  ## Nested Form Options
+
+  `AshPhoenix.Form` automatically determines the nested forms available based on an action's usage of
+  `change manage_relationship(...)`. See the [Related Forms](/documentation/topics/nested-forms.md)
+  for more.
+
+  #{Spark.Options.docs(@nested_form_opts)}
   """
   @spec for_destroy(Ash.Resource.record(), action :: atom, opts :: Keyword.t()) :: t()
   def for_destroy(%resource{} = data, action, opts \\ []) do
@@ -1046,6 +944,11 @@ defmodule AshPhoenix.Form do
 
   defp set_accessing_from(changeset_or_query, opts) do
     case opts[:accessing_from] do
+      {source, name, manage_opts} ->
+        set_context(changeset_or_query, %{
+          accessing_from: %{source: source, name: name, manage_relationship_opts: manage_opts}
+        })
+
       {source, name} ->
         set_context(changeset_or_query, %{
           accessing_from: %{source: source, name: name}
@@ -1449,8 +1352,12 @@ defmodule AshPhoenix.Form do
        ) do
     form.form_keys
     |> Enum.reduce({%{}, params}, fn {key, opts}, {forms, params} ->
+      params = add_nested(params, opts[:as] || key)
+
       case fetch_key(params, opts[:as] || key) do
         {:ok, form_params} when form_params != nil ->
+          form_params = sort_nested(params, form_params, opts[:as] || key)
+
           if opts[:type] == :list do
             form_params =
               if is_map(form_params) do
@@ -2234,7 +2141,9 @@ defmodule AshPhoenix.Form do
       else
         {:error,
          form
-         |> update_all_forms(fn form -> %{form | submitted_once?: true, just_submitted?: true} end)
+         |> update_all_forms(fn form ->
+           %{form | submitted_once?: true, just_submitted?: true}
+         end)
          |> synthesize_action_errors()
          |> carry_over_errors()
          |> Map.put(:valid?, false)}
@@ -2334,6 +2243,96 @@ defmodule AshPhoenix.Form do
   end
 
   @doc """
+  Sorts nested forms at the given path.
+
+  The following items can be given:
+  - `{:replace, path_without_index, [0, 1, 2]}` - indices can be strings or integers.
+  - `{:increment, path_to_form}` - increment the index of a specific form (swapping it with the next)
+  - `{:decrement, path_to_form}` - decrement the index of a specific form (swapping it with the previous)
+  """
+  def sort_forms(%Phoenix.HTML.Form{} = form, path, instruction) do
+    form.source
+    |> sort_forms(path, instruction)
+    |> Phoenix.HTML.FormData.to_form(form.options)
+  end
+
+  def sort_forms(forms, [], indices) when is_list(forms) and not is_list(indices) do
+    forms
+  end
+
+  def sort_forms(forms, [], indices) when is_list(forms) and is_list(indices) do
+    indices =
+      Enum.map(indices, fn index ->
+        if is_binary(index) do
+          String.to_integer(index)
+        else
+          index
+        end
+      end)
+
+    forms
+    |> Enum.with_index()
+    |> Enum.sort_by(fn {_form, index} ->
+      Enum.find_index(indices, &(&1 == index)) || :infinity
+    end)
+    |> Enum.map(&elem(&1, 0))
+  end
+
+  def sort_forms([], _, _), do: []
+
+  def sort_forms(forms, [index], :increment) when is_list(forms) do
+    index =
+      if is_binary(index) do
+        String.to_integer(index)
+      else
+        index
+      end
+
+    case Enum.split(forms, index) do
+      {_head, [_]} ->
+        forms
+
+      {head, [first, second | rest]} ->
+        head ++ [second | [first | rest]]
+    end
+  end
+
+  def sort_forms(forms, [index], :decrement) when is_list(forms) do
+    index =
+      if is_binary(index) do
+        String.to_integer(index)
+      else
+        index
+      end
+
+    case Enum.split(forms, index) do
+      {[], _} ->
+        forms
+
+      {head, [first | rest]} ->
+        {head, [last]} = Enum.split(head, -1)
+        head ++ [first, last] ++ rest
+    end
+  end
+
+  def sort_forms(form, [key | rest], instruction) do
+    new_forms =
+      form.forms
+      |> Map.new(fn {my_key, value} ->
+        if to_string(my_key) == key || my_key == key do
+          {my_key, sort_forms(value, rest, instruction)}
+        else
+          {my_key, value}
+        end
+      end)
+
+    %{
+      form
+      | forms: new_forms
+    }
+  end
+
+  @doc """
   Updates the list of forms matching a given path. Does not validate that the path points at a single form like `update_form/4`.
 
   Additionally, if it gets to a list of child forms and the next part of the path is not an integer,
@@ -2387,11 +2386,11 @@ defmodule AshPhoenix.Form do
       [key | rest] ->
         new_forms =
           form.forms
-          |> Map.new(fn {key, value} ->
-            if to_string(key) == key do
-              {key, update_forms_at_path(value, rest, func, opts)}
+          |> Map.new(fn {my_key, value} ->
+            if to_string(my_key) == key || my_key == key do
+              {my_key, update_forms_at_path(value, rest, func, opts)}
             else
-              {key, value}
+              {my_key, value}
             end
           end)
 
@@ -4332,10 +4331,12 @@ defmodule AshPhoenix.Form do
   end
 
   defp add_auto(opts, resource, action) do
-    if opts[:forms][:auto?] do
-      Keyword.update!(opts, :forms, fn forms ->
-        opts =
-          case opts[:forms][:auto?] do
+    if Keyword.get(opts[:forms] || [], :auto?, true) do
+      opts
+      |> Keyword.put_new(:forms, [])
+      |> Keyword.update!(:forms, fn forms ->
+        auto_opts =
+          case forms[:auto?] do
             value when is_list(value) ->
               value
 
@@ -4343,14 +4344,10 @@ defmodule AshPhoenix.Form do
               []
           end
 
-        auto =
-          resource
-          |> AshPhoenix.Form.Auto.auto(action, opts)
-          |> Enum.reject(fn {key, _} -> Keyword.has_key?(forms, key) end)
-
-        forms
+        resource
+        |> AshPhoenix.Form.Auto.auto(action, auto_opts)
+        |> then(&Keyword.merge(&1, forms || []))
         |> Keyword.delete(:auto?)
-        |> Enum.concat(auto)
       end)
     else
       opts
@@ -4609,6 +4606,81 @@ defmodule AshPhoenix.Form do
     [key | decoded_to_list(rest)]
   end
 
+  defp sort_nested(params, form_params, key) do
+    form_params =
+      case Map.fetch(params, "_drop_#{key}") do
+        {:ok, drop} when is_list(drop) ->
+          Map.drop(form_params, drop)
+
+        _ ->
+          form_params
+      end
+
+    case Map.fetch(params, "_sort_#{key}") do
+      {:ok, indices} when is_list(indices) ->
+        indices
+        |> Enum.with_index()
+        |> Enum.reduce(%{}, fn {index, source}, acc ->
+          case Integer.parse(index) do
+            {_, ""} ->
+              case Map.fetch(form_params, to_string(source)) do
+                {:ok, v} ->
+                  Map.put(acc, index, v)
+
+                :error ->
+                  acc
+              end
+
+            _ ->
+              Map.put(acc, index, %{})
+          end
+        end)
+
+      _ ->
+        form_params
+    end
+  end
+
+  defp add_nested(params, key) do
+    case Map.fetch(params, "_add_#{key}") do
+      {:ok, value} ->
+        index =
+          case value do
+            "start" ->
+              0
+
+            "end" ->
+              -1
+
+            other ->
+              case Integer.parse(other) do
+                {int, ""} ->
+                  int
+
+                _ ->
+                  -1
+              end
+          end
+
+        params
+        |> fetch_key(key)
+        |> case do
+          {:ok, v} -> v
+          _ -> %{}
+        end
+        |> indexed_list()
+        |> List.insert_at(index, %{})
+        |> Enum.with_index()
+        |> Map.new(fn {v, i} -> {to_string(i), v} end)
+        |> then(fn form_params ->
+          Map.put(params, to_string(key), form_params)
+        end)
+
+      _ ->
+        params
+    end
+  end
+
   defp handle_forms(
          params,
          form_keys,
@@ -4624,8 +4696,12 @@ defmodule AshPhoenix.Form do
          trail \\ []
        ) do
     Enum.reduce(form_keys, {%{}, params}, fn {key, opts}, {forms, params} ->
-      case fetch_key(params, key) do
+      params = add_nested(params, opts[:as] || key)
+
+      case fetch_key(params, opts[:as] || key) do
         {:ok, form_params} ->
+          form_params = sort_nested(params, form_params, opts[:as] || key)
+
           handle_form_with_params(
             forms,
             params,

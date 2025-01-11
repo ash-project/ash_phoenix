@@ -24,6 +24,77 @@ defmodule AshPhoenix.FormTest do
     end
   end
 
+  describe "sort_forms/3" do
+    test "allows reordering form indices" do
+      assert ["three", "one", "two"] ==
+               Post
+               |> Form.for_create(:create,
+                 domain: Domain,
+                 params: %{"text" => "bar"},
+                 forms: [
+                   comments: [
+                     type: :list,
+                     resource: Comment,
+                     create_action: :create_with_unknown_error
+                   ]
+                 ]
+               )
+               |> Form.add_form([:comments], params: %{"text" => "one"})
+               |> Form.add_form([:comments], params: %{"text" => "two"})
+               |> Form.add_form([:comments], params: %{"text" => "three"})
+               |> Form.sort_forms([:comments], [2, 0, 1])
+               |> Map.get(:forms)
+               |> Map.get(:comments)
+               |> Enum.map(&AshPhoenix.Form.value(&1, :text))
+    end
+
+    test "allows decrement form indices" do
+      assert ["one", "three", "two"] ==
+               Post
+               |> Form.for_create(:create,
+                 domain: Domain,
+                 params: %{"text" => "bar"},
+                 forms: [
+                   comments: [
+                     type: :list,
+                     resource: Comment,
+                     create_action: :create_with_unknown_error
+                   ]
+                 ]
+               )
+               |> Form.add_form([:comments], params: %{"text" => "one"})
+               |> Form.add_form([:comments], params: %{"text" => "two"})
+               |> Form.add_form([:comments], params: %{"text" => "three"})
+               |> Form.sort_forms([:comments, 2], :decrement)
+               |> Map.get(:forms)
+               |> Map.get(:comments)
+               |> Enum.map(&AshPhoenix.Form.value(&1, :text))
+    end
+
+    test "allows incrementing form indices" do
+      assert ["two", "one", "three"] ==
+               Post
+               |> Form.for_create(:create,
+                 domain: Domain,
+                 params: %{"text" => "bar"},
+                 forms: [
+                   comments: [
+                     type: :list,
+                     resource: Comment,
+                     create_action: :create_with_unknown_error
+                   ]
+                 ]
+               )
+               |> Form.add_form([:comments], params: %{"text" => "one"})
+               |> Form.add_form([:comments], params: %{"text" => "two"})
+               |> Form.add_form([:comments], params: %{"text" => "three"})
+               |> Form.sort_forms([:comments, 0], :increment)
+               |> Map.get(:forms)
+               |> Map.get(:comments)
+               |> Enum.map(&AshPhoenix.Form.value(&1, :text))
+    end
+  end
+
   describe "validate_opts" do
     test "errors are not set on the parent and list child form" do
       form =

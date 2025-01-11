@@ -62,6 +62,7 @@ defmodule AshPhoenix.MixProject do
         {"README.md", title: "Home"},
         "documentation/tutorials/getting-started-with-ash-and-phoenix.md",
         "documentation/topics/union-forms.md",
+        "documentation/topics/nested-forms.md",
         "documentation/dsls/DSL-AshPhoenix.md",
         "CHANGELOG.md"
       ],
