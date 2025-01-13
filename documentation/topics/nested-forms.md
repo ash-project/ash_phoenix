@@ -90,6 +90,12 @@ business = Ash.load!(business, :locations)
 form = AshPhoenix.Form.for_update(business, :update)
 ```
 
+> ### Not using tailwind? {: .warning}
+>
+> If you're not using tailwind, you'll need to replace `class="hidden"`
+> in the examples below with something else. In standard HTML, you'd do
+> `<input .... hidden />`. As long as the checkbox is hidden, you're good!
+
 ## Adding nested forms
 
 There are two ways to add nested forms.
