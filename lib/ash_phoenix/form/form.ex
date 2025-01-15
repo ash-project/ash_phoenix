@@ -1342,6 +1342,19 @@ defmodule AshPhoenix.Form do
     %{form | opts: fun.(form.opts)}
   end
 
+  defp ensure_indexed_list(params, key_name) do
+    case Map.fetch(params, key_name) do
+      {:ok, value} when is_list(value) ->
+        value
+        |> Enum.with_index()
+        |> Map.new(&{to_string(elem(&1, 1)), elem(&1, 0)})
+        |> then(&Map.put(params, key_name, &1))
+
+      _ ->
+        params
+    end
+  end
+
   defp validate_nested_forms(
          form,
          params,
@@ -1352,12 +1365,22 @@ defmodule AshPhoenix.Form do
        ) do
     form.form_keys
     |> Enum.reduce({%{}, params}, fn {key, opts}, {forms, params} ->
-      params = add_nested(params, opts[:as] || key)
+      key_name = to_string(opts[:as] || key)
+
+      params =
+        if opts[:type] == :list do
+          params
+          |> ensure_indexed_list(key_name)
+          |> drop_nested(key_name)
+          |> sort_nested(key_name)
+          |> add_nested(key_name)
+          |> condense(key_name)
+        else
+          params
+        end
 
       case fetch_key(params, opts[:as] || key) do
         {:ok, form_params} when form_params != nil ->
-          form_params = sort_nested(params, form_params, opts[:as] || key)
-
           if opts[:type] == :list do
             form_params =
               if is_map(form_params) do
@@ -3777,12 +3800,17 @@ defmodule AshPhoenix.Form do
         Map.put(form.forms, key, [])
       end
 
+    touched_forms =
+      if any_removed?,
+        do: MapSet.put(form.touched_forms, to_string(key)),
+        else: form.touched_forms
+
     %{
       form
       | forms: new_forms,
         any_removed?: form.any_removed? || any_removed?,
         form_keys: new_config,
-        touched_forms: MapSet.put(form.touched_forms, to_string(key)),
+        touched_forms: touched_forms,
         opts: Keyword.put(form.opts, :forms, new_config)
     }
   end
@@ -3839,11 +3867,16 @@ defmodule AshPhoenix.Form do
         end)
       end)
 
+    touched_forms =
+      if any_removed?,
+        do: MapSet.put(form.touched_forms, to_string(key)),
+        else: form.touched_forms
+
     %{
       form
       | forms: new_forms,
         any_removed?: form.any_removed? || any_removed?,
-        touched_forms: MapSet.put(form.touched_forms, to_string(key)),
+        touched_forms: touched_forms,
         form_keys: new_config,
         opts: Keyword.put(form.opts, :forms, new_config)
     }
@@ -4606,38 +4639,68 @@ defmodule AshPhoenix.Form do
     [key | decoded_to_list(rest)]
   end
 
-  defp sort_nested(params, form_params, key) do
-    form_params =
-      case Map.fetch(params, "_drop_#{key}") do
-        {:ok, drop} when is_list(drop) ->
-          Map.drop(form_params, drop)
+  defp drop_nested(params, key) do
+    case Map.fetch(params, key) do
+      {:ok, form_params} ->
+        case Map.fetch(params, "_drop_#{key}") do
+          {:ok, drop} when is_list(drop) ->
+            Map.put(params, key, Map.drop(form_params, drop))
 
-        _ ->
-          form_params
-      end
+          _ ->
+            params
+        end
 
-    case Map.fetch(params, "_sort_#{key}") do
-      {:ok, indices} when is_list(indices) ->
-        indices
-        |> Enum.with_index()
-        |> Enum.reduce(%{}, fn {index, source}, acc ->
-          case Integer.parse(index) do
-            {_, ""} ->
-              case Map.fetch(form_params, to_string(source)) do
-                {:ok, v} ->
-                  Map.put(acc, index, v)
+      :error ->
+        params
+    end
+  end
 
-                :error ->
-                  acc
+  defp sort_nested(params, key) do
+    case Map.fetch(params, key) do
+      {:ok, form_params} ->
+        case Map.fetch(params, "_sort_#{key}") do
+          {:ok, indices} when is_list(indices) ->
+            indices
+            |> Enum.with_index()
+            |> Enum.reduce(%{}, fn {index, source}, acc ->
+              case Integer.parse(index) do
+                {_, ""} ->
+                  case Map.fetch(form_params, to_string(source)) do
+                    {:ok, v} ->
+                      {Map.put(acc, index, v), true}
+
+                    :error ->
+                      {acc, true}
+                  end
+
+                _ ->
+                  {Map.put(acc, index, %{}), false}
               end
+            end)
+            |> then(&Map.put(params, key, &1))
 
-            _ ->
-              Map.put(acc, index, %{})
-          end
-        end)
+          _ ->
+            params
+        end
 
-      _ ->
+      :error ->
+        params
+    end
+  end
+
+  defp condense(params, key) do
+    case Map.fetch(params, key) do
+      {:ok, form_params} ->
         form_params
+        |> Enum.sort_by(&String.to_integer(elem(&1, 0)))
+        |> Enum.with_index()
+        |> Map.new(fn {{_, v}, index} ->
+          {to_string(index), v}
+        end)
+        |> then(&Map.put(params, key, &1))
+
+      :error ->
+        params
     end
   end
 
@@ -4663,12 +4726,13 @@ defmodule AshPhoenix.Form do
           end
 
         params
-        |> fetch_key(key)
+        |> Map.fetch(key)
         |> case do
           {:ok, v} -> v
           _ -> %{}
         end
         |> indexed_list()
+        |> Enum.map(&elem(&1, 0))
         |> List.insert_at(index, %{})
         |> Enum.with_index()
         |> Map.new(fn {v, i} -> {to_string(i), v} end)
@@ -4696,12 +4760,22 @@ defmodule AshPhoenix.Form do
          trail \\ []
        ) do
     Enum.reduce(form_keys, {%{}, params}, fn {key, opts}, {forms, params} ->
-      params = add_nested(params, opts[:as] || key)
+      key_name = to_string(opts[:as] || key)
+
+      params =
+        if opts[:type] == :list do
+          params
+          |> ensure_indexed_list(key_name)
+          |> drop_nested(key_name)
+          |> sort_nested(key_name)
+          |> add_nested(key_name)
+          |> condense(key_name)
+        else
+          params
+        end
 
       case fetch_key(params, opts[:as] || key) do
         {:ok, form_params} ->
-          form_params = sort_nested(params, form_params, opts[:as] || key)
-
           handle_form_with_params(
             forms,
             params,
@@ -5593,6 +5667,8 @@ defmodule AshPhoenix.Form do
       func.(Enum.at(prev_data_trail, 0), Enum.drop(prev_data_trail, 1))
     end
   end
+
+  defp indexed_list(map) when map == %{}, do: []
 
   defp indexed_list(map) when is_map(map) do
     map

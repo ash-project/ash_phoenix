@@ -24,6 +24,39 @@ defmodule AshPhoenix.FormTest do
     end
   end
 
+  describe "drop_param" do
+    test "allows dropping form indices" do
+      assert 2 ==
+               Post
+               |> Form.for_create(:create,
+                 domain: Domain,
+                 params: %{"text" => "bar"},
+                 forms: [
+                   comments: [
+                     type: :list,
+                     resource: Comment,
+                     create_action: :create_with_unknown_error
+                   ]
+                 ]
+               )
+               |> Form.add_form([:comments], params: %{"text" => "one"})
+               |> Form.add_form([:comments], params: %{"text" => "two"})
+               |> Form.add_form([:comments], params: %{"text" => "three"})
+               |> AshPhoenix.Form.validate(%{
+                 "text" => "bar",
+                 "_drop_comments" => ["1"],
+                 "comments" => %{
+                   "0" => %{"text" => "one"},
+                   "1" => %{"text" => "three"},
+                   "2" => %{"text" => "two"}
+                 }
+               })
+               |> Map.get(:forms)
+               |> Map.get(:comments)
+               |> Enum.count()
+    end
+  end
+
   describe "sort_forms/3" do
     test "allows reordering form indices" do
       assert ["three", "one", "two"] ==
