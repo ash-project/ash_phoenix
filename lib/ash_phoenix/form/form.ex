@@ -1368,6 +1368,19 @@ defmodule AshPhoenix.Form do
       key_name = to_string(opts[:as] || key)
 
       params =
+        if touched?(form, key_name) do
+          default =
+            case opts[:type] do
+              :list -> %{}
+              _ -> nil
+            end
+
+          Map.put_new(params, key_name, default)
+        else
+          params
+        end
+
+      params =
         if opts[:type] == :list do
           params
           |> ensure_indexed_list(key_name)
@@ -1381,6 +1394,13 @@ defmodule AshPhoenix.Form do
 
       case fetch_key(params, opts[:as] || key) do
         {:ok, form_params} when form_params != nil ->
+          forms =
+            if opts[:type] == :list do
+              Map.put(forms, key, [])
+            else
+              Map.put(forms, key, nil)
+            end
+
           if opts[:type] == :list do
             form_params =
               if is_map(form_params) do
