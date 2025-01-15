@@ -4667,14 +4667,14 @@ defmodule AshPhoenix.Form do
                 {_, ""} ->
                   case Map.fetch(form_params, to_string(source)) do
                     {:ok, v} ->
-                      {Map.put(acc, index, v), true}
+                      Map.put(acc, index, v)
 
                     :error ->
-                      {acc, true}
+                      acc
                   end
 
                 _ ->
-                  {Map.put(acc, index, %{}), false}
+                  Map.put(acc, index, %{})
               end
             end)
             |> then(&Map.put(params, key, &1))
