@@ -4662,11 +4662,13 @@ defmodule AshPhoenix.Form do
   defp drop_nested(params, key) do
     case Map.fetch(params, key) do
       {:ok, form_params} ->
-        case Map.fetch(params, "_drop_#{key}") do
+        drop_key = "_drop_#{key}"
+
+        case Map.fetch(params, drop_key) do
           {:ok, drop} when is_list(drop) ->
             params
             |> Map.put(key, Map.drop(form_params, drop))
-            |> Map.put("_drop_#{key}", [])
+            |> Map.delete(drop_key)
 
           _ ->
             params
@@ -4680,7 +4682,9 @@ defmodule AshPhoenix.Form do
   defp sort_nested(params, key) do
     case Map.fetch(params, key) do
       {:ok, form_params} ->
-        case Map.fetch(params, "_sort_#{key}") do
+        sort_key = "_sort_#{key}"
+
+        case Map.fetch(params, sort_key) do
           {:ok, indices} when is_list(indices) ->
             indices
             |> Enum.with_index()
@@ -4700,6 +4704,7 @@ defmodule AshPhoenix.Form do
               end
             end)
             |> then(&Map.put(params, key, &1))
+            |> Map.delete(sort_key)
 
           _ ->
             params
@@ -4727,7 +4732,9 @@ defmodule AshPhoenix.Form do
   end
 
   defp add_nested(params, key) do
-    case Map.fetch(params, "_add_#{key}") do
+    add_key = "_add_#{key}"
+
+    case Map.fetch(params, add_key) do
       {:ok, value} ->
         index =
           case value do
@@ -4761,6 +4768,7 @@ defmodule AshPhoenix.Form do
         |> then(fn form_params ->
           Map.put(params, to_string(key), form_params)
         end)
+        |> Map.delete(add_key)
 
       _ ->
         params
