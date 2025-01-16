@@ -55,6 +55,34 @@ defmodule AshPhoenix.FormTest do
                |> Map.get(:comments)
                |> Enum.count()
     end
+
+    test "allows re-adding forms after dropping the last form" do
+      assert 1 ==
+               Post
+               |> Form.for_create(:create,
+                 domain: Domain,
+                 params: %{"text" => "bar"},
+                 forms: [
+                   comments: [
+                     type: :list,
+                     resource: Comment,
+                     create_action: :create_with_unknown_error
+                   ]
+                 ]
+               )
+               |> Form.add_form([:comments], params: %{"text" => "one"})
+               |> AshPhoenix.Form.validate(%{
+                 "text" => "bar",
+                 "_drop_comments" => ["0"],
+                 "comments" => %{
+                   "0" => %{"text" => "one"}
+                 }
+               })
+               |> Form.add_form([:comments], params: %{"text" => "two"})
+               |> Map.get(:forms)
+               |> Map.get(:comments)
+               |> Enum.count()
+    end
   end
 
   describe "sort_forms/3" do

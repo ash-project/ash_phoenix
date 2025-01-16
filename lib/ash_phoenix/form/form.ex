@@ -4664,7 +4664,9 @@ defmodule AshPhoenix.Form do
       {:ok, form_params} ->
         case Map.fetch(params, "_drop_#{key}") do
           {:ok, drop} when is_list(drop) ->
-            Map.put(params, key, Map.drop(form_params, drop))
+            params
+            |> Map.put(key, Map.drop(form_params, drop))
+            |> Map.put("_drop_#{key}", [])
 
           _ ->
             params
