@@ -1194,8 +1194,24 @@ defmodule AshPhoenix.Form do
 
     matcher =
       opts[:matcher] ||
-        fn nested_form, _params, root_form, key, index ->
-          nested_form.id == root_form.id <> "_#{key}_#{index}"
+        fn nested_form, params, root_form, key, index ->
+          pkey_fields = Ash.Resource.Info.primary_key(nested_form.resource)
+
+          if Enum.any?(pkey_fields) &&
+               Enum.all?(pkey_fields, &Map.has_key?(params, to_string(&1))) do
+            Enum.all?(pkey_fields, fn field ->
+              case Map.fetch(params, to_string(field)) do
+                {:ok, v} ->
+                  v ==
+                    to_string(AshPhoenix.Form.value(nested_form, field))
+
+                _ ->
+                  false
+              end
+            end)
+          else
+            nested_form.id == root_form.id <> "_#{key}_#{index}"
+          end
         end
 
     source_opts = drop_form_opts(form.opts)
@@ -1495,7 +1511,7 @@ defmodule AshPhoenix.Form do
                         prepare_source: opts[:prepare_source],
                         prev_data_trail?: prev_data_trail
                       )
-                      |> Map.put(:as, form.name <> "[#{key}][#{index}]")
+                      |> Map.put(:name, form.name <> "[#{key}][#{index}]")
                       |> Map.put(:id, form.id <> "_#{key}_#{index}")
 
                     Map.update(forms, key, [validated], fn nested_forms ->
@@ -1506,10 +1522,10 @@ defmodule AshPhoenix.Form do
               end)
 
             new_params =
-              if Map.has_key?(new_forms, opts[:as] || key) do
+              if Map.has_key?(new_forms, key) do
                 new_nested =
                   new_forms
-                  |> Map.get(opts[:as] || key)
+                  |> Map.get(key)
                   |> List.wrap()
                   |> Enum.with_index()
                   |> Map.new(fn {form, index} ->
