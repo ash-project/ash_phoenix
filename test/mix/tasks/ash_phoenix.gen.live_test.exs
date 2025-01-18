@@ -292,6 +292,7 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
              "--resourceplural",
              "Artists"
            ])
+           |> Igniter.Project.Module.move_files()
            |> assert_creates(
              form_path,
              form_contents
