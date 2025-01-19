@@ -109,7 +109,7 @@ if Code.ensure_loaded?(Igniter) do
           generate_opts
         )
 
-      igniter = 
+      igniter =
         if opts[:interactive?] do
           Igniter.add_notice(igniter, """
 
