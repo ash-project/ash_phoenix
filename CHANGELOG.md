@@ -5,6 +5,33 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.14](https://github.com/ash-project/ash_phoenix/compare/v2.1.13...v2.1.14) (2025-01-19)
+
+
+
+
+### Bug Fixes:
+
+* print routes on ash_phoenix.gen.live again
+
+* properly find matching forms by primary key
+
+* Allow re-adding forms to a nested form after deleting the last one from a list (#291)
+
+* handle case where last form is deleted
+
+* simplifications and fixes for drop_param
+
+* ensure that form interfaces properly set data
+
+* fix warning in filter_form.ex (#285)
+
+### Improvements:
+
+* support `_drop_*`, `_add_*` and `_sort_*` params
+
+* add `AshPhoenix.Form.sort_forms` utility
+
 ## [v2.1.13](https://github.com/ash-project/ash_phoenix/compare/v2.1.12...v2.1.13) (2025-01-03)
 
 
