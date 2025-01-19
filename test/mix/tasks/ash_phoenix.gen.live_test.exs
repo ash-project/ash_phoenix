@@ -284,6 +284,7 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
       |> format_contents(show_path)
 
     assert Igniter.new()
+           |> Igniter.compose_task("igniter.add_extension", ["phoenix"])
            |> Igniter.compose_task("ash_phoenix.gen.live", [
              "--domain",
              "Elixir.AshPhoenix.Test.Domain",

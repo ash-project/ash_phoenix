@@ -109,14 +109,17 @@ if Code.ensure_loaded?(Igniter) do
           generate_opts
         )
 
-      if opts[:interactive?] do
-        Mix.shell().info("""
+      igniter = 
+        if opts[:interactive?] do
+          Igniter.add_notice(igniter, """
 
-        Add the live routes to your browser scope in #{web_path(igniter)}/router.ex:
+          Add the live routes to your browser scope in #{web_path(igniter)}/router.ex:
 
-        #{for line <- live_route_instructions(assigns), do: "    #{line}"}
-        """)
-      end
+          #{for line <- live_route_instructions(assigns), do: "    #{line}"}
+          """)
+        else
+          igniter
+        end
 
       igniter
     end
