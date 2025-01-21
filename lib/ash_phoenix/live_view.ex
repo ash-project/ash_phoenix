@@ -290,7 +290,7 @@ defmodule AshPhoenix.LiveView do
     "prev"  - prev page
     "next"  - next page
 
-  Returns `:invalid or list of query link params`.
+  Returns `:invalid` or a list of query link params.
   """
   @spec page_link_params(Ash.Page.Offset.t(), String.t()) :: list(any()) | :invalid
   def page_link_params(_, "first") do
