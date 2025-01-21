@@ -282,6 +282,17 @@ defmodule AshPhoenix.LiveView do
     page_link_params(page, "next") != :invalid
   end
 
+  @doc """
+  Converts Ash.Page.Offset to query link params
+
+  Options:
+    "first" - first page
+    "prev"  - prev page
+    "next"  - next page
+
+  Returns `:invalid or list of query link params`.
+  """
+  @spec page_link_params(Ash.Page.Offset.t(), String.t()) :: list(any()) | :invalid
   def page_link_params(_, "first") do
     []
   end
