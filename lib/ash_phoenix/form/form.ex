@@ -60,7 +60,7 @@ defmodule AshPhoenix.Form do
 
   def mount(_params, _session, socket) do
     # Here we call our new generated function to create the form
-    {:ok, assign(socket, form: MyApp.Accounts.form_to_register_with_password())}
+    {:ok, assign(socket, form: MyApp.Accounts.form_to_register_with_password() |> to_form())}
   end
 
   def handle_event(socket, "validate", %{"form" => params}) do
