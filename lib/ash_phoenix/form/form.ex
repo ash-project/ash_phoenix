@@ -3045,8 +3045,7 @@ defmodule AshPhoenix.Form do
   defp get_casted_value(
          %{casted_arguments: casted_arguments, casted_attributes: casted_attributes},
          field
-       )
-       when is_atom(field) do
+       ) do
     with :error <- Map.fetch(casted_arguments, field),
          :error <- Map.fetch(casted_attributes, field),
          string_field = to_string(field),
@@ -3055,33 +3054,10 @@ defmodule AshPhoenix.Form do
     end
   end
 
-  defp get_casted_value(
-         %{casted_arguments: casted_arguments, casted_attributes: casted_attributes},
-         field
-       )
-       when is_binary(field) do
-    with :error <- Map.fetch(casted_arguments, field),
-         :error <- Map.fetch(casted_attributes, field) do
-      Map.fetch(casted_attributes, field)
-    end
-  end
-
-  defp get_casted_value(_, _), do: :error
-
-  defp get_invalid_value(changeset, field) when is_atom(field) do
+  defp get_invalid_value(changeset, field) do
     if field in changeset.invalid_keys do
       with :error <- get_casted_value(changeset, field),
            :error <- Map.fetch(changeset.params, field) do
-        Map.fetch(changeset.params, to_string(field))
-      end
-    else
-      :error
-    end
-  end
-
-  defp get_invalid_value(changeset, field) when is_binary(field) do
-    if Enum.any?(changeset.invalid_keys, &(to_string(&1) == field)) do
-      with :error <- Map.fetch(changeset.params, field) do
         Map.fetch(changeset.params, to_string(field))
       end
     else
