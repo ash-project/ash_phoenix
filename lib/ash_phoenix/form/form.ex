@@ -2973,10 +2973,10 @@ defmodule AshPhoenix.Form do
 
   defp do_value(%{source: %Ash.Changeset{} = changeset} = form, field) do
     with :error <- get_nested(form, field),
+         :error <- Ash.Changeset.fetch_argument(changeset, field),
          :error <- get_invalid_value(changeset, field),
          :error <- get_changing_value(changeset, field),
          :error <- get_casted_value(changeset, field),
-         :error <- Ash.Changeset.fetch_argument(changeset, field),
          :error <- get_non_attribute_non_argument_param(changeset, form, field),
          :error <- get_data_value(changeset.data, field) do
       nil
