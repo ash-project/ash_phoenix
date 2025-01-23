@@ -2246,6 +2246,9 @@ defmodule AshPhoenix.Form do
              carry_over_errors(form, further)
            end)}
 
+        {key, nil} ->
+          {key, nil}
+
         {key, form} ->
           further =
             further_path_errors
