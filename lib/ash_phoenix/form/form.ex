@@ -2718,7 +2718,7 @@ defmodule AshPhoenix.Form do
       path ->
         form
         |> gather_errors(opts[:format])
-        |> Map.get(path)
+        |> Map.get(parse_path!(form, path))
         |> List.wrap()
     end
   end
