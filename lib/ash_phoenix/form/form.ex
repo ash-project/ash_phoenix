@@ -2718,12 +2718,12 @@ defmodule AshPhoenix.Form do
       path ->
         form
         |> gather_errors(opts[:format])
-        |> Map.get(path)
+        |> Map.get(parse_path!(form, path))
         |> List.wrap()
     end
   end
 
-  def ash_errors(form, opts \\ []) do
+  defp ash_errors(form, opts) do
     form = to_form!(form)
     opts = validate_opts_with_extra_keys(opts, @errors_opts)
 
