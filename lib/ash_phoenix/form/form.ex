@@ -2723,7 +2723,7 @@ defmodule AshPhoenix.Form do
     end
   end
 
-  def ash_errors(form, opts \\ []) do
+  defp ash_errors(form, opts) do
     form = to_form!(form)
     opts = validate_opts_with_extra_keys(opts, @errors_opts)
 
