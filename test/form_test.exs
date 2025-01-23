@@ -1024,7 +1024,7 @@ defmodule AshPhoenix.FormTest do
       assert nested_form.errors == [{:text, {"is required", []}}]
     end
 
-    test "errors with a path are propagated down to the appropirate nested form" do
+    test "errors with a path are propagated down to the appropirate nested form for list or string path" do
       author = %Author{
         email: "me@example.com"
       }
@@ -1036,11 +1036,15 @@ defmodule AshPhoenix.FormTest do
         |> Form.validate(%{"embedded_argument" => %{"value" => "you@example.com"}})
         |> form_for("action")
 
-      assert AshPhoenix.Form.errors(form, for_path: [:embedded_argument]) == [
+      assert Form.errors(form, for_path: [:embedded_argument]) == [
                value: "must match email"
              ]
 
-      assert AshPhoenix.Form.errors(form) == []
+      assert Form.errors(form, for_path: "form[embedded_argument]") == [
+               value: "must match email"
+             ]
+
+      assert Form.errors(form) == []
 
       # Check that errors will appear on a nested form using the Phoenix Core Components inputs_for
       # https://github.com/phoenixframework/phoenix_live_view/blob/main/lib/phoenix_component.ex#L2410
