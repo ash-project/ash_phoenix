@@ -14,11 +14,11 @@ defmodule AshPhoenix.FilterForm do
 
   ```elixir
   # Add a predicate to the root of the form (which is itself a group)
-  filter_form = AshPhoenix.add_predicate(filter_form, :some_field, :eq, "Some Value")
+  filter_form = AshPhoenix.FilterForm.add_predicate(filter_form, :some_field, :eq, "Some Value")
 
   # Add a group and another predicate to that group
-  {filter_form, group_id} = AshPhoenix.add_group(filter_form, operator: :or, return_id?: true)
-  filter_form = AshPhoenix.add_predicate(filter_form, :another, :eq, "Other", to: group_id)
+  {filter_form, group_id} = AshPhoenix.FilterForm.add_group(filter_form, operator: :or, return_id?: true)
+  filter_form = AshPhoenix.FilterForm.add_predicate(filter_form, :another, :eq, "Other", to: group_id)
   ```
 
   `validate/1` is used to merge the submitted form params into the filter form, and one of the
@@ -26,7 +26,7 @@ defmodule AshPhoenix.FilterForm do
   depending on your requirements:
 
   ```elixir
-  filter_form = AshPhoenix.validate(socket.assigns.filter_form, params)
+  filter_form = AshPhoenix.FilterForm.validate(socket.assigns.filter_form, params)
 
   # Generate a query and pass it to the Domain
   query = AshPhoenix.FilterForm.filter!(MyApp.Payroll.Employee, filter_form)
