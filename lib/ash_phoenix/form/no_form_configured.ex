@@ -92,7 +92,7 @@ defmodule AshPhoenix.Form.NoFormConfigured do
           """
         end
 
-      relationship = Ash.Resource.Info.attribute(error.resource, error.field) ->
+      relationship = Ash.Resource.Info.relationship(error.resource, error.field) ->
         """
 
         There is a relationship called `#{relationship.name}` on the resource `#{inspect(error.resource)}`.
