@@ -545,9 +545,17 @@ defmodule AshPhoenix.Form do
     name = opts[:as] || "form"
     id = opts[:id] || opts[:as] || "form"
 
+    params =
+      if is_map(opts[:params]) or is_nil(opts[:params]) do
+        opts[:params] || %{}
+      else
+        IO.warn("The `params` option should be a map.")
+        %{}
+      end
+
     {forms, params} =
       handle_forms(
-        opts[:params] || %{},
+        params,
         opts[:forms] || [],
         !!opts[:errors],
         opts[:domain] || Ash.Resource.Info.domain(resource),
