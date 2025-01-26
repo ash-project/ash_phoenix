@@ -311,7 +311,7 @@ defmodule AshPhoenix.LiveView do
   end
 
   @doc """
-  Returns true there's a next page.
+  Returns true if there's a next page.
 
   ### Examples
 
