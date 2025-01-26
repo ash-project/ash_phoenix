@@ -295,7 +295,7 @@ defmodule AshPhoenix.LiveView do
   defp set_count(params, _), do: params
 
   @doc """
-  Returns true there's a previous page.
+  Returns true if there's a previous page.
 
   ### Examples
 
