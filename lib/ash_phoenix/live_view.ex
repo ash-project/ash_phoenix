@@ -656,10 +656,15 @@ defmodule AshPhoenix.LiveView do
   # => %Phoenix.LiveView.Socket{assigns: %{results: [1,2,3], page: %Ash.Page.Offset{results: nil}}}
   ```
   """
-  @spec assign_page_and_stream_result(Phoenix.LiveView.Socket.t(), Ash.Page.page(), atom()) ::
+  @spec assign_page_and_stream_result(
+          Phoenix.LiveView.Socket.t(),
+          Ash.Page.page(),
+          atom(),
+          atom()
+        ) ::
           Phoenix.LiveView.Socket.t()
-  def assign_page_and_stream_result(socket, page, result_key \\ :results) do
+  def assign_page_and_stream_result(socket, page, result_key \\ :results, page_key \\ :page) do
     {results, page} = Map.get_and_update(page, :results, &{&1, nil})
-    Phoenix.Component.assign(socket, [{result_key, results}, {:page, page}])
+    Phoenix.Component.assign(socket, [{result_key, results}, {page_key, page}])
   end
 end

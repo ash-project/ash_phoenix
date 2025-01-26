@@ -15,12 +15,17 @@ defmodule AshPhoenixTest.LiveViewTest do
                AshPhoenix.LiveView.assign_page_and_stream_result(socket, page)
     end
 
-    test "can assign page and its results with a custom results key", %{
+    test "can assign page and its results with a custom results key and custom page key", %{
       socket: socket,
       page: page
     } do
-      assert %{assigns: %{numbers: [1, 2, 3], page: %Ash.Page.Offset{results: nil}}} =
-               AshPhoenix.LiveView.assign_page_and_stream_result(socket, page, :numbers)
+      assert %{assigns: %{numbers: [1, 2, 3], pagination: %Ash.Page.Offset{results: nil}}} =
+               AshPhoenix.LiveView.assign_page_and_stream_result(
+                 socket,
+                 page,
+                 :numbers,
+                 :pagination
+               )
     end
   end
 end
