@@ -21,7 +21,7 @@ if Code.ensure_loaded?(Igniter) do
 
     * `--domain`   - Existing domain
     * `--resource` - Existing resource module name
-    * `--resourceplural` - Pluralized version resource name in english
+    * `--resourceplural` - Pluralized version resource name for the route paths and templates
     """
 
     def info(_argv, _composing_task) do
