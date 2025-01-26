@@ -2,7 +2,7 @@ if Code.ensure_loaded?(Igniter) do
   defmodule Mix.Tasks.AshPhoenix.Gen.Live do
     use Igniter.Mix.Task
 
-    @example "mix ash_phoenix.gen.live --domain ExistingDomainName --resource ExistingResourceName --resourceplural ExistingResourceNames"
+    @example "mix ash_phoenix.gen.live --domain MyApp.Shop --resource MyApp.Shop.Product --resourceplural products"
 
     @shortdoc "Generates liveviews for a given domain and resource."
 
@@ -20,8 +20,8 @@ if Code.ensure_loaded?(Igniter) do
     ## Options
 
     * `--domain`   - Existing domain
-    * `--resource` - Existing resource
-    * `--resourceplural` - Plural resource name
+    * `--resource` - Existing resource module name
+    * `--resourceplural` - Pluralized version resource name in english
     """
 
     def info(_argv, _composing_task) do
