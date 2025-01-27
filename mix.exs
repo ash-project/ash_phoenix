@@ -18,7 +18,7 @@ defmodule AshPhoenix.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      docs: docs(),
+      docs: &docs/0,
       preferred_cli_env: [
         coveralls: :test,
         "coveralls.github": :test
@@ -26,7 +26,6 @@ defmodule AshPhoenix.MixProject do
       dialyzer: [
         plt_add_apps: [:ex_unit, :mix]
       ],
-      docs: docs(),
       package: package(),
       source_url: "https://github.com/ash-project/ash_phoenix",
       homepage_url: "https://github.com/ash-project/ash_phoenix"
@@ -63,7 +62,8 @@ defmodule AshPhoenix.MixProject do
         "documentation/tutorials/getting-started-with-ash-and-phoenix.md",
         "documentation/topics/union-forms.md",
         "documentation/topics/nested-forms.md",
-        "documentation/dsls/DSL-AshPhoenix.md",
+        {"documentation/dsls/DSL-AshPhoenix.md",
+         search_data: Spark.Docs.search_data_for(AshPhoenix)},
         "CHANGELOG.md"
       ],
       groups_for_extras: [
@@ -168,8 +168,7 @@ defmodule AshPhoenix.MixProject do
       docs: [
         "spark.cheat_sheets",
         "docs",
-        "spark.replace_doc_links",
-        "spark.cheat_sheets_in_search"
+        "spark.replace_doc_links"
       ],
       credo: "credo --strict",
       format: "format",
