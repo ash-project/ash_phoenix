@@ -545,9 +545,22 @@ defmodule AshPhoenix.Form do
     name = opts[:as] || "form"
     id = opts[:id] || opts[:as] || "form"
 
+    params =
+      cond do
+        is_map(opts[:params]) ->
+          opts[:params]
+
+        is_nil(opts[:params]) or opts[:params] == "" ->
+          %{}
+
+        true ->
+IO.warn("Got non-map params at path: #{name}. Form and nested form params must be maps.")
+          %{}
+      end
+
     {forms, params} =
       handle_forms(
-        opts[:params] || %{},
+        params,
         opts[:forms] || [],
         !!opts[:errors],
         opts[:domain] || Ash.Resource.Info.domain(resource),
