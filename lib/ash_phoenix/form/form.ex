@@ -554,7 +554,7 @@ defmodule AshPhoenix.Form do
           %{}
 
         true ->
-          IO.warn("Form #{name}: `params` option should be a map.")
+IO.warn("Got non-map params at path: #{name}. Form and nested form params must be maps.")
           %{}
       end
 
