@@ -448,10 +448,11 @@ defmodule AshPhoenix.Form do
 
     name = opts[:as] || "form"
     id = opts[:id] || opts[:as] || "form"
+    params = get_params(opts[:params], name)
 
     {forms, params} =
       handle_forms(
-        opts[:params] || %{},
+        params,
         opts[:forms] || [],
         !!opts[:errors],
         opts[:domain] || Ash.Resource.Info.domain(resource),
@@ -529,6 +530,7 @@ defmodule AshPhoenix.Form do
 
   #{Spark.Options.docs(@nested_form_opts)}
   """
+
   @spec for_create(Ash.Resource.t(), action :: atom, opts :: Keyword.t()) :: t()
   def for_create(resource, action, opts \\ []) when is_atom(resource) do
     opts =
@@ -544,19 +546,7 @@ defmodule AshPhoenix.Form do
 
     name = opts[:as] || "form"
     id = opts[:id] || opts[:as] || "form"
-
-    params =
-      cond do
-        is_map(opts[:params]) ->
-          opts[:params]
-
-        is_nil(opts[:params]) or opts[:params] == "" ->
-          %{}
-
-        true ->
-IO.warn("Got non-map params at path: #{name}. Form and nested form params must be maps.")
-          %{}
-      end
+    params = get_params(opts[:params], name)
 
     {forms, params} =
       handle_forms(
@@ -648,12 +638,13 @@ IO.warn("Got non-map params at path: #{name}. Form and nested form params must b
 
     name = opts[:as] || "form"
     id = opts[:id] || opts[:as] || "form"
+    params = get_params(opts[:params], name)
 
     prepare_source = opts[:prepare_source] || (& &1)
 
     {forms, params} =
       handle_forms(
-        opts[:params] || %{},
+        params,
         opts[:forms] || [],
         !!opts[:errors],
         opts[:domain] || Ash.Resource.Info.domain(resource),
@@ -785,10 +776,11 @@ IO.warn("Got non-map params at path: #{name}. Form and nested form params must b
     name = opts[:as] || "form"
     id = opts[:id] || opts[:as] || "form"
     prepare_source = opts[:prepare_source] || (& &1)
+    params = get_params(opts[:params], name)
 
     {forms, params} =
       handle_forms(
-        opts[:params] || %{},
+        params,
         opts[:forms] || [],
         !!opts[:errors],
         opts[:domain] || Ash.Resource.Info.domain(resource),
@@ -877,10 +869,11 @@ IO.warn("Got non-map params at path: #{name}. Form and nested form params must b
 
     name = opts[:as] || "form"
     id = opts[:id] || opts[:as] || "form"
+    params = get_params(opts[:params], name)
 
     {forms, params} =
       handle_forms(
-        opts[:params] || %{},
+        params,
         opts[:forms] || [],
         !!opts[:errors],
         opts[:domain] || Ash.Resource.Info.domain(resource),
@@ -5728,6 +5721,15 @@ IO.warn("Got non-map params at path: #{name}. Form and nested form params must b
       {:ok, value} -> {:ok, value}
       :error -> Map.fetch(params, to_string(key))
     end
+  end
+
+  defp get_params(params, _name) when is_map(params), do: params
+  defp get_params(nil, _name), do: %{}
+  defp get_params("", _name), do: %{}
+
+  defp get_params(_params, name) do
+    IO.warn("Got non-map params at path: #{name}. Form and nested form params must be maps.")
+    %{}
   end
 
   defp form_for_method(:create), do: "post"
