@@ -655,7 +655,12 @@ defmodule AshPhoenix.LiveView do
   AshPhoenix.LiveView.assign_page_and_stream_result(%Phoenix.LiveView.Socket{}, %Ash.Page.Offset{results: [1,2,3]})
   # => %Phoenix.LiveView.Socket{assigns: %{results: [1,2,3], page: %Ash.Page.Offset{results: nil}}}
   ```
+
+  ## Options
+
+  #{AshPhoenix.LiveView.AssignPageAndStreamResultOptions.docs()}
   """
+  @doc spark_opts: [{1, AshPhoenix.LiveView.AssignPageAndStreamResultOptions.schema()}]
   @spec assign_page_and_stream_result(
           Phoenix.LiveView.Socket.t(),
           Ash.Page.page(),
@@ -663,8 +668,8 @@ defmodule AshPhoenix.LiveView do
         ) ::
           Phoenix.LiveView.Socket.t()
   def assign_page_and_stream_result(socket, page, opts \\ []) do
-    opts = Keyword.validate!(opts, results_key: :results, page_key: :page)
+    opts = AshPhoenix.LiveView.AssignPageAndStreamResultOptions.validate!(opts)
     {results, page} = Map.get_and_update(page, :results, &{&1, nil})
-    Phoenix.Component.assign(socket, [{opts[:results_key], results}, {opts[:page_key], page}])
+    Phoenix.Component.assign(socket, [{opts.results_key, results}, {opts.page_key, page}])
   end
 end
