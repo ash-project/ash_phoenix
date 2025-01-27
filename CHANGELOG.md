@@ -5,6 +5,31 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.15](https://github.com/ash-project/ash_phoenix/compare/v2.1.14...v2.1.15) (2025-01-27)
+
+
+
+
+### Bug Fixes:
+
+* handle `nil` nested form when carrying over errors
+
+* Handle invalid params and warn when invalid (#301)
+
+* In AshPhoenix.Form.errors parse path before errors get (#300)
+
+* Make ash_errors private and remove unused default values
+
+* Show correct error message when no form is configured but a relationship is present
+
+### Improvements:
+
+* Move get params logic to private function, put get params on every for call (#304)
+
+* add `AshPhoenix.LiveView.assign_page_and_stream_result/3`  (#303)
+
+* make arguments have higher precedence in do_value (#294)
+
 ## [v2.1.14](https://github.com/ash-project/ash_phoenix/compare/v2.1.13...v2.1.14) (2025-01-19)
 
 
