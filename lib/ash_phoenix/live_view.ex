@@ -8,6 +8,7 @@ defmodule AshPhoenix.LiveView do
   @type assigns :: map
   @type topic :: String.t()
   @type liveness_options :: Keyword.t()
+  @type page_params :: %{String.t() => String.t()}
 
   @opts [
     subscribe: [
@@ -225,6 +226,21 @@ defmodule AshPhoenix.LiveView do
     |> assign(:ash_live_config, new_live_config)
   end
 
+  @doc """
+  Generates a page request for doing pagination based on the passed in parameters.
+
+  ## Examples
+
+  iex> AshPhoenix.LiveView.page_from_params(%{"offset" => "10", "limit" => "10"}, 20, true)
+  [count: true, limit: 10, offset: 10]
+
+  iex> AshPhoenix.LiveView.page_from_params(%{"offset" => "10", "limit" => "10"}, 20)
+  [count: false, limit: 10, offset: 10]
+
+  iex> AshPhoenix.LiveView.page_from_params(%{"offset" => "10", "count" => "true"}, 20)
+  [count: true, limit: 20, offset: 10]
+  """
+  @spec page_from_params(page_params(), pos_integer(), boolean()) :: Keyword.t()
   def page_from_params(params, default_limit, count? \\ false) do
     params = params || %{}
 
@@ -245,6 +261,10 @@ defmodule AshPhoenix.LiveView do
     |> Keyword.put(:count, count? || params["count"] == "true")
   end
 
+  @doc """
+  Converts an `Ash.Page.Keyset` or `Ash.Page.Offset` struct into page parameters in keyword format.
+  """
+  @spec page_params(Ash.Page.page()) :: Keyword.t()
   def page_params(%Ash.Page.Keyset{} = keyset) do
     cond do
       keyset.after ->
@@ -274,10 +294,34 @@ defmodule AshPhoenix.LiveView do
 
   defp set_count(params, _), do: params
 
+  @doc """
+  Returns true if there's a previous page.
+
+  ### Examples
+
+  iex> AshPhoenix.LiveView.prev_page?(%Ash.Page.Offset{offset: 10, limit: 10})
+  true
+
+  iex> AshPhoenix.LiveView.prev_page?(%{offset: 0, limit: 10})
+  false
+  """
+  @spec prev_page?(Ash.Page.page()) :: boolean()
   def prev_page?(page) do
     page_link_params(page, "prev") != :invalid
   end
 
+  @doc """
+  Returns true if there's a next page.
+
+  ### Examples
+
+  iex> AshPhoenix.LiveView.next_page?(%Ash.Page.Offset{offset: 10, limit: 10, more?: true})
+  true
+
+  iex> AshPhoenix.LiveView.next_page?(%{offset: 0, limit: 10, more?: false})
+  false
+  """
+  @spec next_page?(Ash.Page.page()) :: boolean()
   def next_page?(page) do
     page_link_params(page, "next") != :invalid
   end
@@ -293,9 +337,7 @@ defmodule AshPhoenix.LiveView do
   Returns `:invalid` or a list of query link params.
   """
   @spec page_link_params(Ash.Page.Offset.t(), String.t()) :: list(any()) | :invalid
-  def page_link_params(_, "first") do
-    []
-  end
+  def page_link_params(_, "first"), do: []
 
   def page_link_params(%{__first__?: true}, "prev"), do: :invalid
 
@@ -602,5 +644,32 @@ defmodule AshPhoenix.LiveView do
 
   defp assign(socket, one, two) do
     Phoenix.Socket.assign(socket, one, two)
+  end
+
+  @doc """
+  Shorthand to add results of a page onto a socket along with the page.
+
+  ### Examples:
+
+  ```elixir
+  AshPhoenix.LiveView.assign_page_and_stream_result(%Phoenix.LiveView.Socket{}, %Ash.Page.Offset{results: [1,2,3]})
+  # => %Phoenix.LiveView.Socket{assigns: %{results: [1,2,3], page: %Ash.Page.Offset{results: nil}}}
+  ```
+
+  ## Options
+
+  #{AshPhoenix.LiveView.AssignPageAndStreamResultOptions.docs()}
+  """
+  @doc spark_opts: [{1, AshPhoenix.LiveView.AssignPageAndStreamResultOptions.schema()}]
+  @spec assign_page_and_stream_result(
+          Phoenix.LiveView.Socket.t(),
+          Ash.Page.page(),
+          Keyword.t()
+        ) ::
+          Phoenix.LiveView.Socket.t()
+  def assign_page_and_stream_result(socket, page, opts \\ []) do
+    opts = AshPhoenix.LiveView.AssignPageAndStreamResultOptions.validate!(opts)
+    {results, page} = Map.get_and_update(page, :results, &{&1, nil})
+    Phoenix.Component.assign(socket, [{opts.results_key, results}, {opts.page_key, page}])
   end
 end
