@@ -546,11 +546,16 @@ defmodule AshPhoenix.Form do
     id = opts[:id] || opts[:as] || "form"
 
     params =
-      if is_map(opts[:params]) or is_nil(opts[:params]) do
-        opts[:params] || %{}
-      else
-        IO.warn("The `params` option should be a map.")
-        %{}
+      cond do
+        is_map(opts[:params]) ->
+          opts[:params]
+
+        is_nil(opts[:params]) or opts[:params] == "" ->
+          %{}
+
+        true ->
+          IO.warn("Form #{name}: `params` option should be a map.")
+          %{}
       end
 
     {forms, params} =
