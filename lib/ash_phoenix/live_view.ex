@@ -659,12 +659,12 @@ defmodule AshPhoenix.LiveView do
   @spec assign_page_and_stream_result(
           Phoenix.LiveView.Socket.t(),
           Ash.Page.page(),
-          atom(),
-          atom()
+          Keyword.t()
         ) ::
           Phoenix.LiveView.Socket.t()
-  def assign_page_and_stream_result(socket, page, result_key \\ :results, page_key \\ :page) do
+  def assign_page_and_stream_result(socket, page, opts \\ []) do
+    opts = Keyword.validate!(opts, results_key: :results, page_key: :page)
     {results, page} = Map.get_and_update(page, :results, &{&1, nil})
-    Phoenix.Component.assign(socket, [{result_key, results}, {page_key, page}])
+    Phoenix.Component.assign(socket, [{opts[:results_key], results}, {opts[:page_key], page}])
   end
 end

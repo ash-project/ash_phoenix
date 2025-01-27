@@ -23,8 +23,8 @@ defmodule AshPhoenixTest.LiveViewTest do
                AshPhoenix.LiveView.assign_page_and_stream_result(
                  socket,
                  page,
-                 :numbers,
-                 :pagination
+                 results_key: :numbers,
+                 page_key: :pagination
                )
     end
   end
