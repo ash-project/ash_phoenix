@@ -49,6 +49,14 @@ defmodule AshPhoenix.Test.Post do
 
     create :create do
       primary?(true)
+
+      change fn changeset, _ ->
+        Ash.Changeset.before_action(changeset, fn changeset ->
+          send(self(), {:submitted_changeset, changeset})
+          changeset
+        end)
+      end
+
       argument(:author, :map, allow_nil?: true)
       argument(:comments, {:array, :map})
       argument(:linked_posts, {:array, :map})

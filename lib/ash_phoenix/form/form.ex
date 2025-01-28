@@ -2324,11 +2324,16 @@ defmodule AshPhoenix.Form do
     |> Phoenix.HTML.FormData.to_form(form.options)
   end
 
-  def sort_forms(forms, [], indices) when is_list(forms) and not is_list(indices) do
+  def sort_forms(form, path, instruction) do
+    do_sort_forms(form, path, instruction, form.name, form.id)
+  end
+
+  def do_sort_forms(forms, [], indices, _, _id)
+      when is_list(forms) and not is_list(indices) do
     forms
   end
 
-  def sort_forms(forms, [], indices) when is_list(forms) and is_list(indices) do
+  def do_sort_forms(forms, [], indices, name, id) when is_list(forms) and is_list(indices) do
     indices =
       Enum.map(indices, fn index ->
         if is_binary(index) do
@@ -2344,11 +2349,12 @@ defmodule AshPhoenix.Form do
       Enum.find_index(indices, &(&1 == index)) || :infinity
     end)
     |> Enum.map(&elem(&1, 0))
+    |> reindex_sorted_forms(name, id)
   end
 
-  def sort_forms([], _, _), do: []
+  def do_sort_forms([], _, _, _, _), do: []
 
-  def sort_forms(forms, [index], :increment) when is_list(forms) do
+  def do_sort_forms(forms, [index], :increment, name, id) when is_list(forms) do
     index =
       if is_binary(index) do
         String.to_integer(index)
@@ -2361,11 +2367,11 @@ defmodule AshPhoenix.Form do
         forms
 
       {head, [first, second | rest]} ->
-        head ++ [second | [first | rest]]
+        reindex_sorted_forms(head ++ [second | [first | rest]], name, id)
     end
   end
 
-  def sort_forms(forms, [index], :decrement) when is_list(forms) do
+  def do_sort_forms(forms, [index], :decrement, name, id) when is_list(forms) do
     index =
       if is_binary(index) do
         String.to_integer(index)
@@ -2379,16 +2385,23 @@ defmodule AshPhoenix.Form do
 
       {head, [first | rest]} ->
         {head, [last]} = Enum.split(head, -1)
-        head ++ [first, last] ++ rest
+        reindex_sorted_forms(head ++ [first, last] ++ rest, name, id)
     end
   end
 
-  def sort_forms(form, [key | rest], instruction) do
+  def do_sort_forms(form, [key | rest], instruction, name, id) do
     new_forms =
       form.forms
       |> Map.new(fn {my_key, value} ->
         if to_string(my_key) == key || my_key == key do
-          {my_key, sort_forms(value, rest, instruction)}
+          {my_key,
+           do_sort_forms(
+             value,
+             rest,
+             instruction,
+             name <> "[#{my_key}]",
+             id <> "_#{my_key}"
+           )}
         else
           {my_key, value}
         end
@@ -2398,6 +2411,32 @@ defmodule AshPhoenix.Form do
       form
       | forms: new_forms
     }
+  end
+
+  defp reindex_sorted_forms(forms, name, id) do
+    forms
+    |> Enum.with_index()
+    |> Enum.map(fn {nested_form, i} ->
+      new_name = name <> "[#{i}]"
+      new_id = id <> "_#{i}"
+
+      if nested_form.name == new_name && nested_form.id == new_id do
+        nested_form
+      else
+        %{
+          nested_form
+          | name: new_name,
+            id: new_id,
+            params: add_index(nested_form.params, i, []),
+            forms:
+              replace_form_names(
+                nested_form.forms,
+                {nested_form.name, new_name},
+                {nested_form.id, new_id}
+              )
+        }
+      end
+    end)
   end
 
   @doc """

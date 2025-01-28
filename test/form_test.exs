@@ -109,6 +109,36 @@ defmodule AshPhoenix.FormTest do
                |> Enum.map(&AshPhoenix.Form.value(&1, :text))
     end
 
+    test "submits forms in the correct order" do
+      Post
+      |> Form.for_create(:create,
+        domain: Domain,
+        params: %{"text" => "bar"},
+        forms: [
+          comments: [
+            type: :list,
+            resource: Comment,
+            create_action: :create
+          ]
+        ]
+      )
+      |> Form.add_form([:comments], params: %{"text" => "one"})
+      |> Form.add_form([:comments], params: %{"text" => "two"})
+      |> Form.add_form([:comments], params: %{"text" => "three"})
+      |> Form.sort_forms([:comments], [2, 0, 1])
+      |> AshPhoenix.Form.submit!()
+
+      assert_received {:submitted_changeset, changeset}
+
+      assert %{
+               "comments" => [
+                 %{"text" => "three"},
+                 %{"text" => "one"},
+                 %{"text" => "two"}
+               ]
+             } = changeset.params
+    end
+
     test "allows decrement form indices" do
       assert ["one", "three", "two"] ==
                Post
