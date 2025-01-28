@@ -309,7 +309,6 @@ like drag handles. See [their docs](https://sortablejs.github.io/Sortable/) for 
 Now, lets say you were to drag the second form above the first form, the server would see the
 params as:
 
-### 
 ```elixir
 %{"form" => %{"_sort_locations" => ["1", "0"]}}
 ```
