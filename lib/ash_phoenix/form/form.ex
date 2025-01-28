@@ -2311,12 +2311,33 @@ defmodule AshPhoenix.Form do
   end
 
   @doc """
-  Sorts nested forms at the given path.
+  Sorts nested forms at the given path. Paths may be strings, eg. `form[tracks][0]` or list notation, eg. `[:tracks, 0]`.
 
-  The following items can be given:
-  - `{:replace, path_without_index, [0, 1, 2]}` - indices can be strings or integers.
-  - `{:increment, path_to_form}` - increment the index of a specific form (swapping it with the next)
-  - `{:decrement, path_to_form}` - decrement the index of a specific form (swapping it with the previous)
+  The following path and instruction opts can be given:
+
+  -  path: `path_to_collection`, instruction: `list_of_indices`
+
+     This will re-order the elements of the collection according to the list of indices. Indices can be strings or integers.
+
+     eg. `sort_forms(form, "form[tracks]", [3, 2, 0, 1])`
+
+     Will move `form[tracks][3]` to index 0, `form[tracks][2]` to index 1, etc.
+
+  -  path: `path_to_element_in_collection`, instruction: `:increment`
+
+     This will shift the index of the selected item in the collection up by one, effectively swapping it with the next item in the list.
+
+     eg. `sort_forms(form, "form[tracks][1]", :increment)`
+
+     Will move `form[tracks][1]` to index 2, shifting `form[tracks][2]` up to index 1.
+
+  - path: `path_to_element_in_collection`, instruction: `:decrement`
+
+    This will shift the index of the selected item in the collection down by one, effectively swapping it with the previous item in the list.
+
+    eg. `sort_forms(form, "form[tracks][1]", :decrement)`
+
+    Will move `form[tracks][1]` to index 0, shifting `form[tracks][0]` down to index 1.
   """
   def sort_forms(%Phoenix.HTML.Form{} = form, path, instruction) do
     form.source

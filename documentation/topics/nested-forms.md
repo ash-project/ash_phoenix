@@ -335,7 +335,7 @@ store the index.
 
 ```elixir
 def handle_event("update-sorting", %{"path" => path, "indices" => indices}, socket) do
-  form = AshPhoenix.Form.sort_forms(socket, path, indices)
+  form = AshPhoenix.Form.sort_forms(socket.assigns.form, path, indices)
   {:noreply, assign(socket, form: form)}
 end
 ```
@@ -348,14 +348,14 @@ If you wanted up/down buttons, you could use event handlers like the following.
 def handle_event("move-up", %{"path" => form_to_move}, socket) do
   # decrement typically means "move up" visually
   # because forms are rendered down the page ascending
-  form = AshPhoenix.Form.sort_forms(socket, form_to_move, :decrement)
+  form = AshPhoenix.Form.sort_forms(socket.assigns.form, form_to_move, :decrement)
   {:noreply, assign(socket, form: form)}
 end
 
 def handle_event("move-down", %{"path" => form_to_move}, socket) do
   # increment typically means "move down" visually
   # because forms are rendered down the page ascending
-  form = AshPhoenix.Form.sort_forms(socket, form_to_move, :increment)
+  form = AshPhoenix.Form.sort_forms(socket.assigns.form, form_to_move, :increment)
   {:noreply, assign(socket, form: form)}
 end
 ```
