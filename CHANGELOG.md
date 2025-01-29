@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.16](https://github.com/ash-project/ash_phoenix/compare/v2.1.15...v2.1.16) (2025-01-29)
+
+
+
+
+### Bug Fixes:
+
+* don't try to build form interfaces for calculations
+
+* reindex forms sorted with `sort_forms/3`
+
 ## [v2.1.15](https://github.com/ash-project/ash_phoenix/compare/v2.1.14...v2.1.15) (2025-01-27)
 
 
