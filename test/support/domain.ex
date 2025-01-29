@@ -12,6 +12,7 @@ defmodule AshPhoenix.Test.Domain do
 
     resource AshPhoenix.Test.User do
       define :update_user, action: :update
+      define_calculation :always_true
     end
 
     resource(AshPhoenix.Test.DeepNestedUnionResource)

@@ -19,6 +19,10 @@ defmodule AshPhoenix.Test.User do
     define :create, args: [:email]
   end
 
+  calculations do
+    calculate :always_true, :boolean, expr(true)
+  end
+
   actions do
     default_accept :*
 

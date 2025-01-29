@@ -67,6 +67,7 @@ defmodule AshPhoenix do
 
           dsl_state
           |> Ash.Resource.Info.interfaces()
+          |> Enum.filter(&match?(%Ash.Resource.Interface{}, &1))
           |> Enum.uniq_by(& &1.name)
           |> Enum.reduce(dsl_state, &add_form_interface(&1, &2, resource, true))
           |> then(&{:ok, &1})
@@ -75,6 +76,7 @@ defmodule AshPhoenix do
           references
           |> Enum.reduce(dsl_state, fn reference, dsl_state ->
             reference.definitions
+            |> Enum.filter(&match?(%Ash.Resource.Interface{}, &1))
             |> Enum.uniq_by(& &1.name)
             |> Enum.reduce(dsl_state, &add_form_interface(&1, &2, reference.resource))
           end)
