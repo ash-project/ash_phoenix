@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.17](https://github.com/ash-project/ash_phoenix/compare/v2.1.16...v2.1.17) (2025-01-30)
+
+
+
+
+### Improvements:
+
+* guess the plural name for resources automatically
+
 ## [v2.1.16](https://github.com/ash-project/ash_phoenix/compare/v2.1.15...v2.1.16) (2025-01-29)
 
 
