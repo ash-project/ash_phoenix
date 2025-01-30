@@ -290,7 +290,7 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
              "Elixir.AshPhoenix.Test.Domain",
              "--resource",
              "Elixir.AshPhoenix.Test.Artist",
-             "--resourceplural",
+             "--resource-plural",
              "Artists"
            ])
            |> Igniter.Project.Module.move_files()

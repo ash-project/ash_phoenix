@@ -5,7 +5,11 @@ if Code.ensure_loaded?(Igniter) do
     def generate_from_cli(%Igniter{} = igniter, options) do
       domain = Keyword.fetch!(options, :domain) |> Igniter.Project.Module.parse()
       resource = Keyword.fetch!(options, :resource) |> Igniter.Project.Module.parse()
-      resource_plural = Keyword.fetch!(options, :resourceplural)
+
+      resource_plural =
+        Keyword.fetch!(options, :resource_plural) ||
+          resource |> Module.split() |> List.last() |> Macro.underscore() |> Inflex.pluralize()
+
       opts = []
 
       generate(
@@ -112,7 +116,6 @@ if Code.ensure_loaded?(Igniter) do
       igniter =
         if opts[:interactive?] do
           Igniter.add_notice(igniter, """
-
           Add the live routes to your browser scope in #{web_path(igniter)}/router.ex:
 
           #{for line <- live_route_instructions(assigns), do: "    #{line}"}
@@ -188,8 +191,8 @@ if Code.ensure_loaded?(Igniter) do
         resource_plural: plural_name,
         create_action: create_action,
         update_action: update_action,
-        create_inputs: inputs(resource, create_action),
-        update_inputs: inputs(resource, update_action),
+        create_inputs: create_action && inputs(resource, create_action),
+        update_inputs: update_action && inputs(resource, update_action),
         destroy: destroy(short_name, get_by_pkey, resource, opts),
         pkey: pkey,
         get_by_pkey: get_by_pkey,

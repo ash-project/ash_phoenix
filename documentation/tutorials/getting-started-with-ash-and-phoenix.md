@@ -325,7 +325,7 @@ declining to name your actor, accepting any other default values, and following 
 instructions listed at the end for adding the liveview to your router.
 
 ```bash
-mix ash_phoenix.gen.live --domain MyAshPhoenixApp.Blog --resource MyAshPhoenixApp.Blog.Post --resourceplural posts
+mix ash_phoenix.gen.live --domain MyAshPhoenixApp.Blog --resource MyAshPhoenixApp.Blog.Post
 ```
 
 Now, start the web server by running `mix phx.server`. Then, visit the posts route that you added in your browser to see what we have just created.

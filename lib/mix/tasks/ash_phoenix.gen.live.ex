@@ -21,7 +21,7 @@ if Code.ensure_loaded?(Igniter) do
 
     * `--domain`   - Existing domain
     * `--resource` - Existing resource module name
-    * `--resourceplural` - Pluralized version resource name for the route paths and templates
+    * `--resource-plural` - Pluralized version resource name for the route paths and templates
     """
 
     def info(_argv, _composing_task) do
@@ -30,19 +30,31 @@ if Code.ensure_loaded?(Igniter) do
         # See the generators guide for more.
         group: :ash_phoenix,
         example: @example,
-        schema: [domain: :string, resource: :string, resourceplural: :string],
+        schema: [
+          domain: :string,
+          resource: :string,
+          resourceplural: :string,
+          resource_plural: :string
+        ],
         # Default values for the options in the `schema`.
         defaults: [],
         # CLI aliases
         aliases: [],
         # A list of options in the schema that are required
-        required: [:domain, :resource, :resourceplural]
+        required: [:domain, :resource]
       }
     end
 
     def igniter(igniter, argv) do
       # extract options according to `schema` and `aliases` above
       options = options!(argv)
+
+      options =
+        Keyword.put(
+          options,
+          :resource_plural,
+          options[:resource_plural] || options[:resourceplural]
+        )
 
       # Do your work here and return an updated igniter
       igniter
