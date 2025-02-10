@@ -336,7 +336,8 @@ defmodule AshPhoenix.LiveView do
 
   Returns `:invalid` or a list of query link params.
   """
-  @spec page_link_params(Ash.Page.Offset.t(), String.t() | pos_integer()) :: list(any()) | :invalid
+  @spec page_link_params(Ash.Page.Offset.t(), String.t() | pos_integer()) ::
+          list(any()) | :invalid
   def page_link_params(_, "first"), do: []
 
   def page_link_params(%{__first__?: true}, "prev"), do: :invalid
