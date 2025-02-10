@@ -143,6 +143,7 @@ defmodule AshPhoenix.MixProject do
       {:git_ops, "~> 2.5", only: [:dev, :test]},
       {:ex_doc, "~> 0.32", only: [:dev, :test], override: true},
       {:makeup_eex, ">= 0.0.0", only: :dev, runtime: false},
+      {:makeup_html, "~> 0.2", only: :dev, runtime: false},
       {:ex_check, "~> 0.14", only: [:dev, :test]},
       {:credo, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:dialyxir, ">= 0.0.0", only: [:dev, :test], runtime: false},
