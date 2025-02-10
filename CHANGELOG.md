@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.18](https://github.com/ash-project/ash_phoenix/compare/v2.1.17...v2.1.18) (2025-02-10)
+
+
+
+
+### Bug Fixes:
+
+* page_link_params supports integers
+
 ## [v2.1.17](https://github.com/ash-project/ash_phoenix/compare/v2.1.16...v2.1.17) (2025-01-30)
 
 
