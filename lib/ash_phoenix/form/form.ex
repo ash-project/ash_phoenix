@@ -63,12 +63,12 @@ defmodule AshPhoenix.Form do
     {:ok, assign(socket, form: MyApp.Accounts.form_to_register_with_password() |> to_form())}
   end
 
-  def handle_event(socket, "validate", %{"form" => params}) do
+  def handle_event("validate", %{"form" => params}, socket) do
     form = AshPhoenix.Form.validate(socket.assigns.form, params)
     {:noreply, assign(socket, :form, form)}
   end
 
-  def handle_event(socket, "submit", %{"form" => params}) do
+  def handle_event("submit", %{"form" => params}, socket) do
     case AshPhoenix.Form.submit(socket.assigns.form, params: params) do
       {:ok, _user} ->
         socket =
