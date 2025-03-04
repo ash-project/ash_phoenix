@@ -642,6 +642,19 @@ defmodule AshPhoenix.Form.Auto do
       [] ->
         opts
 
+      [{source_dest_or_join, action_name, _} | rest] ->
+        resource = rel_to_resource(source_dest_or_join, relationship)
+
+        opts
+        |> Keyword.put(:update_resource, resource)
+        |> Keyword.put(:update_action, action_name)
+        |> Keyword.update!(
+          :forms,
+          &(&1 ++
+              auto(resource, action_name, auto_opts))
+        )
+        |> add_join_form(relationship, rest, manage_opts)
+
       [{source_dest_or_join, action_name} | rest] ->
         resource = rel_to_resource(source_dest_or_join, relationship)
 
