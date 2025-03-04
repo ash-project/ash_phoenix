@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.19](https://github.com/ash-project/ash_phoenix/compare/v2.1.18...v2.1.19) (2025-03-04)
+
+
+
+
+### Bug Fixes:
+
+* handle case w/ set list of join attributes
+
 ## [v2.1.18](https://github.com/ash-project/ash_phoenix/compare/v2.1.17...v2.1.18) (2025-02-10)
 
 
