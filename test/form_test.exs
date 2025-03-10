@@ -389,7 +389,7 @@ defmodule AshPhoenix.FormTest do
     test "lists with invalid values return those invalid values when getting them" do
       form =
         Post
-        |> Form.for_create(:create_author_required, domain: Domain, forms: [auto?: true])
+        |> Form.for_create(:create_author_required, domain: Domain, forms: [auto?: false])
         |> Form.validate(%{"list_of_ints" => %{"0" => %{"map" => "of stuff"}}})
 
       assert AshPhoenix.Form.value(form, :list_of_ints) == [%{"map" => "of stuff"}]

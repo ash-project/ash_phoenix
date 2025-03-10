@@ -161,7 +161,7 @@ defmodule AshPhoenix.Form do
           type: :create | :update | :destroy | :read,
           params: map,
           source: source,
-          transform_params: nil | (map -> term),
+          transform_params: nil | (map, atom -> term) | (t(), map, atom -> term),
           data: nil | Ash.Resource.record(),
           form_keys: Keyword.t(),
           forms: map,
@@ -4443,7 +4443,13 @@ defmodule AshPhoenix.Form do
         |> Keyword.delete(:auto?)
       end)
     else
-      opts
+      Keyword.update(opts, :forms, nil, fn value ->
+        if value do
+          Keyword.delete(value, :auto?)
+        else
+          value
+        end
+      end)
     end
   end
 
