@@ -9,7 +9,7 @@ defmodule NormalContent do
   use Ash.Resource, data_layer: :embedded
 
   attributes do
-    attribute :body, :string, allow_nil?: false
+    attribute :body, :string, allow_nil?: false, public?: true
   end
 
   actions do
@@ -21,7 +21,7 @@ defmodule SpecialContent do
   use Ash.Resource, data_layer: :embedded
 
   attributes do
-    attribute :text, :string, allow_nil?: false
+    attribute :text, :string, allow_nil?: false, public?: true
   end
 
   actions do
