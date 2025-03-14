@@ -2219,7 +2219,8 @@ defmodule AshPhoenix.Form do
   defp carry_over_errors(form, additional_errors \\ nil) do
     {these_errors, further_path_errors} =
       form.source.errors
-      |> AshPhoenix.FormData.Helpers.unwrap_errors()
+      |> Ash.Error.to_error_class()
+      |> Map.get(:errors)
       |> Enum.concat(additional_errors || [])
       |> Enum.split_with(&(&1.path == []))
 

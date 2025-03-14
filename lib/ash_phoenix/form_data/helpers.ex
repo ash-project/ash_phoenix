@@ -51,23 +51,8 @@ defmodule AshPhoenix.FormData.Helpers do
   end
 
   @doc false
-  def unwrap_errors(errors) do
-    Enum.flat_map(errors, &unwrap_error/1)
-  end
-
-  defp unwrap_error(%class{errors: errors})
-       when class in [
-              Ash.Error.Invalid,
-              Ash.Error.Forbidden,
-              Ash.Error.Unknown,
-              Ash.Error.Framework
-            ],
-       do: unwrap_errors(errors)
-
-  defp unwrap_error(error), do: [error]
-
   def transform_errors(form, errors, path_filter \\ nil, form_keys \\ []) do
-    errors = unwrap_errors(errors)
+    errors = Ash.Error.to_error_class(errors).errors
 
     additional_path_filters =
       form_keys
