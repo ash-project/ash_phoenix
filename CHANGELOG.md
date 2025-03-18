@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.21](https://github.com/ash-project/ash_phoenix/compare/v2.1.20...v2.1.21) (2025-03-18)
+
+
+
+
+### Bug Fixes:
+
+* translate errors into an error class before rendering
+
+* Additional function clause for keyset pagination (page_link_params) (#323)
+
 ## [v2.1.20](https://github.com/ash-project/ash_phoenix/compare/v2.1.19...v2.1.20) (2025-03-11)
 
 
