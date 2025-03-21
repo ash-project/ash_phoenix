@@ -220,6 +220,10 @@ defmodule AshPhoenix.FormTest do
       assert capture_log(fn ->
                Form.errors(form)
              end) == ""
+
+      assert capture_log(fn ->
+               Form.errors(%{form.source | source: %{form.source.source | errors: nil}})
+             end) == ""
     end
 
     test "unknown errors produce warnings" do
