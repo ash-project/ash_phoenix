@@ -207,6 +207,21 @@ defmodule AshPhoenix.FormTest do
       assert Form.errors(form.source, for_path: [:comments, 0]) == []
     end
 
+    @tag :regression
+    test "when there are no errors, no errors are returned" do
+      form =
+        Post
+        |> Form.for_create(:create,
+          domain: Domain
+        )
+        |> AshPhoenix.Form.validate(%{text: "text"})
+        |> form_for("action")
+
+      assert capture_log(fn ->
+               Form.errors(form)
+             end) == ""
+    end
+
     test "unknown errors produce warnings" do
       form =
         Post
