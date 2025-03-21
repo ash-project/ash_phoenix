@@ -52,7 +52,7 @@ defmodule AshPhoenix.FormData.Helpers do
 
   @doc false
   def transform_errors(form, errors, path_filter \\ nil, form_keys \\ []) do
-    errors = Ash.Error.to_error_class(errors).errors
+    errors = if errors == [], do: [], else: Ash.Error.to_error_class(errors).errors
 
     additional_path_filters =
       form_keys
