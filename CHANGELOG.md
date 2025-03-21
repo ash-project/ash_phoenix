@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.22](https://github.com/ash-project/ash_phoenix/compare/v2.1.21...v2.1.22) (2025-03-21)
+
+
+
+
+### Bug Fixes:
+
+* unhandled error in form submission warning (#329)
+
 ## [v2.1.21](https://github.com/ash-project/ash_phoenix/compare/v2.1.20...v2.1.21) (2025-03-18)
 
 
