@@ -2221,7 +2221,7 @@ defmodule AshPhoenix.Form do
 
     {these_errors, further_path_errors} =
       if errors == [] do
-        {[], []}
+        Enum.split_with(additional_errors || [], &(&1.path == []))
       else
         errors
         |> Ash.Error.to_error_class()
