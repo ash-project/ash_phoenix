@@ -2217,12 +2217,18 @@ defmodule AshPhoenix.Form do
   end
 
   defp carry_over_errors(form, additional_errors \\ nil) do
+    errors = List.wrap(form.source.errors)
+
     {these_errors, further_path_errors} =
-      form.source.errors
-      |> Ash.Error.to_error_class()
-      |> Map.get(:errors)
-      |> Enum.concat(additional_errors || [])
-      |> Enum.split_with(&(&1.path == []))
+      if errors == [] do
+        Enum.split_with(additional_errors || [], &(&1.path == []))
+      else
+        errors
+        |> Ash.Error.to_error_class()
+        |> Map.get(:errors)
+        |> Enum.concat(additional_errors || [])
+        |> Enum.split_with(&(&1.path == []))
+      end
 
     # not the first iteration
     form =
