@@ -16,11 +16,13 @@ defmodule AshPhoenix.FormTest do
 
   describe "generic actions" do
     test "generic actions can have forms made for them" do
+      params = %{containing: "hello"}
+
       assert 0 =
                Post
                |> Form.for_action(:post_count)
-               |> Form.validate(%{containing: "hello"})
-               |> Form.submit!()
+               |> Form.validate(params)
+               |> Form.submit!(params: params)
     end
   end
 
@@ -110,33 +112,21 @@ defmodule AshPhoenix.FormTest do
     end
 
     test "submits forms in the correct order" do
+      comments = [type: :list, resource: Comment, create_action: :create]
+      opts = [domain: Domain, params: %{"text" => "bar"}, forms: [comments: comments]]
+      [params_1, params_2, params_3] = Enum.map(["one", "two", "three"], &%{"text" => &1})
+
       Post
-      |> Form.for_create(:create,
-        domain: Domain,
-        params: %{"text" => "bar"},
-        forms: [
-          comments: [
-            type: :list,
-            resource: Comment,
-            create_action: :create
-          ]
-        ]
-      )
-      |> Form.add_form([:comments], params: %{"text" => "one"})
-      |> Form.add_form([:comments], params: %{"text" => "two"})
-      |> Form.add_form([:comments], params: %{"text" => "three"})
+      |> Form.for_create(:create, opts)
+      |> Form.add_form([:comments], params: params_1)
+      |> Form.add_form([:comments], params: params_2)
+      |> Form.add_form([:comments], params: params_3)
       |> Form.sort_forms([:comments], [2, 0, 1])
-      |> AshPhoenix.Form.submit!()
+      |> AshPhoenix.Form.submit!(params: nil)
 
       assert_received {:submitted_changeset, changeset}
 
-      assert %{
-               "comments" => [
-                 %{"text" => "three"},
-                 %{"text" => "one"},
-                 %{"text" => "two"}
-               ]
-             } = changeset.params
+      assert ["three", "one", "two"] = Enum.map(changeset.params["comments"], & &1["text"])
     end
 
     test "allows decrement form indices" do
@@ -873,20 +863,16 @@ defmodule AshPhoenix.FormTest do
     end
 
     test "nested errors are set on the appropriate form after submit" do
+      params = %{"text" => "text", "post" => %{}}
+      post = [resource: Post, create_action: :create]
+      opts = [domain: Domain, forms: [post: post]]
+
       form =
         Comment
-        |> Form.for_create(:create,
-          domain: Domain,
-          forms: [
-            post: [
-              resource: Post,
-              create_action: :create
-            ]
-          ]
-        )
+        |> Form.for_create(:create, opts)
         |> Form.add_form(:post, params: %{})
-        |> Form.validate(%{"text" => "text", "post" => %{}})
-        |> Form.submit(force?: true)
+        |> Form.validate(params)
+        |> Form.submit(force?: true, params: params)
         |> elem(1)
         |> form_for("action")
 
@@ -924,19 +910,15 @@ defmodule AshPhoenix.FormTest do
     end
 
     test "nested errors are set on the appropriate form after submit, even if no submit actually happens" do
+      params = %{"text" => "text", "post" => %{}}
+      post = [resource: Post, create_action: :create]
+      opts = [domain: Domain, forms: [post: post]]
+
       form =
         Comment
-        |> Form.for_create(:create,
-          domain: Domain,
-          forms: [
-            post: [
-              resource: Post,
-              create_action: :create
-            ]
-          ]
-        )
+        |> Form.for_create(:create, opts)
         |> Form.add_form(:post, params: %{})
-        |> Form.submit(params: %{"text" => "text", "post" => %{}})
+        |> Form.submit(params: params)
         |> elem(1)
         |> form_for("action")
 
@@ -946,20 +928,15 @@ defmodule AshPhoenix.FormTest do
     end
 
     test "nested errors can be fetched with `Form.errors/2`" do
+      params = %{"text" => "text", "post" => %{}}
+      post = [resource: Post, create_action: :create]
+      opts = [domain: Domain, forms: [post: post]]
+
       form =
         Comment
-        |> Form.for_create(:create,
-          domain: Domain,
-          forms: [
-            post: [
-              resource: Post,
-              create_action: :create
-            ]
-          ]
-        )
+        |> Form.for_create(:create, opts)
         |> Form.add_form(:post, params: %{})
-        |> Form.validate(%{"text" => "text", "post" => %{}})
-        |> Form.submit(force?: true)
+        |> Form.submit(params: params)
         |> elem(1)
         |> form_for("action")
 
@@ -977,20 +954,16 @@ defmodule AshPhoenix.FormTest do
     end
 
     test "errors can be fetched with `Form.errors/2`" do
+      params = %{"post" => %{"text" => "text"}}
+      post = [resource: Post, create_action: :create]
+      opts = [domain: Domain, forms: [post: post]]
+
       form =
         Comment
-        |> Form.for_create(:create,
-          domain: Domain,
-          forms: [
-            post: [
-              resource: Post,
-              create_action: :create
-            ]
-          ]
-        )
+        |> Form.for_create(:create, opts)
         |> Form.add_form(:post, params: %{})
-        |> Form.validate(%{"post" => %{"text" => "text"}})
-        |> Form.submit(force?: true)
+        |> Form.validate(params)
+        |> Form.submit(force?: true, params: params)
         |> elem(1)
         |> form_for("action")
 
@@ -1048,6 +1021,8 @@ defmodule AshPhoenix.FormTest do
     end
 
     test "nested errors are set on the appropriate form after submit for many to many relationships" do
+      params = %{"text" => "text", "post" => [%{}]}
+
       form =
         Post
         |> Form.for_create(:create,
@@ -1062,8 +1037,8 @@ defmodule AshPhoenix.FormTest do
           ]
         )
         |> Form.add_form(:post, params: %{})
-        |> Form.validate(%{"text" => "text", "post" => [%{}]})
-        |> Form.submit(force?: true)
+        |> Form.validate(params)
+        |> Form.submit(force?: true, params: params)
         |> elem(1)
         |> form_for("action")
 
@@ -1244,42 +1219,29 @@ defmodule AshPhoenix.FormTest do
 
   describe "submit" do
     test "it runs the action with the params" do
-      assert {:ok, %{text: "text"}} =
-               Post
-               |> Form.for_create(:create, domain: Domain)
-               |> Form.validate(%{text: "text"})
-               |> Form.submit()
+      params = %{text: text} = %{text: "text"}
+      form = Post |> Form.for_create(:create, domain: Domain) |> Form.validate(params)
+      assert {:ok, %AshPhoenix.Test.Post{text: ^text}} = Form.submit(form, params: params)
     end
 
     test "it fallback to resource defined Domain if unset" do
-      assert {:ok, %{name: "name"}} =
-               Artist
-               |> Form.for_action(:create)
-               |> Form.validate(%{name: "name"})
-               |> Form.submit()
+      params_1 = %{name: name_1} = %{name: "name"}
+      params_2 = %{name: name_2} = %{name: "name changed"}
 
-      assert {:ok, [%{name: "name"}]} =
-               Artist
-               |> Form.for_action(:read)
-               |> Form.validate(%{name: "name changed"})
-               |> Form.submit()
+      form = Artist |> Form.for_action(:create) |> Form.validate(params_1)
+      assert {:ok, %AshPhoenix.Test.Artist{name: ^name_1}} = Form.submit(form, params: params_1)
 
-      artist =
-        Artist
-        |> Ash.Changeset.for_create(:create, %{name: "name"})
-        |> Ash.create!()
+      form = Artist |> Form.for_action(:read) |> Form.validate(params_2)
+      assert {:ok, [%AshPhoenix.Test.Artist{name: ^name_1}]} = Form.submit(form, params: params_2)
 
-      assert {:ok, %{name: "name changed"}} =
-               artist
-               |> Form.for_action(:update)
-               |> Form.validate(%{name: "name changed"})
-               |> Form.submit()
+      changeset = Ash.Changeset.for_create(Artist, :create, params_1)
+      artist = Ash.create!(changeset)
 
-      assert :ok =
-               artist
-               |> Form.for_action(:destroy)
-               |> Form.validate(%{name: "name changed"})
-               |> Form.submit()
+      form = artist |> Form.for_action(:update) |> Form.validate(params_2)
+      assert {:ok, %AshPhoenix.Test.Artist{name: ^name_2}} = Form.submit(form, params: params_2)
+
+      form = artist |> Form.for_action(:destroy) |> Form.validate(params_2)
+      assert :ok == Form.submit(form, params: params_2)
     end
   end
 
@@ -1308,21 +1270,13 @@ defmodule AshPhoenix.FormTest do
     end
 
     test "it is preserved through to submit" do
-      result =
-        Post
-        |> Form.for_create(:create,
-          domain: Domain,
-          prepare_source: fn changeset ->
-            Ash.Changeset.before_action(
-              changeset,
-              &Ash.Changeset.force_change_attribute(&1, :title, "special_title")
-            )
-          end
-        )
-        |> Form.validate(%{text: "text"})
-        |> Form.submit!()
+      title = "special_title"
+      params = %{text: "text"}
+      function = &Ash.Changeset.force_change_attribute(&1, :title, title)
+      opts = [domain: Domain, prepare_source: &Ash.Changeset.before_action(&1, function)]
+      form = Post |> Form.for_create(:create, opts) |> Form.validate(params)
 
-      assert result.title == "special_title"
+      assert {:ok, %AshPhoenix.Test.Post{title: ^title}} = Form.submit(form, params: params)
     end
   end
 
