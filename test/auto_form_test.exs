@@ -84,36 +84,26 @@ defmodule AshPhoenix.AutoFormTest do
     end
 
     test "a form can be added for a non-embedded type" do
+      params = %{"text" => "foobar"}
+      opts = [domain: Domain, forms: [auto?: true], params: params]
+
       Post
-      |> AshPhoenix.Form.for_create(:create,
-        domain: Domain,
-        forms: [
-          auto?: true
-        ],
-        params: %{
-          "text" => "foobar"
-        }
-      )
+      |> AshPhoenix.Form.for_create(:create, opts)
       |> AshPhoenix.Form.add_form(:union, params: %{"_union_type" => "bar", "value" => 10})
-      |> AshPhoenix.Form.submit!()
+      |> AshPhoenix.Form.submit!(params: params)
     end
 
     test "simple unions" do
+      params = %{"text" => "foobar"}
+      opts = [domain: Domain, forms: [auto?: true], params: params]
+
       assert %Ash.Union{type: :predefined, value: :update} =
                SimplePost
-               |> AshPhoenix.Form.for_create(:create,
-                 domain: Domain,
-                 forms: [
-                   auto?: true
-                 ],
-                 params: %{
-                   "text" => "foobar"
-                 }
-               )
+               |> AshPhoenix.Form.for_create(:create, opts)
                |> AshPhoenix.Form.add_form(:union,
                  params: %{"_union_type" => "predefined", "value" => "update"}
                )
-               |> AshPhoenix.Form.submit!()
+               |> AshPhoenix.Form.submit!(params: nil)
                |> Map.get(:union)
     end
 
@@ -160,23 +150,18 @@ defmodule AshPhoenix.AutoFormTest do
     end
 
     test "simple unions with invalid values" do
+      params = %{"text" => "foobar"}
+      opts = [domain: Domain, forms: [auto?: true], params: params]
+
       assert_raise Ash.Error.Invalid,
                    ~r/atom must be one of "update, update2", got: :create/,
                    fn ->
                      SimplePost
-                     |> AshPhoenix.Form.for_create(:create,
-                       domain: Domain,
-                       forms: [
-                         auto?: true
-                       ],
-                       params: %{
-                         "text" => "foobar"
-                       }
-                     )
+                     |> AshPhoenix.Form.for_create(:create, opts)
                      |> AshPhoenix.Form.add_form(:union,
                        params: %{"_union_type" => "predefined", "value" => "create"}
                      )
-                     |> AshPhoenix.Form.submit!()
+                     |> AshPhoenix.Form.submit!(params: nil)
                    end
     end
 
@@ -442,14 +427,11 @@ defmodule AshPhoenix.AutoFormTest do
     end
 
     test "validating a form with valid values works" do
+      opts = [domain: Domain, forms: [auto?: true]]
+
       form =
         Post
-        |> AshPhoenix.Form.for_create(:create,
-          domain: Domain,
-          forms: [
-            auto?: true
-          ]
-        )
+        |> AshPhoenix.Form.for_create(:create, opts)
         |> AshPhoenix.Form.add_form(:union_array, params: %{"type" => "foo"})
         |> form_for("action")
 
@@ -464,33 +446,32 @@ defmodule AshPhoenix.AutoFormTest do
                    }
                  }
                })
-               |> AshPhoenix.Form.submit!()
+               |> AshPhoenix.Form.submit!(params: nil)
     end
 
     test "validating a form with an invalid value works" do
+      params = %{
+        "text" => "text",
+        "union_array" => %{
+          "0" => %{
+            "type" => "foo",
+            "value" => "def"
+          }
+        }
+      }
+
+      opts = [domain: Domain, forms: [auto?: true]]
+
       form =
         Post
-        |> AshPhoenix.Form.for_create(:create,
-          domain: Domain,
-          forms: [
-            auto?: true
-          ]
-        )
+        |> AshPhoenix.Form.for_create(:create, opts)
         |> AshPhoenix.Form.add_form(:union_array, params: %{"type" => "foo"})
         |> form_for("action")
 
       assert_raise Ash.Error.Invalid, ~r/must match the pattern/, fn ->
         form
-        |> AshPhoenix.Form.validate(%{
-          "text" => "text",
-          "union_array" => %{
-            "0" => %{
-              "type" => "foo",
-              "value" => "def"
-            }
-          }
-        })
-        |> AshPhoenix.Form.submit!()
+        |> AshPhoenix.Form.validate(params)
+        |> AshPhoenix.Form.submit!(params: params)
       end
     end
   end
