@@ -1319,7 +1319,7 @@ defmodule AshPhoenix.Form do
         params: changeset_params,
         raw_params: raw_params,
         added?: form.added?,
-        errors: !!opts[:errors],
+        errors: opts[:errors],
         submit_errors: nil,
         touched_forms: touched_forms(forms, changeset_params, touched_forms: form.touched_forms)
     }
