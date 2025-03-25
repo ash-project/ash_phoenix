@@ -658,7 +658,7 @@ defmodule AshPhoenix.LiveView do
 
   ```elixir
   AshPhoenix.LiveView.assign_page_and_stream_result(%Phoenix.LiveView.Socket{}, %Ash.Page.Offset{results: [1,2,3]})
-  # => %Phoenix.LiveView.Socket{assigns: %{results: [1,2,3], page: %Ash.Page.Offset{results: nil}}}
+  # => %Phoenix.LiveView.Socket{assigns: %{streams: %{results: [1,2,3]}, page: %Ash.Page.Offset{results: nil}}}
   ```
 
   ## Options
@@ -675,6 +675,9 @@ defmodule AshPhoenix.LiveView do
   def assign_page_and_stream_result(socket, page, opts \\ []) do
     opts = AshPhoenix.LiveView.AssignPageAndStreamResultOptions.validate!(opts)
     {results, page} = Map.get_and_update(page, :results, &{&1, nil})
-    Phoenix.Component.assign(socket, [{opts.results_key, results}, {opts.page_key, page}])
+
+    socket
+    |> Phoenix.Component.assign([{opts.page_key, page}])
+    |> Phoenix.LiveView.stream(opts.results_key, results, opts.stream_opts)
   end
 end
