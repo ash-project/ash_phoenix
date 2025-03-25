@@ -9,6 +9,10 @@ defmodule AshPhoenix.LiveView.AssignPageAndStreamResultOptions do
       page_key: [
         type: :atom,
         default: :page
+      ],
+      stream_opts: [
+        type: :keyword_list,
+        default: [reset: true]
       ]
     ]
 end
