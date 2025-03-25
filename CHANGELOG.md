@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.24](https://github.com/ash-project/ash_phoenix/compare/v2.1.23...v2.1.24) (2025-03-25)
+
+
+
+
+### Bug Fixes:
+
+* assign page and stream to actually stream the stream (#334)
+
+* Prevent empty errors pass to error class (#332)
+
 ## [v2.1.23](https://github.com/ash-project/ash_phoenix/compare/v2.1.22...v2.1.23) (2025-03-21)
 
 
