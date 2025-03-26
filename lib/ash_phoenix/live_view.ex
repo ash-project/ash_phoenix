@@ -231,14 +231,14 @@ defmodule AshPhoenix.LiveView do
 
   ## Examples
 
-  iex> AshPhoenix.LiveView.page_from_params(%{"offset" => "10", "limit" => "10"}, 20, true)
-  [count: true, limit: 10, offset: 10]
+      iex> AshPhoenix.LiveView.page_from_params(%{"offset" => "10", "limit" => "10"}, 20, true)
+      [count: true, limit: 10, offset: 10]
 
-  iex> AshPhoenix.LiveView.page_from_params(%{"offset" => "10", "limit" => "10"}, 20)
-  [count: false, limit: 10, offset: 10]
+      iex> AshPhoenix.LiveView.page_from_params(%{"offset" => "10", "limit" => "10"}, 20)
+      [count: false, limit: 10, offset: 10]
 
-  iex> AshPhoenix.LiveView.page_from_params(%{"offset" => "10", "count" => "true"}, 20)
-  [count: true, limit: 20, offset: 10]
+      iex> AshPhoenix.LiveView.page_from_params(%{"offset" => "10", "count" => "true"}, 20)
+      [count: true, limit: 20, offset: 10]
   """
   @spec page_from_params(page_params(), pos_integer(), boolean()) :: Keyword.t()
   def page_from_params(params, default_limit, count? \\ false) do
@@ -299,11 +299,11 @@ defmodule AshPhoenix.LiveView do
 
   ### Examples
 
-  iex> AshPhoenix.LiveView.prev_page?(%Ash.Page.Offset{offset: 10, limit: 10})
-  true
+      iex> AshPhoenix.LiveView.prev_page?(%Ash.Page.Offset{offset: 10, limit: 10})
+      true
 
-  iex> AshPhoenix.LiveView.prev_page?(%{offset: 0, limit: 10})
-  false
+      iex> AshPhoenix.LiveView.prev_page?(%{offset: 0, limit: 10})
+      false
   """
   @spec prev_page?(Ash.Page.page()) :: boolean()
   def prev_page?(page) do
@@ -315,11 +315,11 @@ defmodule AshPhoenix.LiveView do
 
   ### Examples
 
-  iex> AshPhoenix.LiveView.next_page?(%Ash.Page.Offset{offset: 10, limit: 10, more?: true})
-  true
+      iex> AshPhoenix.LiveView.next_page?(%Ash.Page.Offset{offset: 10, limit: 10, more?: true})
+      true
 
-  iex> AshPhoenix.LiveView.next_page?(%{offset: 0, limit: 10, more?: false})
-  false
+      iex> AshPhoenix.LiveView.next_page?(%{offset: 0, limit: 10, more?: false})
+      false
   """
   @spec next_page?(Ash.Page.page()) :: boolean()
   def next_page?(page) do
@@ -330,9 +330,11 @@ defmodule AshPhoenix.LiveView do
   Converts Ash.Page.Offset to query link params
 
   Options:
-    "first" - first page
-    "prev"  - prev page
-    "next"  - next page
+
+  * "first" - first page
+  * "prev"  - prev page
+  * "next"  - next page
+  * "last"  - last page (if the page is loaded with `count: true`)
 
   Returns `:invalid` or a list of query link params.
   """
@@ -442,7 +444,7 @@ defmodule AshPhoenix.LiveView do
   on the payload like so:
 
   ```
-    @impl true
+  @impl true
   def handle_info(%{topic: topic, payload: %Ash.Notifier.Notification{}}, socket) do
     {:noreply, handle_live(socket, topic, [:query1, :query2, :query3])}
   end
