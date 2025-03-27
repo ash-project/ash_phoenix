@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.25](https://github.com/ash-project/ash_phoenix/compare/v2.1.24...v2.1.25) (2025-03-27)
+
+
+
+
+### Improvements:
+
+* add error impl for Ash.Error.Action.InvalidArgument (#336)
+
 ## [v2.1.24](https://github.com/ash-project/ash_phoenix/compare/v2.1.23...v2.1.24) (2025-03-25)
 
 
