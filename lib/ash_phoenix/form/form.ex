@@ -213,13 +213,23 @@ defmodule AshPhoenix.Form do
         "The html id of the form. Defaults to the value of `:as` if provided, otherwise \"form\""
     ],
     transform_errors: [
-      type: :any,
+      type: {:or, [{:fun, 2}, {:literal, nil}]},
       doc: """
       Allows for manual manipulation and transformation of errors.
 
       If possible, try to implement `AshPhoenix.FormData.Error` for the error (if it as a custom one, for example).
       If that isn't possible, you can provide this function which will get the changeset and the error, and should
       return a list of ash phoenix formatted errors, e.g `[{field :: atom, message :: String.t(), substituations :: Keyword.t()}]`
+
+      Example:
+
+      AshPhoenix.Form.for_create(..., transform_errors: fn 
+        %{field: :field1} = error ->
+          %{error | field: :field2}
+
+        error ->
+          error
+      end
       """
     ],
     prepare_source: [
