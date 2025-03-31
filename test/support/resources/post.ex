@@ -47,6 +47,12 @@ defmodule AshPhoenix.Test.Post do
       change before_action(fn changeset, _ -> Ash.Changeset.add_error(changeset, "nope") end)
     end
 
+    create :create_with_failing_after_action do
+      change after_action(fn _changeset, _session, _ctx ->
+               {:error, "Action failed"}
+             end)
+    end
+
     create :create do
       primary?(true)
 

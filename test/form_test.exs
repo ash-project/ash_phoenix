@@ -494,6 +494,17 @@ defmodule AshPhoenix.FormTest do
     refute form.valid?
   end
 
+  test "validation errors returned from after action" do
+    form = Form.for_create(Post, :create_with_failing_after_action, domain: Domain)
+    form = AshPhoenix.Form.validate(form, %{"text" => "text"})
+
+    assert form.valid?
+
+    {:error, form} = Form.submit(form, params: %{"text" => "text2"})
+
+    assert ["Action failed"] = AshPhoenix.Form.errors(form)
+  end
+
   test "blank form values unset - helps support dead view forms" do
     form =
       Form.for_create(PostWithDefault, :create,
