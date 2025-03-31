@@ -191,7 +191,7 @@ be *removed* from the list. For example, given the following:
       <input
         type="checkbox"
         name={"#{@form.name}[_drop_locations][]"}
-        value={location_form.index}
+        value={location.index}
         class="hidden"
       />
 
