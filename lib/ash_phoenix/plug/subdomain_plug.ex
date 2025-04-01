@@ -55,14 +55,13 @@ defmodule AshPhoenix.SubdomainPlug do
         {:noreply, socket}
       end
   """
-  alias Plug.Conn
-
   @doc false
   def init(opts), do: Spark.Options.validate!(opts, @plug_options)
 
   @doc false
   def call(conn, opts) do
-    subdomain = get_subdomain(conn, opts)
+    subdomain =
+      AshPhoenix.Helpers.get_subdomain(conn, opts[:endpoint])
 
     conn
     |> Plug.Conn.assign(opts[:assign], subdomain)
@@ -71,10 +70,7 @@ defmodule AshPhoenix.SubdomainPlug do
 
   if Code.ensure_loaded?(Phoenix.LiveView) do
     def live_tenant(socket, url) do
-      url
-      |> URI.parse()
-      |> Map.get(:host)
-      |> do_get_subdomain(socket.endpoint.config(:url)[:host])
+      AshPhoenix.Helpers.get_subdomain(socket, url)
     end
   end
 
@@ -85,31 +81,6 @@ defmodule AshPhoenix.SubdomainPlug do
 
       _ ->
         conn
-    end
-  end
-
-  defp get_subdomain(
-         %Conn{host: host},
-         opts
-       ) do
-    root_host = opts[:endpoint].config(:url)[:host]
-    do_get_subdomain(host, root_host)
-  end
-
-  defp do_get_subdomain(host, root_host) do
-    if host in [root_host, "localhost", "127.0.0.1", "0.0.0.0"] do
-      nil
-    else
-      host
-      |> String.trim_leading("www.")
-      |> String.replace(~r/.?#{root_host}/, "")
-      |> case do
-        "" ->
-          nil
-
-        subdomain ->
-          subdomain
-      end
     end
   end
 end
