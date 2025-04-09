@@ -56,6 +56,65 @@ MyApp.Accounts.form_to_update_user(params: %{"email" => "placeholder@email"})
 ```
 
 
+## forms
+Customize the definition of forms for code interfaces
+
+### Nested DSLs
+ * [form](#forms-form)
+
+
+### Examples
+```
+forms do 
+  # customize the generated `form_to_create_student` function
+  form :create_student, args: [:school_id]
+end
+
+```
+
+
+
+
+### forms.form
+```elixir
+form name
+```
+
+
+Customize the definition of a form for a code inteface
+
+
+
+### Examples
+```
+# customize the generated `form_to_create_student` function
+# args defaults to empty for form definitions
+form :create_student, args: [:school_id]
+
+```
+
+
+
+### Arguments
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`name`](#forms-form-name){: #forms-form-name } | `atom` |  | The name of the interface to modify. Must match an existing interface definition. |
+### Options
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`args`](#forms-form-args){: #forms-form-args } | `list(atom \| {:optional, atom})` |  | Map specific arguments to named inputs. Can provide any argument/attributes that the action allows. |
+
+
+
+
+
+### Introspection
+
+Target: `AshPhoenix.FormDefinition`
+
+
 
 
 

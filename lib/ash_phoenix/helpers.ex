@@ -1,4 +1,5 @@
 defmodule AshPhoenix.Helpers do
+  @moduledoc false
   def get_subdomain(%Plug.Conn{host: host}, endpoint) when is_atom(endpoint) do
     get_subdomain(host, endpoint)
   end

@@ -54,6 +54,7 @@ defmodule AshPhoenix do
   """
 
   defmodule FormDefinition do
+    @moduledoc "A customized form code interface"
     defstruct [:name, :args]
   end
 

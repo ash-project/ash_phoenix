@@ -1,4 +1,5 @@
 defmodule AshPhoenix.Verifiers.VerifyFormDefinitions do
+  @moduledoc false
   use Spark.Dsl.Verifier
 
   def verify(dsl) do
