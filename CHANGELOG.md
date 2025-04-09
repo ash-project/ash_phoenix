@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.26](https://github.com/ash-project/ash_phoenix/compare/v2.1.25...v2.1.26) (2025-04-09)
+
+
+
+
+### Improvements:
+
+* allow configuring positional args for form code interfaces
+
+* Add subdomain live_view hook (#339)
+
 ## [v2.1.25](https://github.com/ash-project/ash_phoenix/compare/v2.1.24...v2.1.25) (2025-03-27)
 
 
