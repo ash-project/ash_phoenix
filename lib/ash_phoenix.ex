@@ -53,109 +53,53 @@ defmodule AshPhoenix do
   ```
   """
 
-  defmodule AddFormCodeInterfaces do
-    @moduledoc false
-
-    use Spark.Dsl.Transformer
-
-    def after?(_), do: true
-
-    def transform(dsl_state) do
-      case Ash.Domain.Info.resource_references(dsl_state) do
-        [] ->
-          resource = Spark.Dsl.Transformer.get_persisted(dsl_state, :module)
-
-          dsl_state
-          |> Ash.Resource.Info.interfaces()
-          |> Enum.filter(&match?(%Ash.Resource.Interface{}, &1))
-          |> Enum.uniq_by(& &1.name)
-          |> Enum.reduce(dsl_state, &add_form_interface(&1, &2, resource, true))
-          |> then(&{:ok, &1})
-
-        references ->
-          references
-          |> Enum.reduce(dsl_state, fn reference, dsl_state ->
-            reference.definitions
-            |> Enum.filter(&match?(%Ash.Resource.Interface{}, &1))
-            |> Enum.uniq_by(& &1.name)
-            |> Enum.reduce(dsl_state, &add_form_interface(&1, &2, reference.resource))
-          end)
-          |> then(&{:ok, &1})
-      end
-    end
-
-    # sobelow_skip ["DOS.BinToAtom"]
-    defp add_form_interface(interface, dsl_state, resource, resource? \\ false) do
-      name = :"form_to_#{interface.name}"
-
-      action =
-        if resource? do
-          Ash.Resource.Info.action(dsl_state, interface.action || interface.name)
-        else
-          Ash.Resource.Info.action(resource, interface.action || interface.name)
-        end
-
-      cond do
-        !action ->
-          dsl_state
-
-        action.type in [:update, :destroy] and interface.require_reference? ->
-          define =
-            quote do
-              @doc """
-                   #{unquote(action.description) || "Creates a form for the #{unquote(action.name)} action on #{unquote(inspect(resource))}."}
-
-                   ## Options
-
-                   #{Spark.Options.docs(AshPhoenix.Form.for_opts())}
-
-                   Any *additional* options will be passed to the underlying call to build the source, i.e
-                   `Ash.ActionInput.for_action/4`, or `Ash.Changeset.for_*`. This means you can set things
-                   like the tenant/actor. These will be retained, and provided again when 
-                   `Form.submit/3` is called.
-
-                   ## Nested Form Options
-
-                   #{Spark.Options.docs(AshPhoenix.Form.nested_form_opts())}
-                   """
-                   |> Ash.CodeInterface.trim_double_newlines()
-
-              def unquote(name)(record, opts \\ []) do
-                AshPhoenix.Form.for_action(record, unquote(action.name), opts)
-              end
-            end
-
-          Spark.Dsl.Transformer.eval(dsl_state, [], define)
-
-        true ->
-          define =
-            quote do
-              @doc """
-                   #{unquote(action.description) || "Creates a form for the #{unquote(action.name)} action on #{unquote(inspect(resource))}."}
-
-                   ## Options
-
-                   #{Spark.Options.docs(AshPhoenix.Form.for_opts())}
-
-                   Any *additional* options will be passed to the underlying call to build the source, i.e
-                   `Ash.ActionInput.for_action/4`, or `Ash.Changeset.for_*`. This means you can set things
-                   like the tenant/actor. These will be retained, and provided again when 
-                   `Form.submit/3` is called.
-
-                   ## Nested Form Options
-
-                   #{Spark.Options.docs(AshPhoenix.Form.nested_form_opts())}
-                   """
-                   |> Ash.CodeInterface.trim_double_newlines()
-              def unquote(name)(opts \\ []) do
-                AshPhoenix.Form.for_action(unquote(resource), unquote(action.name), opts)
-              end
-            end
-
-          Spark.Dsl.Transformer.eval(dsl_state, [], define)
-      end
-    end
+  defmodule FormDefinition do
+    defstruct [:name, :args]
   end
 
-  use Spark.Dsl.Extension, transformers: [AddFormCodeInterfaces]
+  @form %Spark.Dsl.Entity{
+    name: :form,
+    target: FormDefinition,
+    describe: "Customize the definition of a form for a code inteface",
+    examples: [
+      """
+      # customize the generated `form_to_create_student` function
+      # args defaults to empty for form definitions
+      form :create_student, args: [:school_id]
+      """
+    ],
+    args: [:name],
+    schema: [
+      name: [
+        type: :atom,
+        doc: "The name of the interface to modify. Must match an existing interface definition."
+      ],
+      args: [
+        type: {:list, {:or, [:atom, {:tagged_tuple, :optional, :atom}]}},
+        doc:
+          "Map specific arguments to named inputs. Can provide any argument/attributes that the action allows."
+      ]
+    ]
+  }
+
+  @forms %Spark.Dsl.Section{
+    name: :forms,
+    describe: "Customize the definition of forms for code interfaces",
+    examples: [
+      """
+      forms do 
+        # customize the generated `form_to_create_student` function
+        form :create_student, args: [:school_id]
+      end
+      """
+    ],
+    entities: [
+      @form
+    ]
+  }
+
+  use Spark.Dsl.Extension,
+    verifiers: [AshPhoenix.Verifiers.VerifyFormDefinitions],
+    transformers: [AshPhoenix.Transformers.AddFormCodeInterfaces],
+    sections: [@forms]
 end

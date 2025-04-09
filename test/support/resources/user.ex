@@ -15,8 +15,13 @@ defmodule AshPhoenix.Test.User do
     attribute(:email, :string, allow_nil?: false, public?: true)
   end
 
+  forms do
+    form(:create2, args: [:email])
+  end
+
   code_interface do
     define :create, args: [:email]
+    define :create2, args: [:email], action: :create
   end
 
   calculations do

@@ -45,6 +45,16 @@ defmodule AshPhoenix.Form do
 
   will cause another function to be generated for each definition, beginning with `form_to_`.
 
+  By default, the `args` option in `define` is ignored when building forms. If you want to have
+  positional arguments, configure that in the `forms` section which is added by the `AshPhoenix`
+  section. For example:
+
+  ```elixir
+  forms do
+    form :update_user, args: [:email]
+  end
+  ```
+
   With this extension, the standard setup for forms looks something like this:
 
   ```elixir
