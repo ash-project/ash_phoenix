@@ -53,15 +53,24 @@ defmodule AshPhoenix.Transformers.AddFormCodeInterfaces do
           {key, [], Elixir}
       end)
 
-    delete = Enum.flat_map(args, &[&1, to_string(&1)])
+    arg_names =
+      Enum.map(args, fn
+        {:optional, name} ->
+          name
+
+        name ->
+          name
+      end)
+
+    delete = Enum.flat_map(arg_names, &[&1, to_string(&1)])
 
     {private_args, params} =
-      Enum.split_with(args, fn arg ->
+      Enum.split_with(arg_names, fn arg ->
         Enum.any?(action.arguments, &(&1.name == arg && !&1.public?))
       end)
 
     merge_params = {:%{}, [], Enum.map(params, &{to_string(&1), {&1, [], Elixir}})}
-    private_args_merge = Enum.map(private_args, &{&1, {&1, [], Elixir}})
+    private_args_merge = {:%{}, [], Enum.map(private_args, &{&1, {&1, [], Elixir}})}
 
     cond do
       !action ->
