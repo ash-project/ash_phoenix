@@ -2338,7 +2338,7 @@ defmodule AshPhoenix.Form do
   end
 
   @doc """
-  The function sorts nested forms at the specified path.
+  This function sorts nested forms at the specified path.
 
   The path can either be an attribute, e.g. [:comments] (for changing the entire order) or an attribute with an index,
   like `[:comments, 2]` (used for incrementing or decrementing).
