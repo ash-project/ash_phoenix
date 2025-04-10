@@ -233,7 +233,7 @@ defmodule AshPhoenix.Form do
 
       Example:
 
-      AshPhoenix.Form.for_create(..., transform_errors: fn 
+      AshPhoenix.Form.for_create(..., transform_errors: fn
         %{field: :field1} = error ->
           %{error | field: :field2}
 
@@ -2338,13 +2338,17 @@ defmodule AshPhoenix.Form do
   end
 
   @doc """
-  Sorts nested forms at the given path.
+  This function sorts nested forms at the specified path.
 
-  The following items can be given:
-  - `{:replace, path_without_index, [0, 1, 2]}` - indices can be strings or integers.
-  - `{:increment, path_to_form}` - increment the index of a specific form (swapping it with the next)
-  - `{:decrement, path_to_form}` - decrement the index of a specific form (swapping it with the previous)
+  The path can either be an attribute, e.g. [:comments] (for changing the entire order) or an attribute with an index,
+  like `[:comments, 2]` (used for incrementing or decrementing).
+
+  You can provide the following instructions:
+  - `[0, 1, 2]`: indices in the new order (they can be either strings or integers).
+  - `:increment`: increment the index of a specific form, swapping it with the next form.
+  - `:decrement`: decrement the index of a specific form, swapping it with the previous form.
   """
+  @spec sort_forms(t(), [atom() | integer()], [String.t() | integer()] | :increment | :decrement) :: t()
   def sort_forms(%Phoenix.HTML.Form{} = form, path, instruction) do
     form.source
     |> sort_forms(path, instruction)
