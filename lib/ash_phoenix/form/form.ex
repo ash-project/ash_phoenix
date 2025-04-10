@@ -2348,7 +2348,8 @@ defmodule AshPhoenix.Form do
   - `:increment`: increment the index of a specific form, swapping it with the next form.
   - `:decrement`: decrement the index of a specific form, swapping it with the previous form.
   """
-  @spec sort_forms(t(), [atom() | integer()], [String.t() | integer()] | :increment | :decrement) :: t()
+  @spec sort_forms(t(), [atom() | integer()], [String.t() | integer()] | :increment | :decrement) ::
+          t()
   def sort_forms(%Phoenix.HTML.Form{} = form, path, instruction) do
     form.source
     |> sort_forms(path, instruction)
