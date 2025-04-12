@@ -29,7 +29,7 @@ resources do
 end
 ```
 
-Adding the `AshPhoenix` extension would define 
+Adding the `AshPhoenix` extension would define
 `form_to_register_with_password/2`.
 
 ## Usage
@@ -48,7 +48,7 @@ MyApp.Accounts.form_to_register_with_password(params: %{"email" => "placeholder@
 #=> %AshPhoenix.Form{}
 ```
 
-With 
+With
 
 ```elixir
 MyApp.Accounts.form_to_update_user(params: %{"email" => "placeholder@email"})
@@ -57,7 +57,7 @@ MyApp.Accounts.form_to_update_user(params: %{"email" => "placeholder@email"})
 
 
 ## forms
-Customize the definition of forms for code interfaces
+Customize the definition of forms for code interfaces.
 
 ### Nested DSLs
  * [form](#forms-form)
@@ -65,14 +65,28 @@ Customize the definition of forms for code interfaces
 
 ### Examples
 ```
-forms do 
+# In the domain where the code interface is defined.
+use Ash.Domain,
+  extensions: [AshPhoenix]
+
+forms do
   # customize the generated `form_to_create_student` function
   form :create_student, args: [:school_id]
 end
 
 ```
 
+```
+# In the resource where the code interface is defined.
+use Ash.Resource,
+  extensions: [AshPhoenix]
 
+forms do
+  # customize the generated `form_to_create_student` function
+  form :create_student, args: [:school_id]
+end
+
+```
 
 
 ### forms.form
