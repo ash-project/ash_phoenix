@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.0](https://github.com/ash-project/ash_phoenix/compare/v2.1.26...v2.2.0) (2025-04-13)
+
+
+
+
+### Features:
+
+* Add basic Igniter installer to add `ash_phoenix` to the formatter list
+
 ## [v2.1.26](https://github.com/ash-project/ash_phoenix/compare/v2.1.25...v2.1.26) (2025-04-09)
 
 
