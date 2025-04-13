@@ -10,7 +10,9 @@ if Code.ensure_loaded?(Igniter) do
 
     @impl Igniter.Mix.Task
     def info(_argv, _source) do
-      %Igniter.Mix.Task.Info{}
+      %Igniter.Mix.Task.Info{
+        group: :ash
+      }
     end
 
     @impl Igniter.Mix.Task
