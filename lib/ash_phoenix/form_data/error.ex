@@ -14,14 +14,9 @@ end
 
 defimpl AshPhoenix.FormData.Error, for: Ash.Error.Query.InvalidQuery do
   def to_form_error(error) do
-    error_fields =
-      if is_nil(error.field) do
-        Map.get(error, :fields, [])
-      else
-        [error.field]
-      end
+    fields = List.wrap(error.field || Map.get(error, :fields) || [])
 
-    for field <- error_fields || [] do
+    for field <- fields do
       {field, error.message, error.vars}
     end
   end
