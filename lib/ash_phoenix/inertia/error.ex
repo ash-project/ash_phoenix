@@ -80,7 +80,9 @@ if Code.ensure_compiled?(Inertia.Errors) do
           "product.sku" => "acme powder is out of stock"
         }
     """
-    @spec to_errors(error_or_errors :: term, message_func :: function) :: %{String.t() => String.t()}
+    @spec to_errors(error_or_errors :: term, message_func :: function) :: %{
+            String.t() => String.t()
+          }
     def to_errors(error_or_errors, message_func \\ &default_message_func/1) do
       error_or_errors
       |> Ash.Error.to_error_class()
