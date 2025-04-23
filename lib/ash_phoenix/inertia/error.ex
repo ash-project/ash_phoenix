@@ -111,8 +111,8 @@ if Code.ensure_loaded?(Inertia.Errors) do
     end
   end
 
-  # The list of types this protocol is implemented for was determined empirically based on usage with actions exposed through a code_interface.
-  # Additional impls may be required.
+  # The list of types this protocol is implemented for was determined empirically based on
+  # usage with actions exposed through a code_interface. Additional impls may be required.
   defimpl Inertia.Errors,
     for: [
       Ash.Error,
