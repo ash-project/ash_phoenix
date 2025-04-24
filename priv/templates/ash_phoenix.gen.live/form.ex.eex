@@ -1,20 +1,19 @@
-defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.FormComponent do
+defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Form do
 
-  use <%= @web_module %>, :live_component
+  use <%= @web_module %>, :live_view
 
   @impl true
   def render(assigns) do
     ~H"""
-    <div>
+    <Layouts.app flash={@flash}>
       <.header>
-        <%%= @title %>
+        <%%= @page_title %>
         <:subtitle>Use this form to manage <%= @resource_singular %> records in your database.</:subtitle>
       </.header>
 
-      <.simple_form
+      <.form
         for={@form}
         id="<%= @resource_singular %>-form"
-        phx-target={@myself}
         phx-change="validate"
         phx-submit="save"
       >
@@ -35,21 +34,34 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.FormCom
           <% @update_action -> %>
             <%= @update_inputs %>
         <% end %>
-        <:actions>
-          <.button phx-disable-with="Saving...">Save <%= @resource_human_singular %></.button>
-        </:actions>
-      </.simple_form>
+        <.button phx-disable-with="Saving..." variant="primary">Save <%= @resource_human_singular %></.button>
+        <.button navigate={return_path(@return_to, @<%= @resource_singular %>)} >Cancel</.button>
+      </.form>
     </div>
     """
   end
 
   @impl true
-  def update(assigns, socket) do
+  def mount(params, _session, socket) do
+    <%= @resource_singular %> =
+      case params["id"] do
+        nil -> nil
+        id -> Ash.get!(<%= inspect Module.concat(Elixir, @resource) %>, id)
+      end
+
+    action = if is_nil(<%= @resource_singular %>), do: "New", else: "Edit"
+    page_title = action <> " " <> <%= inspect @resource_human_singular %>
+  dbg(params)
     {:ok,
      socket
-     |> assign(assigns)
+     |> assign(:return_to, return_to(params["return_to"]))
+     |> assign(<%= @resource_singular %>: <%= @resource_singular %>)
+     |> assign(:page_title, page_title)
      |> assign_form()}
   end
+
+  defp return_to("show"), do: "show"
+  defp return_to(_), do: "index"
 
   @impl true
   def handle_event("validate", %{"<%= @resource_singular %>" => <%= @resource_singular %>_params}, socket) do
@@ -71,7 +83,7 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.FormCom
           <% @create_action -> %>
               |> put_flash(:info, "<%= @resource_human_singular %> created successfully")
         <% end %>
-        |> push_patch(to: socket.assigns.patch)
+        |> push_navigate(to: return_path(socket.assigns.return_to, <%= @resource_singular %>))
 
       {:noreply, socket}
 
@@ -99,4 +111,7 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.FormCom
 
     assign(socket, form: to_form(form))
   end
+
+  defp return_path("index", _<%= @resource_singular %>), do: ~p"<%= @route_prefix %>"
+  defp return_path("show", <%= @resource_singular %>), do: ~p"<%= @route_prefix %>/#{<%= @resource_singular %>.id}"
 end
