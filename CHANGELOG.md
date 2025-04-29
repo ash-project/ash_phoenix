@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.0](https://github.com/ash-project/ash_phoenix/compare/v2.2.0...v2.3.0) (2025-04-29)
+
+
+
+
+### Features:
+
+* Add Inertia.Errors impl for Ash.Error types (#352)
+
+### Bug Fixes:
+
+* properly route inertia errors to implementation
+
+* handle invalid query error different formats
+
 ## [v2.2.0](https://github.com/ash-project/ash_phoenix/compare/v2.1.26...v2.2.0) (2025-04-13)
 
 
