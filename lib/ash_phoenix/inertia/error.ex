@@ -83,7 +83,13 @@ if Code.ensure_loaded?(Inertia.Errors) do
     @spec to_errors(error_or_errors :: term, message_func :: function) :: %{
             String.t() => String.t()
           }
-    def to_errors(error_or_errors, message_func \\ &default_message_func/1) do
+    def to_errors(error_or_errors, message_func \\ &default_message_func/1)
+
+    def to_errors(%AshPhoenix.Form{errors: errors}, message_func) do
+      to_errors(errors, message_func)
+    end
+
+    def to_errors(error_or_errors, message_func) do
       error_or_errors
       |> Ash.Error.to_error_class()
       |> Map.get(:errors)
@@ -119,6 +125,7 @@ if Code.ensure_loaded?(Inertia.Errors) do
       Ash.Error.Invalid,
       Ash.Error.Unknown,
       Ash.Error.Forbidden,
+      AshPhoenix.Form,
       Ash.Changeset,
       Ash.Query,
       Ash.ActionInput
