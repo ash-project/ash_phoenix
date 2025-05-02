@@ -93,8 +93,8 @@ if Code.ensure_loaded?(Igniter) do
         if assigns[:update_action] || assigns[:create_action] do
           write_formatted_template(
             igniter,
-            "ash_phoenix.gen.live/form_component.ex.eex",
-            "form_component.ex",
+            "ash_phoenix.gen.live/form.ex.eex",
+            "form.ex",
             web_live,
             assigns,
             generate_opts
@@ -131,10 +131,10 @@ if Code.ensure_loaded?(Igniter) do
       [
         ~s|live "/#{assigns[:resource_plural]}", #{assigns[:resource_alias]}Live.Index, :index\n|,
         if assigns[:create_action] do
-          ~s|live "/#{assigns[:resource_plural]}/new", #{assigns[:resource_alias]}Live.Index, :new\n|
+          ~s|live "/#{assigns[:resource_plural]}/new", #{assigns[:resource_alias]}Live.Form, :new\n|
         end,
         if assigns[:update_action] do
-          ~s|live "/#{assigns[:resource_plural]}/:id/edit", #{assigns[:resource_alias]}Live.Index, :edit\n\n|
+          ~s|live "/#{assigns[:resource_plural]}/:id/edit", #{assigns[:resource_alias]}Live.Form, :edit\n\n|
         end,
         ~s|live "/#{assigns[:resource_plural]}/:id", #{assigns[:resource_alias]}Live.Show, :show\n|,
         if assigns[:update_action] do
