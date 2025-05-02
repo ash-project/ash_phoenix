@@ -1,4 +1,4 @@
-if Code.ensure_compiled?(Inertia.Errors) do
+if Code.ensure_loaded?(Inertia.Errors) do
   defmodule AshPhoenix.Inertia.Error do
     @moduledoc ~S"""
     Provides a mapping from an Ash Error type to a plain map that can be used with the `Inertia.Controller.assign_errors/2` function.
@@ -111,8 +111,8 @@ if Code.ensure_compiled?(Inertia.Errors) do
     end
   end
 
-  # The list of types this protocol is implemented for was determined empirically based on usage with actions exposed through a code_interface.
-  # Additional impls may be required.
+  # The list of types this protocol is implemented for was determined empirically based on
+  # usage with actions exposed through a code_interface. Additional impls may be required.
   defimpl Inertia.Errors,
     for: [
       Ash.Error,
@@ -125,12 +125,12 @@ if Code.ensure_compiled?(Inertia.Errors) do
     ] do
     def to_errors(value) do
       value
-      |> AshInertiaError.to_errors()
+      |> AshPhoenix.Inertia.Error.to_errors()
     end
 
     def to_errors(value, message_func) do
       value
-      |> AshInertiaError.to_errors(message_func)
+      |> AshPhoenix.Inertia.Error.to_errors(message_func)
     end
   end
 end

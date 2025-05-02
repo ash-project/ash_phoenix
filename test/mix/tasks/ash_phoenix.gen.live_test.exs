@@ -121,45 +121,45 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
 
       @impl true
       def render(assigns) do
-      ~H\"\"\"
-      <Layouts.app flash={@flash}>
-      <.header>
-        Listing Artists
-          <:actions>
-            <.button variant="primary" navigate={~p"/Artists/new"}>
-              <.icon name="hero-plus" /> New Artist
-            </.button>
-          </:actions>
-        </.header>
+        ~H\"\"\"
+        <Layouts.app flash={@flash}>
+        <.header>
+          Listing Artists
+            <:actions>
+              <.button variant="primary" navigate={~p"/Artists/new"}>
+                <.icon name="hero-plus" /> New Artist
+              </.button>
+            </:actions>
+          </.header>
 
-        <.table
-          id="Artists"
-          rows={@streams.Artists}
-          row_click={fn {_id, artist} -> JS.navigate(~p"/Artists/\#{artist}") end}
-        >
-          <:col :let={{_id, artist}} label="Id">{artist.id}</:col>
+          <.table
+            id="Artists"
+            rows={@streams.Artists}
+            row_click={fn {_id, artist} -> JS.navigate(~p"/Artists/\#{artist}") end}
+          >
+            <:col :let={{_id, artist}} label="Id">{artist.id}</:col>
 
-          <:col :let={{_id, artist}} label="Name">{artist.name}</:col>
+            <:col :let={{_id, artist}} label="Name">{artist.name}</:col>
 
-          <:action :let={{_id, artist}}>
-            <div class="sr-only">
-              <.link navigate={~p"/Artists/\#{artist}"}>Show</.link>
-            </div>
+            <:action :let={{_id, artist}}>
+              <div class="sr-only">
+                <.link navigate={~p"/Artists/\#{artist}"}>Show</.link>
+              </div>
 
-            <.link navigate={~p"/Artists/\#{artist}/edit"}>Edit</.link>
-          </:action>
+              <.link navigate={~p"/Artists/\#{artist}/edit"}>Edit</.link>
+            </:action>
 
-          <:action :let={{id, artist}}>
-            <.link
-              phx-click={JS.push("delete", value: %{id: artist.id}) |> hide("#\#{id}")}
-              data-confirm="Are you sure?"
-            >
-              Delete
-            </.link>
-          </:action>
-        </.table>
-      </Layouts.app>
-      \"\"\"
+            <:action :let={{id, artist}}>
+              <.link
+                phx-click={JS.push("delete", value: %{id: artist.id}) |> hide("#\#{id}")}
+                data-confirm="Are you sure?"
+              >
+                Delete
+              </.link>
+            </:action>
+          </.table>
+        </Layouts.app>
+        \"\"\"
       end
 
       @impl true
@@ -218,29 +218,29 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
 
       @impl true
       def render(assigns) do
-      ~H\"\"\"
-      <Layouts.app flash={@flash}>
-      <.header>
-        Artist {@artist.id}
-          <:subtitle>This is a artist record from your database.</:subtitle>
+        ~H\"\"\"
+        <Layouts.app flash={@flash}>
+        <.header>
+          Artist {@artist.id}
+            <:subtitle>This is a artist record from your database.</:subtitle>
 
-          <:actions>
-            <.button navigate={~p"/Artists"}>
-              <.icon name="hero-arrow-left" />
-            </.button>
-            <.button variant="primary" navigate={~p"/Artists/\#{@artist}/edit?return_to=show"}>
-              <.icon name="hero-pencil-square" /> Edit Artist
-            </.button>
-          </:actions>
-        </.header>
+            <:actions>
+              <.button navigate={~p"/Artists"}>
+                <.icon name="hero-arrow-left" />
+              </.button>
+              <.button variant="primary" navigate={~p"/Artists/\#{@artist}/edit?return_to=show"}>
+                <.icon name="hero-pencil-square" /> Edit Artist
+              </.button>
+            </:actions>
+          </.header>
 
-        <.list>
-          <:item title="Id">{@artist.id}</:item>
+          <.list>
+            <:item title="Id">{@artist.id}</:item>
 
-          <:item title="Name">{@artist.name}</:item>
-        </.list>
-      </Layouts.app>
-      \"\"\"
+            <:item title="Name">{@artist.name}</:item>
+          </.list>
+        </Layouts.app>
+        \"\"\"
       end
 
       @impl true
