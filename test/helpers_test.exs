@@ -72,5 +72,14 @@ defmodule AshPhoenix.HelpersTest do
 
       assert subdomain == tenant
     end
+
+    test "for Phoenix.LiveView.Socket returns subdomain" do
+      tenant = "tenant"
+      socket = %Phoenix.LiveView.Socket{endpoint: TestEndpoint}
+      url = "https://#{tenant}.example.com"
+      subdomain = AshPhoenix.Helpers.get_subdomain(socket, url)
+
+      assert subdomain == tenant
+    end
   end
 end

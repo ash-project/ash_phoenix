@@ -4,7 +4,7 @@ defmodule AshPhoenix.Helpers do
     get_subdomain(host, endpoint)
   end
 
-  def get_subdomain(%Phoenix.Socket{endpoint: endpoint}, url) when is_binary(url) do
+  def get_subdomain(%{endpoint: endpoint}, url) when not is_nil(endpoint) and is_atom(endpoint) and is_binary(url) do
     url
     |> URI.parse()
     |> Map.get(:host)
