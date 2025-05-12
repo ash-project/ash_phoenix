@@ -285,6 +285,13 @@ defmodule AshPhoenix.Form do
     tenant: [
       type: :any,
       doc: "The current tenant. Passed through to the underlying action."
+    ],
+    params: [
+      type: :any,
+      default: %{},
+      doc: """
+      The initial parameters to use for the form. This is useful for setting up a form with default values.
+      """
     ]
   ]
 
@@ -6001,7 +6008,8 @@ defmodule AshPhoenix.Form do
       :transform_params,
       :prepare_params,
       :prepare_source,
-      :warn_on_unhandled_errors?
+      :warn_on_unhandled_errors?,
+      :params
     ])
   end
 end
