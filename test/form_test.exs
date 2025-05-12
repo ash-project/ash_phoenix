@@ -20,7 +20,7 @@ defmodule AshPhoenix.FormTest do
 
       assert 0 =
                Post
-               |> Form.for_action(:post_count)
+               |> Form.for_action(:post_count, params: params)
                |> Form.validate(params)
                |> Form.submit!(params: params)
     end
