@@ -25,13 +25,13 @@ defmodule AshPhoenix.FormTest do
                |> Form.submit!(params: params)
     end
 
-    test "generic actions can have forms with initial params" do
+    test "generic actions can accept initial params" do
       params = %{containing: "hello"}
 
       assert 0 =
                Post
                |> Form.for_action(:post_count, params: params)
-               |> Form.submit!(params: params)
+               |> Form.submit!(params: %{})
     end
   end
 
