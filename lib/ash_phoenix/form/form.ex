@@ -6009,8 +6009,7 @@ defmodule AshPhoenix.Form do
       :transform_params,
       :prepare_params,
       :prepare_source,
-      :warn_on_unhandled_errors?,
-      :params
+      :warn_on_unhandled_errors?
     ])
   end
 end
