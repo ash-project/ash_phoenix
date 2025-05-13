@@ -6000,6 +6000,7 @@ defmodule AshPhoenix.Form do
     Keyword.drop(opts, [
       :forms,
       :transform_errors,
+      :params,
       :errors,
       :id,
       :method,
