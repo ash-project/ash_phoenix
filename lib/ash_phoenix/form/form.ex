@@ -518,6 +518,7 @@ defmodule AshPhoenix.Form do
       type: :action,
       data: opts[:data],
       params: params,
+      raw_params: opts[:params] || %{},
       errors: opts[:errors],
       transform_errors: opts[:transform_errors],
       warn_on_unhandled_errors?: opts[:warn_on_unhandled_errors?],
