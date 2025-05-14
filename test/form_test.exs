@@ -33,6 +33,16 @@ defmodule AshPhoenix.FormTest do
                |> Form.for_action(:post_count, params: params)
                |> Form.submit!(params: nil)
     end
+
+    test "the INITIAL generic actions Form can be update_params() in phx-change event handler" do
+      assert 0 =
+               Post
+               |> Form.for_action(:post_count)
+               |> Form.update_params(fn params ->
+                 Map.put(params, "containing", "hello")
+               end)
+               |> Form.submit!(params: nil)
+    end
   end
 
   describe "drop_param" do
