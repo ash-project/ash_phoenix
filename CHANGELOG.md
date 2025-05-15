@@ -5,6 +5,27 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.1](https://github.com/ash-project/ash_phoenix/compare/v2.3.0...v2.3.1) (2025-05-15)
+
+
+
+
+### Bug Fixes:
+
+* Initialize :raw_params field of for_action() Form (#362)
+
+* for action params option (#359)
+
+* Accept Phoenix.LiveView.Socket in SubdomainPlug (#355)
+
+### Improvements:
+
+* Document `:params` option for `for_action` (#361)
+
+* Rework gen.live (#353)
+
+* support `AshPhoenix.Form` in error subject
+
 ## [v2.3.0](https://github.com/ash-project/ash_phoenix/compare/v2.2.0...v2.3.0) (2025-04-29)
 
 
