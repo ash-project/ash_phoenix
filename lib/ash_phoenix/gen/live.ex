@@ -10,14 +10,13 @@ if Code.ensure_loaded?(Igniter) do
         Keyword.fetch!(options, :resource_plural) ||
           resource |> Module.split() |> List.last() |> Macro.underscore() |> Inflex.pluralize()
 
-      opts = []
+      opts = [
+        interactive?: true,
+        resource_plural: resource_plural,
+        phx_version: options[:phx_version]
+      ]
 
-      generate(
-        igniter,
-        domain,
-        resource,
-        Keyword.put(opts, :interactive?, true) |> Keyword.put(:resource_plural, resource_plural)
-      )
+      generate(igniter, domain, resource, opts)
     end
 
     def generate(igniter, domain, resource, opts \\ []) do
@@ -79,7 +78,8 @@ if Code.ensure_loaded?(Igniter) do
           [force: true, quiet: true]
         end
 
-      igniter = write_formatted_templates(igniter, web_live, assigns, generate_opts)
+      igniter =
+        write_formatted_templates(igniter, web_live, assigns, generate_opts, opts[:phx_version])
 
       igniter =
         if opts[:interactive?] do
@@ -112,9 +112,19 @@ if Code.ensure_loaded?(Igniter) do
       |> Enum.reject(&is_nil/1)
     end
 
-    defp write_formatted_templates(igniter, web_live, assigns, generate_opts) do
-      phx_version = to_string(Application.spec(:phoenix, :vsn))
-      path = if String.starts_with?(phx_version, "1.8"), do: "new", else: "old"
+    defp write_formatted_templates(igniter, web_live, assigns, generate_opts, phx_version) do
+      {path, igniter} =
+        if String.starts_with?(phx_version, "1.8") do
+          message = """
+          if Layouts.app causes a problem, you may be on an older version of the generators,
+          try deleting the files and running the command again with --phx-version 1.7
+          """
+
+          {"new", Igniter.add_notice(igniter, message)}
+        else
+          {"old", igniter}
+        end
+
       template_folder = template_folder(path)
       action? = assigns[:update_action] || assigns[:create_action]
 
