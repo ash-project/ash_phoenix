@@ -22,6 +22,7 @@ if Code.ensure_loaded?(Igniter) do
     * `--domain`   - Existing domain
     * `--resource` - Existing resource module name
     * `--resource-plural` - Pluralized version resource name for the route paths and templates
+    * `--phx-version` - Phoenix version 1.7 (old) or 1.8 (new). Defaults to 1.8
     """
 
     def info(_argv, _composing_task) do
@@ -34,10 +35,11 @@ if Code.ensure_loaded?(Igniter) do
           domain: :string,
           resource: :string,
           resourceplural: :string,
-          resource_plural: :string
+          resource_plural: :string,
+          phx_version: :string
         ],
         # Default values for the options in the `schema`.
-        defaults: [],
+        defaults: [phx_version: "1.8"],
         # CLI aliases
         aliases: [],
         # A list of options in the schema that are required

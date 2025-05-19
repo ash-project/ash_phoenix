@@ -1,0 +1,102 @@
+defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.FormComponent do
+
+  use <%= @web_module %>, :live_component
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <div>
+      <.header>
+        <%%= @title %>
+        <:subtitle>Use this form to manage <%= @resource_singular %> records in your database.</:subtitle>
+      </.header>
+
+      <.simple_form
+        for={@form}
+        id="<%= @resource_singular %>-form"
+        phx-target={@myself}
+        phx-change="validate"
+        phx-submit="save"
+      >
+        <%= cond do %>
+          <% @create_action && @update_action -> %>
+            <%= if @create_inputs == @update_inputs do %>
+              <%= @create_inputs %>
+            <% else %>
+              <%%= if @form.source.type == :create do %>
+                <%= @create_inputs %>
+              <%% end %>
+              <%%= if @form.source.type == :update do %>
+                <%= @update_inputs %>
+              <%% end %>
+            <% end %>
+          <% @create_action -> %>
+            <%= @create_inputs %>
+          <% @update_action -> %>
+            <%= @update_inputs %>
+        <% end %>
+        <:actions>
+          <.button phx-disable-with="Saving...">Save <%= @resource_human_singular %></.button>
+        </:actions>
+      </.simple_form>
+    </div>
+    """
+  end
+
+  @impl true
+  def update(assigns, socket) do
+    {:ok,
+     socket
+     |> assign(assigns)
+     |> assign_form()}
+  end
+
+  @impl true
+  def handle_event("validate", %{"<%= @resource_singular %>" => <%= @resource_singular %>_params}, socket) do
+    {:noreply, assign(socket, form: AshPhoenix.Form.validate(socket.assigns.form, <%= @resource_singular %>_params))}
+  end
+
+  def handle_event("save", %{"<%= @resource_singular %>" => <%= @resource_singular %>_params}, socket) do
+    case AshPhoenix.Form.submit(socket.assigns.form, params: <%= @resource_singular %>_params) do
+      {:ok, <%= @resource_singular %>} ->
+        notify_parent({:saved, <%= @resource_singular %>})
+
+      socket =
+        socket
+        <%= cond do %>
+          <% @update_action && @create_action -> %>
+            |> put_flash(:info, "<%= @resource_human_singular %> #{socket.assigns.form.source.type}d successfully")
+          <% @update_action -> %>
+              |> put_flash(:info, "<%= @resource_human_singular %> updated successfully")
+          <% @create_action -> %>
+              |> put_flash(:info, "<%= @resource_human_singular %> created successfully")
+        <% end %>
+        |> push_patch(to: socket.assigns.patch)
+
+      {:noreply, socket}
+
+      {:error, form} ->
+        {:noreply, assign(socket, form: form)}
+    end
+  end
+
+  defp notify_parent(msg), do: send(self(), {__MODULE__, msg})
+
+  defp assign_form(%{assigns: %{<%= @resource_singular %>: <%= @resource_singular %>}} = socket) do
+    form =
+      <%= cond do %>
+        <% @update_action && @create_action -> %>
+          if <%= @resource_singular %> do
+            AshPhoenix.Form.for_update(<%= @resource_singular %>, <%= inspect @update_action.name %>, as: <%= inspect @resource_singular %><%= @actor_opt %>)
+          else
+            AshPhoenix.Form.for_create(<%= @resource %>, <%= inspect @create_action.name %>, as: <%= inspect @resource_singular %><%= @actor_opt %>)
+          end
+        <% @update_action -> %>
+          AshPhoenix.Form.for_update(<%= @resource_singular %>, <%= inspect @update_action.name %>, as: <%= inspect @resource_singular %><%= @actor_opt %>)
+        <% @create_action -> %>
+          AshPhoenix.Form.for_create(<%= @resource_singular %>, <%= inspect @create_action.name %>, as: <%= inspect @resource_singular %><%= @actor_opt %>)
+      <% end %>
+
+    assign(socket, form: to_form(form))
+  end
+end

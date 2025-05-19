@@ -10,14 +10,13 @@ if Code.ensure_loaded?(Igniter) do
         Keyword.fetch!(options, :resource_plural) ||
           resource |> Module.split() |> List.last() |> Macro.underscore() |> Inflex.pluralize()
 
-      opts = []
+      opts = [
+        interactive?: true,
+        resource_plural: resource_plural,
+        phx_version: options[:phx_version]
+      ]
 
-      generate(
-        igniter,
-        domain,
-        resource,
-        Keyword.put(opts, :interactive?, true) |> Keyword.put(:resource_plural, resource_plural)
-      )
+      generate(igniter, domain, resource, opts)
     end
 
     def generate(igniter, domain, resource, opts \\ []) do
@@ -80,38 +79,7 @@ if Code.ensure_loaded?(Igniter) do
         end
 
       igniter =
-        write_formatted_template(
-          igniter,
-          "ash_phoenix.gen.live/index.ex.eex",
-          "index.ex",
-          web_live,
-          assigns,
-          generate_opts
-        )
-
-      igniter =
-        if assigns[:update_action] || assigns[:create_action] do
-          write_formatted_template(
-            igniter,
-            "ash_phoenix.gen.live/form.ex.eex",
-            "form.ex",
-            web_live,
-            assigns,
-            generate_opts
-          )
-        else
-          igniter
-        end
-
-      igniter =
-        write_formatted_template(
-          igniter,
-          "ash_phoenix.gen.live/show.ex.eex",
-          "show.ex",
-          web_live,
-          assigns,
-          generate_opts
-        )
+        write_formatted_templates(igniter, web_live, assigns, generate_opts, opts[:phx_version])
 
       igniter =
         if opts[:interactive?] do
@@ -144,21 +112,37 @@ if Code.ensure_loaded?(Igniter) do
       |> Enum.reject(&is_nil/1)
     end
 
-    defp write_formatted_template(igniter, path, destination, web_live, assigns, generate_opts) do
-      destination_path =
-        web_live
-        |> Path.join(destination)
+    defp write_formatted_templates(igniter, web_live, assigns, generate_opts, phx_version) do
+      {path, igniter} =
+        if String.starts_with?(phx_version, "1.8") do
+          message = """
+          if Layouts.app causes a problem, you may be on an older version of the generators,
+          try deleting the files and running the command again with --phx-version 1.7
+          """
 
-      {formatter_function, _options} =
-        Mix.Tasks.Format.formatter_for_file(destination_path)
+          {"new", Igniter.add_notice(igniter, message)}
+        else
+          {"old", igniter}
+        end
 
-      contents =
-        path
-        |> template()
-        |> EEx.eval_file(assigns: assigns)
-        |> formatter_function.()
+      template_folder = template_folder(path)
+      action? = assigns[:update_action] || assigns[:create_action]
 
-      Igniter.create_new_file(igniter, destination_path, contents, generate_opts)
+      Enum.reduce(File.ls!(template_folder), igniter, fn
+        "form.ex.eex", igniter when is_nil(action?) ->
+          igniter
+
+        file, igniter ->
+          destination = String.replace_trailing(file, ".eex", "")
+          destination_path = Path.join(web_live, destination)
+
+          {formatter_function, _options} =
+            Mix.Tasks.Format.formatter_for_file(destination_path)
+
+          path = Path.join(template_folder, file)
+          contents = path |> EEx.eval_file(assigns: assigns) |> formatter_function.()
+          Igniter.create_new_file(igniter, destination_path, contents, generate_opts)
+      end)
     end
 
     defp add_resource_assigns(assigns, resource, opts) do
@@ -341,8 +325,10 @@ if Code.ensure_loaded?(Igniter) do
       Igniter.Libs.Phoenix.web_module(igniter)
     end
 
-    defp template(path) do
-      :code.priv_dir(:ash_phoenix) |> Path.join("templates") |> Path.join(path)
+    defp template_folder(path) do
+      :code.priv_dir(:ash_phoenix)
+      |> Path.join("templates/ash_phoenix.gen.live")
+      |> Path.join(path)
     end
 
     def inputs(resource, action) do

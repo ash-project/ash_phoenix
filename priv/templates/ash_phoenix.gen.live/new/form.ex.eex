@@ -51,7 +51,6 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Form do
 
     action = if is_nil(<%= @resource_singular %>), do: "New", else: "Edit"
     page_title = action <> " " <> <%= inspect @resource_human_singular %>
-  dbg(params)
     {:ok,
      socket
      |> assign(:return_to, return_to(params["return_to"]))

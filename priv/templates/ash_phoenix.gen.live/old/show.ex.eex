@@ -1,0 +1,61 @@
+defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Show do
+  use <%= @web_module %>, :live_view
+
+  @impl true
+  def render(assigns) do
+  ~H"""
+  <.header>
+    <%= @resource_human_singular %> <%%= @<%= @resource_singular %>.id %>
+      <:subtitle>This is a <%= @resource_singular %> record from your database.</:subtitle>
+    <%= if @update_action do %>
+      <:actions>
+        <.link patch={~p"<%= @route_prefix %>/#{@<%= @resource_singular %>}/show/edit"} phx-click={JS.push_focus()}>
+          <.button>Edit <%= @resource_singular %></.button>
+        </.link>
+      </:actions>
+    <% end %>
+  </.header>
+
+  <.list>
+    <%= for attribute <- @attrs do %>
+      <:item title="<%= Phoenix.Naming.humanize(attribute.name) %>"><%%= @<%= @resource_singular %>.<%= attribute.name %> %></:item>
+    <% end %>
+  </.list>
+
+  <.back navigate={~p"<%= @route_prefix %>"}>Back to <%= @resource_plural %></.back>
+
+  <%= if @update_action do %>
+    <.modal :if={@live_action == :edit} id="<%= @resource_singular %>-modal" show on_cancel={JS.patch(~p"<%= @route_prefix %>/#{@<%= @resource_singular %>}")}>
+      <.live_component
+        module={<%= inspect Module.concat(@web_module, @resource_alias) %>Live.FormComponent}
+        id={@<%= @resource_singular %>.id}
+        title={@page_title}
+        action={@live_action}
+        <%= if @actor do %>
+          <%= @actor %>={@<%= @actor %>}
+        <% end %>
+        <%= @resource_singular %>={@<%= @resource_singular %>}
+        patch={~p"<%= @route_prefix %>/#{@<%= @resource_singular %>}"}
+      />
+    </.modal>
+  <% end %>
+  """
+  end
+
+  @impl true
+  def mount(_params, _session, socket) do
+    {:ok, socket}
+  end
+
+  @impl true
+  def handle_params(%{"<%= @pkey %>" => <%= @pkey %>}, _, socket) do
+    {:noreply,
+     socket
+     |> assign(:page_title, page_title(socket.assigns.live_action))
+     |> assign(:<%= @resource_singular %>, <%= @get_by_pkey %>)}
+  end
+
+  defp page_title(:show), do: "Show <%= @resource_human_singular %>"
+  defp page_title(:edit), do: "Edit <%= @resource_human_singular %>"
+
+end

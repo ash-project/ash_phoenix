@@ -1,0 +1,155 @@
+defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Index do
+  use <%= @web_module %>, :live_view
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <.header>
+      Listing <%= @resource_human_plural %>
+      <:actions>
+        <.link patch={~p"<%= @route_prefix %>/new"}>
+        <.button>New <%= @resource_human_singular %></.button>
+        </.link>
+      </:actions>
+    </.header>
+
+    <.table
+      id="<%= @resource_plural %>"
+      rows={@streams.<%= @resource_plural %>}
+      row_click={fn {_<%= @pkey %>, <%= @resource_singular %>} -> JS.navigate(~p"<%= @route_prefix %>/#{<%= @resource_singular %>}") end}
+    >
+      <%= for %{name: name} <- @attrs do %>
+        <:col :let={{_<%= @pkey %>, <%= @resource_singular %>}} label="<%= Phoenix.Naming.humanize(Atom.to_string(name)) %>"><%%= <%= @resource_singular %>.<%= name %> %></:col>
+      <% end %>
+      <:action :let={{_<%= @pkey %>, <%= @resource_singular %>}}>
+        <div class="sr-only">
+          <.link navigate={~p"<%= @route_prefix %>/#{<%= @resource_singular %>}"}>Show</.link>
+        </div>
+        <%= if @update_action do %>
+          <.link patch={~p"<%= @route_prefix %>/#{<%= @resource_singular %>}/edit"}>Edit</.link>
+        <% end %>
+      </:action>
+      <%= if @destroy do %>
+      <:action :let={{<%= @pkey %>, <%= @resource_singular %>}}>
+        <.link
+          phx-click={JS.push("delete", value: %{<%= @pkey %>: <%= @resource_singular %>.<%= @pkey %>}) |> hide("##{<%= @pkey %>}")}
+          data-confirm="Are you sure?"
+        >
+          Delete
+        </.link>
+      </:action>
+      <% end %>
+    </.table>
+
+    <%= cond do %>
+      <% @create_action && @update_action -> %>
+        <.modal :if={@live_action in [:new, :edit]} id="<%= @resource_singular %>-modal" show on_cancel={JS.patch(~p"<%= @route_prefix %>")}>
+          <.live_component
+            module={<%= inspect Module.concat(@web_module, @resource_alias) %>Live.FormComponent}
+            id={(@<%= @resource_singular %> && @<%= @resource_singular%>.<%= @pkey %>) || :new}
+            title={@page_title}
+            <%= if @actor do %>
+              <%= @actor %>={@<%= @actor %>}
+            <% end %>
+            action={@live_action}
+            <%= @resource_singular %>={@<%= @resource_singular %>}
+            patch={~p"<%= @route_prefix %>"}
+          />
+        </.modal>
+      <% @create_action -> %>
+        <.modal :if={@live_action == :new} id="<%= @resource_singular %>-modal" show on_cancel={JS.patch(~p"<%= @route_prefix %>")}>
+          <.live_component
+            module={<%= inspect Module.concat(@web_module, @resource_alias) %>Live.FormComponent}
+            <%= if @actor do %>
+              <%= @actor %>={@<%= @actor %>}
+            <% end %>
+            id={:new}
+            title={@page_title}
+            action={@live_action}
+            <%= @resource_singular %>={@<%= @resource_singular %>}
+            patch={~p"<%= @route_prefix %>"}
+          />
+        </.modal>
+      <% @update_action -> %>
+        <.modal :if={@live_action == :edit} id="<%= @resource_singular %>-modal" show on_cancel={JS.patch(~p"<%= @route_prefix %>")}>
+          <.live_component
+            module={<%= inspect Module.concat(@web_module, @resource_alias) %>Live.FormComponent}
+            id={@<%= @resource_singular %>.<%= @pkey %>}
+            <%= if @actor do %>
+              <%= @actor %>={@<%= @actor %>}
+            <% end %>
+            title={@page_title}
+            action={@live_action}
+            <%= @resource_singular %>={@<%= @resource_singular %>}
+            patch={~p"<%= @route_prefix %>"}
+          />
+        </.modal>
+      <% true -> %>
+        <% nil %>
+    <% end %>
+    """
+  end
+
+  @impl true
+  def mount(_params, _session, socket) do
+    <%= if @actor do %>
+      {:ok,
+        socket
+        <%= if @actor do %>
+          |> stream(:<%= @resource_plural %>, Ash.read!(<%= @resource %>, actor: socket.assigns[:<%= @actor %>]))
+        <% else %>
+          |> stream(:<%= @resource_plural %>, Ash.read!(<%= @resource %>))
+        <% end %>
+        |> assign_new(:<%= @actor %>, fn -> nil end)}
+    <% else %>
+      {:ok, stream(socket, :<%= @resource_plural %>, Ash.read!(<%= @resource %>))}
+    <% end %>
+  end
+
+  @impl true
+  def handle_params(params, _url, socket) do
+    {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+  end
+
+  <%= if @update_action do %>
+    defp apply_action(socket, :edit, %{"<%= @pkey %>" => <%= @pkey %>}) do
+      socket
+      |> assign(:page_title, "Edit <%= @resource_human_singular %>")
+      |> assign(:<%= @resource_singular %>, <%= @get_by_pkey %>)
+    end
+  <% end %>
+
+  <%= if @create_action do %>
+    defp apply_action(socket, :new, _params) do
+      socket
+      |> assign(:page_title, "New <%= @resource_human_singular %>")
+      <%= if @update_action do %>
+        |> assign(:<%= @resource_singular %>, nil)
+      <% end %>
+    end
+  <% end %>
+
+  defp apply_action(socket, :index, _params) do
+    socket
+    |> assign(:page_title, "Listing <%= @resource_human_plural %>")
+    <%= if @update_action || @create_action do %>
+      |> assign(:<%= @resource_singular %>, nil)
+    <% end %>
+  end
+
+  <%= if @create_action || @update_action do %>
+    @impl true
+    def handle_info({<%= inspect Module.concat(@web_module, @resource_alias) %>Live.FormComponent, {:saved, <%= @resource_singular %>}}, socket) do
+      {:noreply, stream_insert(socket, :<%= @resource_plural %>, <%= @resource_singular %>)}
+    end
+  <% end %>
+
+  <%= if @destroy do %>
+  @impl true
+  def handle_event("delete", %{"<%= @pkey %>" => <%= @pkey %>}, socket) do
+    <%= @destroy %>
+
+    {:noreply, stream_delete(socket, :<%= @resource_plural %>, <%= @resource_singular %>)}
+  end
+  <% end %>
+end
