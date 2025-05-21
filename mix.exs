@@ -152,7 +152,7 @@ defmodule AshPhoenix.MixProject do
       {:mix_audit, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:mix_test_watch, "~> 1.0", only: [:dev, :test]},
       # Code Generators
-      {:igniter, "~> 0.4 and >= 0.4.3", optional: true}
+      {:igniter, "~> 0.6", optional: true}
     ]
   end
 

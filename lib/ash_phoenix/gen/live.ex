@@ -8,7 +8,11 @@ if Code.ensure_loaded?(Igniter) do
 
       resource_plural =
         Keyword.fetch!(options, :resource_plural) ||
-          resource |> Module.split() |> List.last() |> Macro.underscore() |> Inflex.pluralize()
+          resource
+          |> Module.split()
+          |> List.last()
+          |> Macro.underscore()
+          |> Igniter.Inflex.pluralize()
 
       opts = [
         interactive?: true,
