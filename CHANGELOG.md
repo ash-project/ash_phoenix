@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.2](https://github.com/ash-project/ash_phoenix/compare/v2.3.1...v2.3.2) (2025-05-21)
+
+
+
+
+### Bug Fixes:
+
+* support old phoenix generators (#365)
+
+### Improvements:
+
+* update igniter, remove inflex
+
+* add usage-rules.md
+
 ## [v2.3.1](https://github.com/ash-project/ash_phoenix/compare/v2.3.0...v2.3.1) (2025-05-15)
 
 
