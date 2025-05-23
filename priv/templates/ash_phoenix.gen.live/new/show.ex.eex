@@ -30,18 +30,10 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Show do
   end
 
   @impl true
-  def mount(_params, _session, socket) do
-    {:ok, socket}
+  def mount(%{"<%= @pkey %>" => <%= @pkey %>}, _session, socket) do
+    {:ok,
+      socket
+      |> assign(:page_title, "Show <%= @resource_human_singular %>")
+      |> assign(:<%= @resource_singular %>, <%= @get_by_pkey %>)}
   end
-
-  @impl true
-  def handle_params(%{"<%= @pkey %>" => <%= @pkey %>}, _, socket) do
-    {:noreply,
-     socket
-     |> assign(:page_title, page_title(socket.assigns.live_action))
-     |> assign(:<%= @resource_singular %>, <%= @get_by_pkey %>)}
-  end
-
-  defp page_title(:show), do: "Show <%= @resource_human_singular %>"
-  defp page_title(:edit), do: "Edit <%= @resource_human_singular %>"
 end
