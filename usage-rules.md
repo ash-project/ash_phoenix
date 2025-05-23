@@ -68,6 +68,9 @@ Which could then be used as:
 MyApp.Accounts.register_with_password(email, ...)
 ```
 
+These positional arguments are *very important* for certain cases, because there may be values you do not want the form to be able to set. For example, when updating a user's settings, maybe the action takes a `user_id`, but the form is on a page for
+a specific user's id and so this should therefore not be editable in the form. Use positional arguments for this.
+
 ### Handling Form Submission
 
 In your LiveView:
