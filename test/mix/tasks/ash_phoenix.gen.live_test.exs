@@ -457,36 +457,8 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
       def mount(_params, _session, socket) do
       {:ok,
        socket
-       |> stream(:Artists, Ash.read!(AshPhoenix.Test.Artist, actor: socket.assigns[:current_user]))
-       |> assign_new(:current_user, fn -> nil end)}
-      end
-
-      @impl true
-      def handle_params(params, _url, socket) do
-      {:noreply, apply_action(socket, socket.assigns.live_action, params)}
-      end
-
-      defp apply_action(socket, :edit, %{"id" => id}) do
-      socket
-      |> assign(:page_title, "Edit Artist")
-      |> assign(:artist, Ash.get!(AshPhoenix.Test.Artist, id, actor: socket.assigns.current_user))
-      end
-
-      defp apply_action(socket, :new, _params) do
-      socket
-      |> assign(:page_title, "New Artist")
-      |> assign(:artist, nil)
-      end
-
-      defp apply_action(socket, :index, _params) do
-      socket
-      |> assign(:page_title, "Listing Artists")
-      |> assign(:artist, nil)
-      end
-
-      @impl true
-      def handle_info({AshPhoenixWeb.ArtistLive.FormComponent, {:saved, artist}}, socket) do
-      {:noreply, stream_insert(socket, :Artists, artist)}
+        |> assign(:page_title, "Listing Artists")
+        |> stream(:Artists, Ash.read!(AshPhoenix.Test.Artist, actor: socket.assigns[:current_user]))}
       end
 
       @impl true
