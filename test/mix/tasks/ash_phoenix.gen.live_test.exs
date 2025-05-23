@@ -339,7 +339,7 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
          artist =
            case params["id"] do
              nil -> nil
-             id -> Ash.get!(AshPhoenix.Test.Artist, id)
+             id -> Ash.get!(AshPhoenix.Test.Artist, id, actor: socket.assigns.current_user)
            end
 
          action = if is_nil(artist), do: "New", else: "Edit"
