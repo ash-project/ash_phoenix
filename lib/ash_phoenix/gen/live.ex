@@ -90,7 +90,7 @@ if Code.ensure_loaded?(Igniter) do
           Igniter.add_notice(igniter, """
           Add the live routes to your browser scope in #{web_path(igniter)}/router.ex:
 
-          #{for line <- live_route_instructions(assigns), do: "    #{line}"}
+          #{for line <- live_route_instructions(assigns, opts[:phx_version]), do: "    #{line}"}
           """)
         else
           igniter
@@ -99,17 +99,17 @@ if Code.ensure_loaded?(Igniter) do
       igniter
     end
 
-    defp live_route_instructions(assigns) do
+    defp live_route_instructions(assigns, phx_version) do
       [
         ~s|live "/#{assigns[:resource_plural]}", #{assigns[:resource_alias]}Live.Index, :index\n|,
         if assigns[:create_action] do
           ~s|live "/#{assigns[:resource_plural]}/new", #{assigns[:resource_alias]}Live.Form, :new\n|
         end,
         if assigns[:update_action] do
-          ~s|live "/#{assigns[:resource_plural]}/:id/edit", #{assigns[:resource_alias]}Live.Form, :edit\n\n|
+          ~s|live "/#{assigns[:resource_plural]}/:id/edit", #{assigns[:resource_alias]}Live.Form, :edit\n|
         end,
         ~s|live "/#{assigns[:resource_plural]}/:id", #{assigns[:resource_alias]}Live.Show, :show\n|,
-        if assigns[:update_action] do
+        if assigns[:update_action] != nil and not String.starts_with?(phx_version, "1.8") do
           ~s|live "/#{assigns[:resource_plural]}/:id/show/edit", #{assigns[:resource_alias]}Live.Show, :edit|
         end
       ]

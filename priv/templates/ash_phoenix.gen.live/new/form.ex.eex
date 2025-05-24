@@ -46,7 +46,7 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Form do
     <%= @resource_singular %> =
       case params["id"] do
         nil -> nil
-        id -> Ash.get!(<%= inspect Module.concat(Elixir, @resource) %>, id)
+        id -> Ash.get!(<%= inspect Module.concat(Elixir, @resource) %>, id<%= @actor_opt %>)
       end
 
     action = if is_nil(<%= @resource_singular %>), do: "New", else: "Edit"
