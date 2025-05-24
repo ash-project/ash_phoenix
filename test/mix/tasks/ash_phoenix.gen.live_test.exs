@@ -458,6 +458,7 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
       {:ok,
        socket
         |> assign(:page_title, "Listing Artists")
+        |> assign_new(:current_user, fn -> nil end)
         |> stream(:Artists, Ash.read!(AshPhoenix.Test.Artist, actor: socket.assigns[:current_user]))}
       end
 
