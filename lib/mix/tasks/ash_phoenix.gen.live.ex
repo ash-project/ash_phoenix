@@ -47,15 +47,12 @@ if Code.ensure_loaded?(Igniter) do
       }
     end
 
-    def igniter(igniter, argv) do
-      # extract options according to `schema` and `aliases` above
-      options = options!(argv)
-
+    def igniter(igniter) do
       options =
         Keyword.put(
-          options,
+          igniter.args.options,
           :resource_plural,
-          options[:resource_plural] || options[:resourceplural]
+          igniter.args.options[:resource_plural] || igniter.args.options[:resourceplural]
         )
 
       # Do your work here and return an updated igniter
