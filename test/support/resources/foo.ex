@@ -10,7 +10,7 @@ defmodule AshPhoenix.Test.Foo do
     end
 
     attribute :value, :string do
-      constraints match: ~r/abc/
+      constraints match: fn -> ~r/abc/ end
       public? true
     end
 
