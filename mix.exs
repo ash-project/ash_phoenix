@@ -134,8 +134,7 @@ defmodule AshPhoenix.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      # {:ash, ash_version("~> 3.0 and >= 3.4.31")},
-      {:ash, github: "ash-project/ash", override: true},
+      {:ash, ash_version("~> 3.5 and >= 3.5.13")},
       {:phoenix, "~> 1.5.6 or ~> 1.6"},
       {:phoenix_html, "~> 4.0"},
       {:phoenix_live_view, "~> 0.20.3 or ~> 1.0 or ~> 1.0.0-rc.1"},
@@ -157,14 +156,14 @@ defmodule AshPhoenix.MixProject do
     ]
   end
 
-  # defp ash_version(default_version) do
-  #   case System.get_env("ASH_VERSION") do
-  #     nil -> default_version
-  #     "local" -> [path: "../ash"]
-  #     "main" -> [git: "https://github.com/ash-project/ash.git"]
-  #     version -> "~> #{version}"
-  #   end
-  # end
+  defp ash_version(default_version) do
+    case System.get_env("ASH_VERSION") do
+      nil -> default_version
+      "local" -> [path: "../ash"]
+      "main" -> [git: "https://github.com/ash-project/ash.git"]
+      version -> "~> #{version}"
+    end
+  end
 
   defp aliases do
     [
