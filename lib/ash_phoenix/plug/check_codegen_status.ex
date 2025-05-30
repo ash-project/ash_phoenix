@@ -1,6 +1,8 @@
 defmodule AshPhoenix.Plug.CheckCodegenStatus do
   @moduledoc """
   A plug that checks if there are pending codegen tasks for your application.
+
+  Place `plug AshPhoenix.Plug.CheckCodegenStatus` just after `plug Phoenix.CodeReloader` in your endpoint.
   """
 
   @behaviour Plug
