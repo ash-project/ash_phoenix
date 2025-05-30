@@ -12,6 +12,7 @@ defimpl Plug.Exception, for: Ash.Error.Framework.PendingCodegen do
 
   def codegen do
     Mix.Task.reenable("ash.codegen")
+    Mix.Task.reenable("ash.migrate")
     Mix.Task.run("ash.codegen", ["--dev"])
     Mix.Task.run("ash.migrate")
   end
