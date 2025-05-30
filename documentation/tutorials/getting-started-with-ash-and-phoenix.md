@@ -1,344 +1,41 @@
 # Get Started with Ash and Phoenix
 
-## Goals
-
-In this guide we will:
-
-1. Create a new Phoenix project
-2. Setup Ash, AshPhoenix and AshPostgres as dependencies
-3. Create a basic `Blog.Post` resource
-4. Create and migrate the database
-5. Learn how to interact with your resource
-6. Integrate a minimal Phoenix LiveView with Ash
-
-## Preparation
-
-- [Install Elixir](https://elixir-lang.org/install.html)
-- [Phoenix - Up and Running Guide](https://hexdocs.pm/phoenix/up_and_running.html)
-- [Design Principles](https://hexdocs.pm/ash/design-principles.html)
-
-## Requirements
-
-If you want to follow along yourself, you will need the following things:
-
-1. Elixir (1.12 or later) and Erlang (22 or later) installed
-2. PostgreSQL installed
-3. A text editor
-4. A terminal to run the examples
+This is a small guide to get you started with Ash & Phoenix.
+See the AshPhoenix home page for more information on what is available.
 
 ## Setup
 
-### Create a New Phoenix Project
-
-> ### Install Phoenix {: .info}
->
-> _This section is based on the [Phoenix installation docs](https://hexdocs.pm/phoenix/installation.html). For more details go there._
-
-First we need to install the Phoenix project generator, then we'll run the generator to create our new project.
-
-```bash
-# install Phoenix project generator
-$ mix archive.install hex phx_new
-
-# generate Phoenix project
-$ mix igniter.new my_ash_phoenix_app --install ash,ash_phoenix,ash_postgres --with phx.new
-
-# cd into project
-$ cd my_ash_phoenix_app
-```
-
-> ### Don't run `mix ecto.create` {: .warning}
->
-> Do _not_ run `mix ecto.create`, (as it asks you to) we will do this the Ash way later.
-
-### Edit Config
-
-We need to specify the Ash domains that our application uses.
-
-Add this to your config:
-
-```elixir
-# config/config.exs
-
-import Config
-
-config :my_ash_phoenix_app,
-  ash_domains: [MyAshPhoenixApp.Blog]
-```
-
-### Create the Domain and add Resources
-
-An Ash domain can be thought of as a [Bounded Context](https://martinfowler.com/bliki/BoundedContext.html) in Domain Driven Design terms and can seen as analogous to a Phoenix context. Put simply, its a way of grouping related resources together. In our case our domain will be called `MyAshPhoenixApp.Blog`.
-
-An Ash domain points to Ash resources. An Ash domain can point to one or more resources. In our case we will only have a single resource `MyAshPhoenixApp.Blog.Post`. We'll be taking a deeper look into that in the next section.
-
-For now take a look at the `Blog` domain and the associated resources:
-
-```elixir
-# lib/my_ash_phoenix_app/blog/blog.ex
-
-defmodule MyAshPhoenixApp.Blog do
-  use Ash.Domain
-
-  resources do
-    resource MyAshPhoenixApp.Blog.Post do
-      # Define an interface for calling resource actions.
-      define :create_post, action: :create
-      define :list_posts, action: :read
-      define :destroy_post, action: :destroy
-      define :get_post, args: [:id], action: :by_id
-    end
-  end
-end
-```
-
-## Creating Resources
-
-### Creating the `Post` Resource
-
-A resource is a central concept in Ash. In short, a resource is a domain model object in your system. A resource defines the data it holds and defines the actions that can operate on that data.
-
-When we create `Post` we will place it in `lib/my_ash_phoenix_app/blog/post.ex`. So the structure after making the resource should look like so:
-
-```
-lib/
-├─ my_ash_phoenix_app/
-│  ├─ blog/
-│  │  ├─ blog.ex
-│  │  ├─ post.ex
-```
-
-Below is the resource module. Read the comments carefully, every line is explained:
-
-```elixir
-# lib/my_ash_phoenix_app/blog/post.ex
-
-defmodule MyAshPhoenixApp.Blog.Post do
-  # Using Ash.Resource turns this module into an Ash resource.
-  use Ash.Resource,
-    # Tells Ash where the generated code interface belongs
-    domain: MyAshPhoenixApp.Blog,
-    # Tells Ash you want this resource to store its data in Postgres.
-    data_layer: AshPostgres.DataLayer
-
-  # The Postgres keyword is specific to the AshPostgres module.
-  postgres do
-    # Tells Postgres what to call the table
-    table "posts"
-    # Tells Ash how to interface with the Postgres table
-    repo MyAshPhoenixApp.Repo
-  end
-
-  actions do
-    # Exposes default built in actions to manage the resource
-    defaults [:read, :destroy]
-
-    create :create do
-      primary? true
-      # accept title as input
-      accept [:title]
-    end
-
-    update :update do
-      primary? true
-      # accept content as input
-      accept [:content]
-    end
-
-    # Defines custom read action which fetches post by id.
-    read :by_id do
-      # This action has one argument :id of type :uuid
-      argument :id, :uuid, allow_nil?: false
-      # Tells us we expect this action to return a single result
-      get? true
-      # Filters the `:id` given in the argument
-      # against the `id` of each element in the resource
-      filter expr(id == ^arg(:id))
-    end
-  end
-
-  # Attributes are simple pieces of data that exist in your resource
-  attributes do
-    # Add an autogenerated UUID primary key called `:id`.
-    uuid_primary_key :id
-    # Add a string type attribute called `:title`
-    attribute :title, :string do
-      # We don't want the title to ever be `nil`
-      allow_nil? false
-    end
-
-    # Add a string type attribute called `:content`
-    # If allow_nil? is not specified, then content can be nil
-    attribute :content, :string
-  end
-end
-```
-
-### Creating and Migrating the Database
-
-We have specified the resource in Ash. But we have yet to create it in our data layer (in our case Postgres).
-
-First we need to create our database:
-
-```bash
-$ mix ash.setup
-
-Running setup for AshPostgres.DataLayer...
-The database for MyAshPhoenixApp.Repo has been created
-
-01:23:45.678 [info] Migrations already up
-```
-
-Now we need to populate our database. We do this by generating and performing a migration.
-
-We can use a generator to produce a migration for us. Ash can deduce what needs to go into the migration and do the hard work for us, to do this use the command below:
-
-```bash
-$ mix ash.codegen initial_migration
-
-# ... don't worry about other files it creates
-
-Generating Migrations:
-* creating priv/repo/migrations/20230208045101_initial_migration.exs
-```
-
-Here is the migration file commented in detail:
-
-```elixir
-# priv/repo/migrations/20230208045101_initial_migration.exs
-
-defmodule MyAshPhoenixApp.Repo.Migrations.InitialMigration do
-  use Ecto.Migration
-
-  # This function runs when migrating forward
-  def up do
-    # Creates the `:posts` table
-    create table(:posts, primary_key: false) do
-      # Adds primary key attribute `:id` of type `:uuid`
-      # null values are not allowed
-      add :id, :uuid, null: false, default: fragment("gen_random_uuid()"), primary_key: true
-
-      # Adds attribute `:title` of type `:text`, null values are not allowed
-      add :title, :text, null: false
-      # Adds attribute `:content` of type `:text`, null values are allowed
-      add :content, :text
-    end
-  end
-
-  # This is the function that runs if you want to rollback the migration.
-  def down do
-    # Deletes the `:posts` table
-    drop table(:posts)
-  end
-end
-```
-
-We can run the `up/0` function which will perform the desired operations on the Postgres database. We do this with the migrate command:
-
-```bash
-$ mix ash.migrate
-```
-
-> In case you want to drop the database and start over again during development you can use `mix ash.reset`.
-
-## Interacting with your Resources
-
-**All interaction with your resource attributes always occur through an action**. In our resource we are using the default actions for `:create, :read, :update, :destroy` along with a custom action `:by_id`.
-
-`:create` and `:update` and `:destroy` actions require a changeset. Ash changesets are conceptually similar to [Ecto changesets](https://hexdocs.pm/ecto/Ecto.Changeset.html). They're data structures which represent an intended change to an Ash resource and provide validation.
-
-The `:read` action takes a query instead of a changeset.
-
-Below is the most verbose way of calling your resource. All other ways of interaction are some kind of shorthand of these. This means at some point a changeset is being created and passed to the domain, even if it's encapsulated within another function.
-
-```elixir
-# create post
-new_post =
-  MyAshPhoenixApp.Blog.Post
-  |> Ash.Changeset.for_create(:create, %{title: "hello world"})
-  |> Ash.create!()
-
-# read all posts
-MyAshPhoenixApp.Blog.Post
-|> Ash.Query.for_read(:read)
-|> Ash.read!()
-
-# get single post by id
-MyAshPhoenixApp.Blog.Post
-|> Ash.Query.for_read(:by_id, %{id: new_post.id})
-|> Ash.read_one!()
-
-# update post
-updated_post =
-  new_post
-  |> Ash.Changeset.for_update(:update, %{content: "hello to you too!"})
-  |> Ash.update!()
-
-# delete post
-new_post
-|> Ash.Changeset.for_destroy(:destroy)
-|> Ash.destroy!()
-```
-
-As stated above, this is verbose so Ash has a built in shortcut - The `code_interface`. You may notice this has already been done in your `Post` resource inside of the domain module.
-
-> ### you can call code interfaces whatever you like {: .info}
->
-> The function name doesn't have to match the action name in any way. You could also write:
->
-> ```elixir
-> define :make_post, action: :create
-> ```
->
-> That's perfectly valid and could be called via `Blog.make_post/2`.
-
-Now we can call our resource like so:
-
-```elixir
-# create post
-new_post = MyAshPhoenixApp.Blog.create_post!(%{title: "hello world"})
-
-# read post
-MyAshPhoenixApp.Blog.list_posts!()
-
-# get post by id
-MyAshPhoenixApp.Blog.get_post!(new_post.id)
-
-# update post
-updated_post = MyAshPhoenixApp.Blog.update_post!(new_post, %{content: "hello to you too!"})
-
-# delete post
-MyAshPhoenixApp.Blog.destroy_post!(updated_post)
-```
-
-Now isn't that more convenient?
-
-> ### raising and non-raising functions {: .info}
->
-> All functions that interact with an Ash resource have a raising and non-raising version. For example there are two create functions `create/2` and `create!/2`. `create/2` returns `{:ok, resource}` or `{:error, reason}`. `create!/2` will return just the record on success and will raise an error on failure.
+To begin, you should go through the Ash [getting started guide](https://hexdocs.pm/ash/get-started.html). You should choose the step
+to create a new application with Phoenix pre-installed, as Phoenix cannot
+easily be added to your project later.
+
+Once you've done that, you'll have some Ash resources with which to follow the next steps.
 
 ## Connecting your Resource to a Phoenix LiveView
 
-Now we know how to interact with our resource, we can generate a liveview for it!
-let's run `mix ash_phoenix.gen.live` to generate a liveview! Run the following command,
-declining to name your actor, accepting any other default values, and following the 
-instructions listed at the end for adding the liveview to your router.
+In general, working with Ash and Phoenix is fairly "standard" with the exception that you
+will be calling into your Ash resources & domains instead of context functions. For that
+reason, we suggest reading their documentation as well, since nothing really changes about
+controllers, liveviews etc.
+
+### `mix ash_phoenix.gen.live`
+
+We can run `mix ash_phoenix.gen.live` to generate a liveview! Run the following command to
+generate a starting point for your own liveview. Remember that it is just a starting point,
+not a finished product.
 
 ```bash
-mix ash_phoenix.gen.live --domain MyAshPhoenixApp.Blog --resource MyAshPhoenixApp.Blog.Post
+mix ash_phoenix.gen.live --domain Helpdesk.Support --resource Helpdesk.Support.Ticket
 ```
 
-Now, start the web server by running `mix phx.server`. Then, visit the posts route that you added in your browser to see what we have just created.
-
-You can see how using functions created by our `code_interface` makes it easy to integrate Ash with Phoenix.
-
-You may also notice this is the first time we've used the AshPhoenix library. The AshPhoenix library contains utilities to help Ash integrate with Phoenix and LiveView Seamlessly. One of these utilities is `AshPhoenix.Form` which can automatically produce changesets to be used in the forms.
-
-That's it for this guide. We've gone from 0 to a fully working Phoenix App using Ash. To get a closer look, see the accompanying repo [here](https://github.com/team-alembic/my_ash_phoenix_project).
+Now, start the web server by running `mix phx.server`. Then, visit the tickets route that you added in your browser to see what we have just created.
 
 ## Where to Next?
 
-We are really just scratching the surface of what can be done in Ash. Look below for what to look at next.
+### Examples
+
+- The final chapter's branch for [tunez](https://github.com/sevenseacat/tunez/tree/end-of-chapter-10) from the Ash book is a great example.
+- The [Realworld app](https://github.com/team-alembic/realworld) is another good example
 
 ### Continue Learning
 
