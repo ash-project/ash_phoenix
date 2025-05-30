@@ -196,6 +196,11 @@ defmodule AshPhoenix.Form do
       type: :any,
       doc: "The actor performing the action. Passed through to the underlying action."
     ],
+    scope: [
+      type: :any,
+      doc:
+        "A value that implements the `Ash.Scope` protocol, for passing around actor/tenant/context in a single value. See `Ash.Scope` for more."
+    ],
     forms: [
       type: :keyword_list,
       doc: "Nested form configurations. See `for_create/3` \"Nested Form Options\" docs for more."
@@ -484,6 +489,7 @@ defmodule AshPhoenix.Form do
         !!opts[:errors],
         opts[:domain] || Ash.Resource.Info.domain(resource),
         opts[:actor],
+        opts[:scope],
         opts[:tenant],
         [],
         name,
@@ -583,6 +589,7 @@ defmodule AshPhoenix.Form do
         !!opts[:errors],
         opts[:domain] || Ash.Resource.Info.domain(resource),
         opts[:actor],
+        opts[:scope],
         opts[:tenant],
         [],
         name,
@@ -677,6 +684,7 @@ defmodule AshPhoenix.Form do
         !!opts[:errors],
         opts[:domain] || Ash.Resource.Info.domain(resource),
         opts[:actor],
+        opts[:scope],
         opts[:tenant],
         [
           data | opts[:prev_data_trail] || []
@@ -813,6 +821,7 @@ defmodule AshPhoenix.Form do
         !!opts[:errors],
         opts[:domain] || Ash.Resource.Info.domain(resource),
         opts[:actor],
+        opts[:scope],
         opts[:tenant],
         [
           data | opts[:prev_data_trail] || []
@@ -906,6 +915,7 @@ defmodule AshPhoenix.Form do
         !!opts[:errors],
         opts[:domain] || Ash.Resource.Info.domain(resource),
         opts[:actor],
+        opts[:scope],
         opts[:tenant],
         [],
         name,
@@ -1487,6 +1497,7 @@ defmodule AshPhoenix.Form do
 
                           for_action(resource, create_action,
                             actor: form.opts[:actor],
+                            scope: form.opts[:scope],
                             tenant: form.opts[:tenant],
                             domain: form.domain,
                             params: params,
@@ -1513,6 +1524,7 @@ defmodule AshPhoenix.Form do
 
                           for_action(resource, create_action,
                             actor: form.opts[:actor],
+                            scope: form.opts[:scope],
                             tenant: form.opts[:tenant],
                             domain: form.domain,
                             params: params,
@@ -1606,6 +1618,7 @@ defmodule AshPhoenix.Form do
                   new_form =
                     for_action(resource, create_action,
                       actor: form.opts[:actor],
+                      scope: form.opts[:scope],
                       tenant: form.opts[:tenant],
                       domain: form.domain,
                       params: form_params,
@@ -1681,6 +1694,7 @@ defmodule AshPhoenix.Form do
 
                         for_action(data, update_action,
                           actor: form.opts[:actor],
+                          scope: form.opts[:scope],
                           tenant: form.opts[:tenant],
                           domain: form.domain,
                           errors: errors?,
@@ -1704,6 +1718,7 @@ defmodule AshPhoenix.Form do
                           for_action(data, update_action,
                             domain: form.domain,
                             actor: form.opts[:actor],
+                            scope: form.opts[:scope],
                             tenant: form.opts[:tenant],
                             errors: errors?,
                             accessing_from: opts[:managed_relationship],
@@ -1748,6 +1763,7 @@ defmodule AshPhoenix.Form do
 
                         for_action(data, read_action,
                           actor: form.opts[:actor],
+                          scope: form.opts[:scope],
                           tenant: form.opts[:tenant],
                           domain: form.domain,
                           errors: errors?,
@@ -1777,6 +1793,7 @@ defmodule AshPhoenix.Form do
 
                           for_action(data, read_action,
                             actor: form.opts[:actor],
+                            scope: form.opts[:scope],
                             tenant: form.opts[:tenant],
                             domain: form.domain,
                             errors: errors?,
@@ -1816,6 +1833,7 @@ defmodule AshPhoenix.Form do
                           if opts[:update_action] do
                             for_action(data, opts[:update_action],
                               actor: form.opts[:actor],
+                              scope: form.opts[:scope],
                               tenant: form.opts[:tenant],
                               domain: form.domain,
                               errors: errors?,
@@ -1855,6 +1873,7 @@ defmodule AshPhoenix.Form do
                         if opts[:update_action] do
                           for_action(data, opts[:update_action],
                             actor: form.opts[:actor],
+                            scope: form.opts[:scope],
                             tenant: form.opts[:tenant],
                             domain: form.domain,
                             errors: errors?,
@@ -4104,6 +4123,7 @@ defmodule AshPhoenix.Form do
           params: opts[:params] || %{},
           domain: form.domain,
           actor: form.opts[:actor],
+          scope: form.opts[:scope],
           tenant: form.opts[:tenant],
           accessing_from: config[:managed_relationship],
           transform_params: config[:transform_params],
@@ -4251,6 +4271,7 @@ defmodule AshPhoenix.Form do
                   params: opts[:params] || %{},
                   domain: form.domain,
                   actor: form.opts[:actor],
+                  scope: form.opts[:scope],
                   tenant: form.opts[:tenant],
                   accessing_from: config[:managed_relationship],
                   transform_params: config[:transform_params],
@@ -4285,6 +4306,7 @@ defmodule AshPhoenix.Form do
                   params: opts[:params] || %{},
                   domain: form.domain,
                   actor: form.opts[:actor],
+                  scope: form.opts[:scope],
                   tenant: form.opts[:tenant],
                   accessing_from: config[:managed_relationship],
                   transform_params: config[:transform_params],
@@ -4867,6 +4889,7 @@ defmodule AshPhoenix.Form do
          error?,
          domain,
          actor,
+         scope,
          tenant,
          prev_data_trail,
          name,
@@ -4900,6 +4923,7 @@ defmodule AshPhoenix.Form do
             key,
             domain,
             actor,
+            scope,
             tenant,
             trail,
             prev_data_trail,
@@ -4918,6 +4942,7 @@ defmodule AshPhoenix.Form do
             key,
             domain,
             actor,
+            scope,
             tenant,
             trail,
             prev_data_trail,
@@ -4938,6 +4963,7 @@ defmodule AshPhoenix.Form do
          key,
          domain,
          actor,
+         scope,
          tenant,
          trail,
          prev_data_trail,
@@ -4982,6 +5008,7 @@ defmodule AshPhoenix.Form do
                 for_action(data, update_action,
                   domain: domain,
                   actor: actor,
+                  scope: scope,
                   tenant: tenant,
                   errors: error?,
                   accessing_from: opts[:managed_relationship],
@@ -5004,6 +5031,7 @@ defmodule AshPhoenix.Form do
                   for_action(data, update_action,
                     domain: domain,
                     actor: actor,
+                    scope: scope,
                     tenant: tenant,
                     errors: error?,
                     params: add_index(params, index, opts),
@@ -5061,6 +5089,7 @@ defmodule AshPhoenix.Form do
               if (opts[:type] || :single) == :single do
                 for_action(data, read_action,
                   actor: actor,
+                  scope: form.opts[:scope],
                   tenant: tenant,
                   errors: error?,
                   domain: domain,
@@ -5095,6 +5124,7 @@ defmodule AshPhoenix.Form do
                 |> Enum.map(fn {data, index} ->
                   for_action(data, read_action,
                     actor: actor,
+                    scope: scope,
                     tenant: tenant,
                     errors: error?,
                     domain: domain,
@@ -5134,6 +5164,7 @@ defmodule AshPhoenix.Form do
                   if opts[:update_action] do
                     for_action(data, opts[:update_action],
                       domain: domain,
+                      scope: scope,
                       actor: actor,
                       tenant: tenant,
                       errors: error?,
@@ -5161,6 +5192,7 @@ defmodule AshPhoenix.Form do
                 if opts[:update_action] do
                   for_action(data, opts[:update_action],
                     domain: domain,
+                    scope: scope,
                     actor: actor,
                     tenant: tenant,
                     errors: error?,
@@ -5272,6 +5304,7 @@ defmodule AshPhoenix.Form do
 
         for_action(resource, read_action,
           actor: actor,
+          scope: scope,
           tenant: tenant,
           params: form_params,
           domain: domain,
@@ -5301,6 +5334,7 @@ defmodule AshPhoenix.Form do
 
         for_action(resource, create_action,
           actor: actor,
+          scope: scope,
           tenant: tenant,
           params: form_params,
           forms: opts[:forms] || [],
@@ -5336,6 +5370,7 @@ defmodule AshPhoenix.Form do
 
           for_action(resource, read_action,
             domain: domain,
+            scope: scope,
             actor: actor,
             tenant: tenant,
             params: add_index(form_params, original_index, opts),
@@ -5365,6 +5400,7 @@ defmodule AshPhoenix.Form do
 
           for_action(resource, create_action,
             domain: domain,
+            scope: scope,
             actor: actor,
             tenant: tenant,
             params: add_index(form_params, original_index, opts),
@@ -5447,6 +5483,7 @@ defmodule AshPhoenix.Form do
 
             for_action(data, destroy_action,
               actor: actor,
+              scope: scope,
               tenant: tenant,
               params: form_params,
               domain: domain,
@@ -5479,6 +5516,7 @@ defmodule AshPhoenix.Form do
 
             for_action(resource, create_action,
               actor: actor,
+              scope: scope,
               tenant: tenant,
               params: form_params,
               forms: opts[:forms] || [],
@@ -5509,6 +5547,7 @@ defmodule AshPhoenix.Form do
 
             for_action(resource, read_action,
               actor: actor,
+              scope: scope,
               tenant: tenant,
               params: form_params,
               forms: opts[:forms] || [],
@@ -5554,6 +5593,7 @@ defmodule AshPhoenix.Form do
           form =
             for_action(resource, read_action,
               actor: actor,
+              scope: scope,
               tenant: tenant,
               domain: domain,
               params: add_index(form_params, original_index, opts),
@@ -5588,6 +5628,7 @@ defmodule AshPhoenix.Form do
               form =
                 for_action(resource, create_action,
                   actor: actor,
+                  scope: scope,
                   tenant: tenant,
                   domain: domain,
                   params: add_index(form_params, original_index, opts),
@@ -5617,6 +5658,7 @@ defmodule AshPhoenix.Form do
 
                   for_action(data, destroy_action,
                     actor: actor,
+                    scope: scope,
                     tenant: tenant,
                     domain: domain,
                     params: form_params,
@@ -5641,6 +5683,7 @@ defmodule AshPhoenix.Form do
 
                   for_action(data, update_action,
                     actor: actor,
+                    scope: scope,
                     tenant: tenant,
                     domain: domain,
                     params: form_params,
@@ -5675,6 +5718,7 @@ defmodule AshPhoenix.Form do
               form =
                 for_action(resource, create_action,
                   actor: actor,
+                  scope: scope,
                   tenant: tenant,
                   domain: domain,
                   params: form_params,
