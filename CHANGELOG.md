@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.4](https://github.com/ash-project/ash_phoenix/compare/v2.3.3...v2.3.4) (2025-05-30)
+
+
+
+
+### Bug Fixes:
+
+* reenable migrate task
+
 ## [v2.3.3](https://github.com/ash-project/ash_phoenix/compare/v2.3.2...v2.3.3) (2025-05-30)
 
 
