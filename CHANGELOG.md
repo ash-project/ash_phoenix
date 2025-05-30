@@ -5,6 +5,33 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.3](https://github.com/ash-project/ash_phoenix/compare/v2.3.2...v2.3.3) (2025-05-30)
+
+
+
+
+### Bug Fixes:
+
+* new generators, use actor when getting resource
+
+* new generators, close Layouts.app tag
+
+* new generators, remove handle_params and apply_action, since this no longer handles create/update
+
+* new generators, remove handle params + title, since this no longer handles update
+
+### Improvements:
+
+* implement new codegen status plug
+
+* support `Ash.Scope`
+
+* resolve igniter task deprecation warning
+
+* new generator tweaks (#368)
+
+* explain importants of positional arguments in usage rules
+
 ## [v2.3.2](https://github.com/ash-project/ash_phoenix/compare/v2.3.1...v2.3.2) (2025-05-21)
 
 
