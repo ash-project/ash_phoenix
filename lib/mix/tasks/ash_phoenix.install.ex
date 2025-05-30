@@ -19,6 +19,72 @@ if Code.ensure_loaded?(Igniter) do
     def igniter(igniter) do
       igniter
       |> Igniter.Project.Formatter.import_dep(:ash_phoenix)
+      |> configure_phoenix_endpoints()
+    end
+
+    defp configure_phoenix_endpoints(igniter) do
+      {igniter, routers} =
+        Igniter.Libs.Phoenix.list_routers(igniter)
+
+      {igniter, endpoints} =
+        Enum.reduce(routers, {igniter, []}, fn router, {igniter, endpoints} ->
+          {igniter, new_endpoints} = Igniter.Libs.Phoenix.endpoints_for_router(igniter, router)
+          {igniter, endpoints ++ new_endpoints}
+        end)
+
+      Enum.reduce(endpoints, igniter, fn endpoint, igniter ->
+        setup_endpoint(igniter, endpoint)
+      end)
+    end
+
+    defp setup_endpoint(igniter, endpoint) do
+      Igniter.Project.Module.find_and_update_module!(igniter, endpoint, fn zipper ->
+        zipper
+        |> add_codegen_status_plug()
+        |> then(&{:ok, &1})
+      end)
+    end
+
+    defp add_codegen_status_plug(zipper) do
+      # Look for existing AshPhoenix.Plug.CheckCodegenStatus plug first
+      case Igniter.Code.Common.move_to(
+             zipper,
+             fn zipper ->
+               Igniter.Code.Function.function_call?(zipper, :plug, [1, 2]) &&
+                 Igniter.Code.Function.argument_equals?(
+                   zipper,
+                   0,
+                   AshPhoenix.Plug.CheckCodegenStatus
+                 )
+             end
+           ) do
+        {:ok, _zipper} ->
+          # Plug already exists, don't add it again
+          zipper
+
+        :error ->
+          case Igniter.Code.Common.move_to(
+                 zipper,
+                 fn zipper ->
+                   Igniter.Code.Function.function_call?(zipper, :plug, [1, 2]) &&
+                     Igniter.Code.Function.argument_equals?(
+                       zipper,
+                       0,
+                       Phoenix.CodeReloader
+                     )
+                 end
+               ) do
+            {:ok, zipper} ->
+              # Add AshPhoenix.Plug.CheckCodegenStatus after Phoenix.CodeReloader
+              Igniter.Code.Common.add_code(zipper, "plug AshPhoenix.Plug.CheckCodegenStatus",
+                placement: :after
+              )
+
+            :error ->
+              # Phoenix.CodeReloader not found, don't add the plug
+              zipper
+          end
+      end
     end
   end
 else
