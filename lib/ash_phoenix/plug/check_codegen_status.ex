@@ -52,45 +52,4 @@ defmodule AshPhoenix.Plug.CheckCodegenStatus do
     :persistent_term.put(:ash_codegen_extensions, extensions)
     extensions
   end
-
-  # defp check_pending_migrations!(repo, opts) do
-  #   dirs = migration_directories(repo, opts)
-
-  #   migrations_fun =
-  #     Keyword.get_lazy(opts, :mock_migrations_fn, fn ->
-  #       if Code.ensure_loaded?(Ecto.Migrator),
-  #         do: &Ecto.Migrator.migrations/3,
-  #         else: fn _repo, _paths, _opts -> raise "to be rescued" end
-  #     end)
-
-  #   true = is_function(migrations_fun, 3)
-  #   migration_opts = Keyword.take(opts, @migration_opts)
-
-  #   try do
-  #     repo
-  #     |> migrations_fun.(dirs, migration_opts)
-  #     |> Enum.any?(fn {status, _version, _migration} -> status == :down end)
-  #   rescue
-  #     _ -> false
-  #   else
-  #     true ->
-
-  #     false ->
-  #       true
-  #   end
-  # end
-
-  # defp migration_directories(repo, opts) do
-  #   case Keyword.fetch(opts, :migration_paths) do
-  #     {:ok, migration_directories_fn} ->
-  #       List.wrap(migration_directories_fn.(repo))
-
-  #     :error ->
-  #       try do
-  #         [Ecto.Migrator.migrations_path(repo)]
-  #       rescue
-  #         _ -> []
-  #       end
-  #   end
-  # end
 end
