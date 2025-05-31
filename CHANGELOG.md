@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.5](https://github.com/ash-project/ash_phoenix/compare/v2.3.4...v2.3.5) (2025-05-31)
+
+
+
+
+### Bug Fixes:
+
+* live route instructions (#371)
+
 ## [v2.3.4](https://github.com/ash-project/ash_phoenix/compare/v2.3.3...v2.3.4) (2025-05-30)
 
 
