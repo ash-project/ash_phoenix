@@ -100,16 +100,18 @@ if Code.ensure_loaded?(Igniter) do
     end
 
     defp live_route_instructions(assigns, phx_version) do
+      module = if String.starts_with?(phx_version, "1.8"), do: "Form", else: "Index"
+
       [
         ~s|live "/#{assigns[:resource_plural]}", #{assigns[:resource_alias]}Live.Index, :index\n|,
         if assigns[:create_action] do
-          ~s|live "/#{assigns[:resource_plural]}/new", #{assigns[:resource_alias]}Live.Form, :new\n|
+          ~s|live "/#{assigns[:resource_plural]}/new", #{assigns[:resource_alias]}Live.#{module}, :new\n|
         end,
         if assigns[:update_action] do
-          ~s|live "/#{assigns[:resource_plural]}/:id/edit", #{assigns[:resource_alias]}Live.Form, :edit\n|
+          ~s|live "/#{assigns[:resource_plural]}/:id/edit", #{assigns[:resource_alias]}Live.#{module}, :edit\n\n|
         end,
         ~s|live "/#{assigns[:resource_plural]}/:id", #{assigns[:resource_alias]}Live.Show, :show\n|,
-        if assigns[:update_action] != nil and not String.starts_with?(phx_version, "1.8") do
+        if assigns[:update_action] do
           ~s|live "/#{assigns[:resource_plural]}/:id/show/edit", #{assigns[:resource_alias]}Live.Show, :edit|
         end
       ]
