@@ -420,11 +420,11 @@ defmodule MyApp.MyForm do
     {:ok, assign(socket, form: MyApp.Operations.form_to_create_business())}
   end
 
-  def handle_event(socket, "validate", %{"form" => params}) do
+  def handle_event("validate", %{"form" => params}, socket) do
     {:noreply, assign(socket, :form, AshPhoenix.Form.validate(socket.assigns.form, params))}
   end
 
-  def handle_event(socket, "submit", %{"form" => params}) do
+  def handle_event("submit", %{"form" => params}, socket) do
     case AshPhoenix.Form.submit(socket.assigns.form, params: params) do
       {:ok, business} ->
         socket =
