@@ -15,6 +15,10 @@ defmodule AshPhoenix.Test.Domain do
       define_calculation :always_true
     end
 
+    resource AshPhoenix.Test.Post do
+      define :create_post, action: :create
+    end
+
     resource(AshPhoenix.Test.DeepNestedUnionResource)
     resource(AshPhoenix.Test.SimplePost)
   end

@@ -22,4 +22,18 @@ defmodule AshPhoenixTest do
     assert %AshPhoenix.Form{data: %{id: ^id}} =
              AshPhoenix.Test.Domain.form_to_update_user(%AshPhoenix.Test.User{id: id})
   end
+
+  test "adding a form retains original params" do
+    form =
+      AshPhoenix.Test.Domain.form_to_create_post(
+        params: %{"text" => "original text", "title" => "original title"}
+      )
+
+    assert AshPhoenix.Form.value(form, :text) == "original text"
+
+    form =
+      AshPhoenix.Form.add_form(form, :comments, params: %{"text" => "new comment"})
+
+    assert AshPhoenix.Form.value(form, :text) == "original text"
+  end
 end

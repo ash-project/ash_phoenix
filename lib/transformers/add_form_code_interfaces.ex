@@ -88,7 +88,7 @@ defmodule AshPhoenix.Transformers.AddFormCodeInterfaces do
 
                  Any *additional* options will be passed to the underlying call to build the source, i.e
                  `Ash.ActionInput.for_action/4`, or `Ash.Changeset.for_*`. This means you can set things
-                 like the tenant/actor. These will be retained, and provided again when 
+                 like the tenant/actor. These will be retained, and provided again when
                  `Form.submit/3` is called.
 
                  ## Nested Form Options
@@ -124,7 +124,7 @@ defmodule AshPhoenix.Transformers.AddFormCodeInterfaces do
 
                  Any *additional* options will be passed to the underlying call to build the source, i.e
                  `Ash.ActionInput.for_action/4`, or `Ash.Changeset.for_*`. This means you can set things
-                 like the tenant/actor. These will be retained, and provided again when 
+                 like the tenant/actor. These will be retained, and provided again when
                  `Form.submit/3` is called.
 
                  ## Nested Form Options
@@ -142,8 +142,8 @@ defmodule AshPhoenix.Transformers.AddFormCodeInterfaces do
                 |> unquote(__MODULE__).set_private_arguments(unquote(private_args_merge))
 
               AshPhoenix.Form.for_action(unquote(resource), unquote(action.name), form_opts)
-              |> Map.put(:params, unquote(merge_params))
-              |> Map.put(:raw_params, unquote(merge_params))
+              |> Map.update!(:params, &Map.merge(&1, unquote(merge_params)))
+              |> Map.update!(:raw_params, &Map.merge(&1, unquote(merge_params)))
             end
           end
 
