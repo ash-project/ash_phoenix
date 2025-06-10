@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.6](https://github.com/ash-project/ash_phoenix/compare/v2.3.5...v2.3.6) (2025-06-10)
+
+
+
+
+### Bug Fixes:
+
+* merge overridden params with original params in code interfaces by [@zachdaniel](https://github.com/zachdaniel)
+
 ## [v2.3.5](https://github.com/ash-project/ash_phoenix/compare/v2.3.4...v2.3.5) (2025-05-31)
 
 
