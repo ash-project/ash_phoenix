@@ -2684,17 +2684,7 @@ defmodule AshPhoenix.Form do
   def get_form(form, path) do
     form = to_form!(form)
 
-    path =
-      case path do
-        [] ->
-          []
-
-        path when is_list(path) ->
-          path
-
-        path ->
-          parse_path!(form, path)
-      end
+    path = parse_path!(form, path)
 
     case path do
       [] ->
@@ -2724,6 +2714,9 @@ defmodule AshPhoenix.Form do
             nil
         end
     end
+  rescue
+    InvalidPath ->
+      nil
   end
 
   defp to_form!(%__MODULE__{} = form), do: form
@@ -4643,7 +4636,19 @@ defmodule AshPhoenix.Form do
 
     {path, last} =
       if opts[:skip_last?] do
-        {:lists.droplast(path), List.last(path)}
+        last = List.last(path)
+
+        if is_binary(last) do
+          case Integer.parse(last) do
+            {int, ""} ->
+              {:lists.droplast(path), int}
+
+            _ ->
+              {:lists.droplast(path), last}
+          end
+        else
+          {:lists.droplast(path), last}
+        end
       else
         {path, nil}
       end
