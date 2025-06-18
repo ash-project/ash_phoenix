@@ -115,7 +115,7 @@ defmodule AshPhoenix.FilterForm.Arguments do
     @impl true
     def to_form(form, phoenix_form, :arguments, _opts) do
       [
-        Phoenix.HTML.FormData.to_form(form.source.arguments,
+        Phoenix.HTML.FormData.to_form(form.arguments,
           transform_errors: form.transform_errors,
           as: phoenix_form.name <> "[arguments]"
         )
