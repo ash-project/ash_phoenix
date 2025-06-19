@@ -8,7 +8,9 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
 
   #{AshPhoenix.Gen.docs()}
 
-  mix ash_phoenix.gen.html MyApp.Shop MyApp.Shop.Product --plural-name products
+  ```bash
+  mix ash_phoenix.gen.html MyApp.Shop MyApp.Shop.Product --resource-plural products
+  ```
   """
 
   def run([]) do
