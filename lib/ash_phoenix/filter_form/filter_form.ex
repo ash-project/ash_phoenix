@@ -914,7 +914,7 @@ defmodule AshPhoenix.FilterForm do
     |> Enum.concat(Ash.Filter.builtin_functions())
     |> Enum.filter(fn function ->
       try do
-        struct(function).__predicate__?() && Enum.any?(function.args, &match?([_, _], &1))
+        struct(function).__predicate__? && Enum.any?(function.args, &match?([_, _], &1))
       rescue
         _ -> false
       end
