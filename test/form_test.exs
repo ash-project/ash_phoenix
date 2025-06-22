@@ -1158,6 +1158,36 @@ defmodule AshPhoenix.FormTest do
                 ]}
              ]
     end
+
+    test "raw errors can be fetched with `Form.raw_errors/2`" do
+      params = %{"post" => %{"text" => "text"}}
+      post = [resource: Post, create_action: :create]
+      opts = [domain: Domain, forms: [post: post]]
+
+      form =
+        Comment
+        |> Form.for_create(:create, opts)
+        |> Form.add_form(:post, params: %{})
+        |> Form.validate(params)
+        |> Form.submit(force?: true, params: params)
+        |> elem(1)
+        |> form_for("action")
+
+      # raw_errors should return the actual error structs from the source
+      raw_errors = Form.raw_errors(form.source)
+      assert is_list(raw_errors)
+      assert length(raw_errors) > 0
+
+      # All errors should be actual error structs, not formatted tuples
+      Enum.each(raw_errors, fn error ->
+        assert is_struct(error)
+      end)
+
+      # Test getting raw errors for nested forms
+      all_raw_errors = Form.raw_errors(form.source, for_path: :all)
+      assert is_map(all_raw_errors)
+      assert Map.has_key?(all_raw_errors, [])
+    end
   end
 
   describe "data" do

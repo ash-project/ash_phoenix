@@ -2781,7 +2781,7 @@ defmodule AshPhoenix.Form do
   ]
 
   @doc """
-  Returns the errors on the form.
+  Returns the errors on the form, sanitized for displaying to the end user.
 
   By default, only errors on the form being passed in (not nested forms) are provided.
   Use `for_path` to get errors for nested forms.
@@ -2821,6 +2821,83 @@ defmodule AshPhoenix.Form do
         |> Map.get(parse_path!(form, path))
         |> List.wrap()
     end
+  end
+
+  @doc """
+  Returns the raw errors from the underlying source without protocol formatting.
+
+  This function provides access to the original errors from the changeset, query, or
+  action input without any transformation through the AshPhoenix.FormData.Error protocol.
+
+  ## Options
+
+  * `:for_path` - The path to get errors for. Defaults to `[]` (the current form).
+    Set to `:all` to get all errors for all forms.
+  * `:format` - This option is ignored for `raw_errors/2` as it always returns raw errors.
+
+  ## Examples
+
+      raw_errors(form)
+      #=> [%Ash.Error.Invalid{...}, ...]
+
+      raw_errors(form, for_path: [:posts, 0])
+      #=> [%Ash.Error.Invalid{...}, ...]
+
+      raw_errors(form, for_path: :all)
+      #=> %{[] => [...], [:posts, 0] => [...]}
+  """
+  def raw_errors(form, opts \\ []) do
+    form = to_form!(form)
+    opts = validate_opts_with_extra_keys(opts, @errors_opts)
+
+    case opts[:for_path] do
+      :all ->
+        gather_raw_errors(form)
+
+      [] ->
+        if form.errors do
+          List.wrap(form.source.errors)
+        else
+          []
+        end
+
+      path ->
+        form
+        |> gather_raw_errors()
+        |> Map.get(parse_path!(form, path))
+        |> List.wrap()
+    end
+  end
+
+  defp gather_raw_errors(form, acc \\ %{}, trail \\ []) do
+    errors = if form.errors, do: List.wrap(form.source.errors), else: []
+
+    acc =
+      if Enum.empty?(errors) do
+        acc
+      else
+        Map.put(acc, trail, errors)
+      end
+
+    Enum.reduce(form.forms, acc, fn {key, forms}, acc ->
+      case forms do
+        [] ->
+          acc
+
+        nil ->
+          acc
+
+        forms when is_list(forms) ->
+          forms
+          |> Enum.with_index()
+          |> Enum.reduce(acc, fn {nested_form, i}, acc ->
+            gather_raw_errors(nested_form, acc, trail ++ [key, i])
+          end)
+
+        nested_form ->
+          gather_raw_errors(nested_form, acc, trail ++ [key])
+      end
+    end)
   end
 
   defp ash_errors(form, opts) do
