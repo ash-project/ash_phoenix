@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.8](https://github.com/ash-project/ash_phoenix/compare/v2.3.7...v2.3.8) (2025-06-25)
+
+
+
+
+### Bug Fixes:
+
+* resolve warning about map key access as function call by [@zachdaniel](https://github.com/zachdaniel)
+
+### Improvements:
+
+* add `AshPhoenix.Form.raw_errors/2` by [@zachdaniel](https://github.com/zachdaniel)
+
 ## [v2.3.7](https://github.com/ash-project/ash_phoenix/compare/v2.3.6...v2.3.7) (2025-06-18)
 
 
