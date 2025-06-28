@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.9](https://github.com/ash-project/ash_phoenix/compare/v2.3.8...v2.3.9) (2025-06-28)
+
+
+
+
+### Improvements:
+
+* update usage rules with info on `raw_errors` by [@zachdaniel](https://github.com/zachdaniel)
+
 ## [v2.3.8](https://github.com/ash-project/ash_phoenix/compare/v2.3.7...v2.3.8) (2025-06-25)
 
 
