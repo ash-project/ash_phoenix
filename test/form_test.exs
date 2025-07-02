@@ -3,7 +3,19 @@ defmodule AshPhoenix.FormTest do
   import ExUnit.CaptureLog
 
   alias AshPhoenix.Form
-  alias AshPhoenix.Test.{Artist, Author, Comment, Domain, Post, PostWithDefault}
+
+  alias AshPhoenix.Test.{
+    Artist,
+    Author,
+    Comment,
+    Domain,
+    Post,
+    PostWithDefault,
+    TodoTask,
+    Context,
+    TodoTaskContext
+  }
+
   alias Phoenix.HTML.FormData
 
   defp form_for(form, _) do
@@ -12,6 +24,138 @@ defmodule AshPhoenix.FormTest do
 
   defp inputs_for(form, key) do
     form[key].value
+  end
+
+  describe "non-map form values" do
+    test "field.value is populated" do
+      %{id: context_1_id} = Ash.Seed.seed!(Context, %{id: 1})
+      %{id: context_2_id} = Ash.Seed.seed!(Context, %{id: 2})
+
+      task_id = 1
+
+      valid_attrs = %{
+        id: task_id,
+        contexts: [%{context_id: context_1_id}, %{context_id: context_2_id}]
+      }
+
+      assert Ash.count!(TodoTaskContext) == 0
+      assert task = TodoTask |> Ash.Changeset.for_create(:create, valid_attrs) |> Ash.create()
+
+      task = Ash.load!(task, [:contexts, :context_relationships])
+
+      assert [%Context{id: ^context_1_id}, %Context{id: ^context_2_id}] = task.contexts
+
+      assert [
+               %TodoTaskContext{task_id: ^task_id, context_id: ^context_1_id},
+               %TodoTaskContext{task_id: ^task_id, context_id: ^context_2_id}
+             ] = task.context_relationships
+
+      assert Ash.count!(TodoTaskContext) == 2
+
+      ash_form =
+        task
+        |> AshPhoenix.Form.for_update(:update,
+          forms: [
+            auto?: [include_non_map_types?: true]
+          ]
+        )
+
+      assert ash_form.source.data == task
+      assert ash_form.data == task
+      assert ash_form.original_data == task
+
+      phx_form = ash_form |> Phoenix.Component.to_form()
+
+      assert phx_form.source == ash_form
+
+      # fetch the contexts field as I would in the template
+      field = phx_form[:contexts]
+
+      assert [
+               %Phoenix.HTML.Form{
+                 data: %TodoTaskContext{task_id: ^task_id, context_id: ^context_1_id}
+               },
+               %Phoenix.HTML.Form{
+                 data: %TodoTaskContext{task_id: ^task_id, context_id: ^context_2_id}
+               }
+             ] = field.value
+
+      ash_form_without_nested_form_config =
+        task
+        |> AshPhoenix.Form.for_update(:update)
+
+      phx_form = ash_form_without_nested_form_config |> Phoenix.Component.to_form()
+
+      field = phx_form[:contexts]
+
+      # I'm not sure if this failing is an actual issue or not.
+      # I don't really know what the correct value should be without :include_non_map_types?
+      assert [
+               %Phoenix.HTML.Form{
+                 data: %TodoTaskContext{task_id: ^task_id, context_id: ^context_1_id}
+               },
+               %Phoenix.HTML.Form{
+                 data: %TodoTaskContext{task_id: ^task_id, context_id: ^context_2_id}
+               }
+             ] = field.value
+    end
+
+    test "form can be submit (without nested form config)" do
+      #
+      # when there is no nested form config, the form CAN be submit.
+      # adding the nested form config breaks the submit
+      #
+
+      %{id: context_1_id} = Ash.Seed.seed!(Context, %{id: 1})
+      %{id: context_2_id} = Ash.Seed.seed!(Context, %{id: 2})
+
+      task_id = 1
+
+      valid_attrs = %{
+        id: task_id,
+        contexts: [%{context_id: context_1_id}]
+      }
+
+      assert Ash.count!(TodoTaskContext) == 0
+      assert task = TodoTask |> Ash.Changeset.for_create(:create, valid_attrs) |> Ash.create()
+
+      task = Ash.load!(task, [:contexts, :context_relationships])
+
+      assert [%Context{id: ^context_1_id}] = task.contexts
+
+      assert [
+               %TodoTaskContext{task_id: ^task_id, context_id: ^context_1_id}
+             ] = task.context_relationships
+
+      assert Ash.count!(TodoTaskContext) == 1
+
+      ash_form_without_nested_form_config = task |> AshPhoenix.Form.for_update(:update)
+      phx_form = ash_form_without_nested_form_config |> Phoenix.Component.to_form()
+
+      # check that a basic update works as expected
+      assert %TodoTask{name: nil} = task
+      form_params = %{"name" => "Updated Task"}
+      assert validated_form = AshPhoenix.Form.validate(phx_form, form_params)
+      assert validated_form.source.valid?
+
+      assert {:ok, %TodoTask{name: "Updated Task"}} =
+               AshPhoenix.Form.submit(validated_form, params: form_params)
+
+      # check that using an array of strings works as expected
+      form_params = %{"contexts" => [to_string(context_1_id), to_string(context_2_id)]}
+      assert validated_form = AshPhoenix.Form.validate(phx_form, form_params)
+      assert validated_form.source.valid?
+      assert {:ok, task} = AshPhoenix.Form.submit(validated_form, params: form_params)
+      task = Ash.load!(task, [:contexts, :context_relationships])
+      assert [%Context{id: ^context_1_id}, %Context{id: ^context_2_id}] = task.contexts
+
+      assert [
+               %TodoTaskContext{task_id: ^task_id, context_id: ^context_1_id},
+               %TodoTaskContext{task_id: ^task_id, context_id: ^context_2_id}
+             ] = task.context_relationships
+
+      assert Ash.count!(TodoTaskContext) == 2
+    end
   end
 
   describe "generic actions" do
