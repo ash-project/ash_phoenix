@@ -156,6 +156,63 @@ defmodule AshPhoenix.FormTest do
 
       assert Ash.count!(TodoTaskContext) == 2
     end
+
+    test "form can be submit (with nested form config)" do
+      #
+      # when there IS nested form config, the form CANNOT be submit.
+      #
+
+      %{id: context_1_id} = Ash.Seed.seed!(Context, %{id: 1})
+      %{id: context_2_id} = Ash.Seed.seed!(Context, %{id: 2})
+
+      task_id = 1
+
+      valid_attrs = %{
+        id: task_id,
+        contexts: [%{context_id: context_1_id}]
+      }
+
+      assert task = TodoTask |> Ash.Changeset.for_create(:create, valid_attrs) |> Ash.create()
+
+      task = Ash.load!(task, [:contexts, :context_relationships])
+
+      ash_form =
+        task
+        |> AshPhoenix.Form.for_update(:update,
+          forms: [
+            auto?: [include_non_map_types?: true]
+          ]
+        )
+
+      phx_form = ash_form |> Phoenix.Component.to_form()
+
+      # check that a basic update works as expected
+      assert %TodoTask{name: nil} = task
+      form_params = %{"name" => "Updated Task"}
+      assert validated_form = AshPhoenix.Form.validate(phx_form, form_params)
+      assert validated_form.source.valid?
+
+      assert {:ok, %TodoTask{name: "Updated Task"}} =
+               AshPhoenix.Form.submit(validated_form, params: form_params)
+
+      # check that using an array of strings works as expected
+      form_params = %{"contexts" => [to_string(context_1_id), to_string(context_2_id)]}
+      # currently failing: (BadMapError) expected a map, got: "1"
+      assert validated_form = AshPhoenix.Form.validate(phx_form, form_params)
+      assert validated_form.source.valid?
+
+      # currently failing, same BadMapError
+      assert {:ok, task} = AshPhoenix.Form.submit(validated_form, params: form_params)
+      task = Ash.load!(task, [:contexts, :context_relationships])
+      assert [%Context{id: ^context_1_id}, %Context{id: ^context_2_id}] = task.contexts
+
+      assert [
+               %TodoTaskContext{task_id: ^task_id, context_id: ^context_1_id},
+               %TodoTaskContext{task_id: ^task_id, context_id: ^context_2_id}
+             ] = task.context_relationships
+
+      assert Ash.count!(TodoTaskContext) == 2
+    end
   end
 
   describe "generic actions" do
