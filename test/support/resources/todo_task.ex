@@ -22,7 +22,7 @@ defmodule AshPhoenix.Test.TodoTask do
 
       update :update do
         accept [:name]
-        argument :contexts, {:array, :string}, allow_nil?: true, default: []
+        argument :contexts, {:array, :integer}, allow_nil?: true, default: []
         require_atomic? false
 
         change manage_relationship(:contexts, :context_relationships,

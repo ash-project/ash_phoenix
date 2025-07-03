@@ -1239,22 +1239,26 @@ defmodule AshPhoenix.Form do
     matcher =
       opts[:matcher] ||
         fn nested_form, params, root_form, key, index ->
-          pkey_fields = Ash.Resource.Info.primary_key(nested_form.resource)
+          if is_map(params) do
+            pkey_fields = Ash.Resource.Info.primary_key(nested_form.resource)
 
-          if Enum.any?(pkey_fields) &&
-               Enum.all?(pkey_fields, &Map.has_key?(params, to_string(&1))) do
-            Enum.all?(pkey_fields, fn field ->
-              case Map.fetch(params, to_string(field)) do
-                {:ok, v} ->
-                  v ==
-                    to_string(AshPhoenix.Form.value(nested_form, field))
+            if Enum.any?(pkey_fields) &&
+                 Enum.all?(pkey_fields, &Map.has_key?(params, to_string(&1))) do
+              Enum.all?(pkey_fields, fn field ->
+                case Map.fetch(params, to_string(field)) do
+                  {:ok, v} ->
+                    v ==
+                      to_string(AshPhoenix.Form.value(nested_form, field))
 
-                _ ->
-                  false
-              end
-            end)
+                  _ ->
+                    false
+                end
+              end)
+            else
+              nested_form.id == root_form.id <> "_#{key}_#{index}"
+            end
           else
-            nested_form.id == root_form.id <> "_#{key}_#{index}"
+            false
           end
         end
 

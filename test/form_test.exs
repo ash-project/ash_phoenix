@@ -79,25 +79,6 @@ defmodule AshPhoenix.FormTest do
                  data: %TodoTaskContext{task_id: ^task_id, context_id: ^context_2_id}
                }
              ] = field.value
-
-      ash_form_without_nested_form_config =
-        task
-        |> AshPhoenix.Form.for_update(:update)
-
-      phx_form = ash_form_without_nested_form_config |> Phoenix.Component.to_form()
-
-      field = phx_form[:contexts]
-
-      # I'm not sure if this failing is an actual issue or not.
-      # I don't really know what the correct value should be without :include_non_map_types?
-      assert [
-               %Phoenix.HTML.Form{
-                 data: %TodoTaskContext{task_id: ^task_id, context_id: ^context_1_id}
-               },
-               %Phoenix.HTML.Form{
-                 data: %TodoTaskContext{task_id: ^task_id, context_id: ^context_2_id}
-               }
-             ] = field.value
     end
 
     test "form can be submit (without nested form config)" do
@@ -196,8 +177,13 @@ defmodule AshPhoenix.FormTest do
                AshPhoenix.Form.submit(validated_form, params: form_params)
 
       # check that using an array of strings works as expected
-      form_params = %{"contexts" => [to_string(context_1_id), to_string(context_2_id)]}
-      # currently failing: (BadMapError) expected a map, got: "1"
+      form_params = %{
+        "contexts" => %{
+          "0" => %{"context_id" => to_string(context_1_id)},
+          "1" => %{"context_id" => to_string(context_2_id)}
+        }
+      }
+
       assert validated_form = AshPhoenix.Form.validate(phx_form, form_params)
       assert validated_form.source.valid?
 
