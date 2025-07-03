@@ -1,4 +1,5 @@
 defmodule AshPhoenix.Test.TodoTask do
+  @moduledoc false
   use Ash.Resource,
     domain: AshPhoenix.Test.Domain,
     data_layer: Ash.DataLayer.Ets
@@ -52,6 +53,7 @@ defmodule AshPhoenix.Test.TodoTask do
 end
 
 defmodule AshPhoenix.Test.Context do
+  @moduledoc false
   use Ash.Resource,
     domain: AshPhoenix.Test.Domain,
     data_layer: Ash.DataLayer.Ets
@@ -72,6 +74,7 @@ defmodule AshPhoenix.Test.Context do
 end
 
 defmodule AshPhoenix.Test.TodoTaskContext do
+  @moduledoc false
   use Ash.Resource,
     domain: AshPhoenix.Test.Domain,
     data_layer: Ash.DataLayer.Ets

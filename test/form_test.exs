@@ -8,11 +8,11 @@ defmodule AshPhoenix.FormTest do
     Artist,
     Author,
     Comment,
+    Context,
     Domain,
     Post,
     PostWithDefault,
     TodoTask,
-    Context,
     TodoTaskContext
   }
 
