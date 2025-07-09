@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.10](https://github.com/ash-project/ash_phoenix/compare/v2.3.9...v2.3.10) (2025-07-09)
+
+
+
+
+### Bug Fixes:
+
+* handle `value_is_key` forms by [@zachdaniel](https://github.com/zachdaniel)
+
 ## [v2.3.9](https://github.com/ash-project/ash_phoenix/compare/v2.3.8...v2.3.9) (2025-06-28)
 
 
