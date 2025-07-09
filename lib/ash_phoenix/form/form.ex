@@ -237,7 +237,7 @@ defmodule AshPhoenix.Form do
       return a list of ash phoenix formatted errors, e.g `[{field :: atom, message :: String.t(), substituations :: Keyword.t()}]`
 
       Example:
-
+      ```
       AshPhoenix.Form.for_create(..., transform_errors: fn
         %{field: :field1} = error ->
           %{error | field: :field2}
@@ -245,6 +245,7 @@ defmodule AshPhoenix.Form do
         error ->
           error
       end
+      ```
       """
     ],
     prepare_source: [
