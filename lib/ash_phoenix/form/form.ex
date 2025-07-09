@@ -239,10 +239,10 @@ defmodule AshPhoenix.Form do
       Example:
       ```
       AshPhoenix.Form.for_create(..., transform_errors: fn
-        %{field: :field1} = error ->
+        _changeset, %{field: :field1} = error ->
           %{error | field: :field2}
 
-        error ->
+        _changeset, error ->
           error
       end
       ```
