@@ -1,0 +1,211 @@
+# Forms For Relationships Between Existing Records
+
+Make sure you're familiar with the basics of `AshPhoenix.Form` and relationships before reading this guide.
+
+When we talk about "relationships between existing records", we mean inputs on a form that manage the relationships between records that already exist.
+
+For example, you might have a form for creating a "service" that can be performed at some "locations", but not others.
+When creating or updating a service, the user is only able to select from the existing locations.
+
+## Defining the resources and relationships
+
+First, we have a simple `Location`
+
+```elixir
+defmodule MyApp.Operations.Location do
+  use Ash.Resource, otp_app: :my_app, domain: MyApp.Operations, data_layer: AshPostgres.DataLayer
+
+  ...
+
+  attributes do
+    integer_primary_key :id
+
+    attribute :name, :string do
+      allow_nil? false
+    end
+  end
+end
+```
+
+Then we have a `Service`, which has a `many_to_many` association to `Location`, through `ServiceLocation`.
+
+```elixir
+defmodule MyApp.Operations.Service do
+  use Ash.Resource, otp_app: :my_app, domain: MyApp.Operations, data_layer: AshPostgres.DataLayer
+
+  ...
+
+  relationships do
+    has_many :location_relationships, MyApp.Operations.ServiceLocation do
+      destination_attribute :service_id
+    end
+
+    many_to_many :locations, MyApp.Operations.Location do
+      join_relationship :location_relationships
+      source_attribute_on_join_resource :service_id
+      destination_attribute_on_join_resource :location_id
+    end
+  end
+end
+```
+
+`ServiceLocation` has default `actions` as well as the `relationships` declared to operate as the joining resource between a `Service` and one or more `Location`s.
+
+```elixir
+defmodule MyApp.Operations.ServiceLocation do
+  use Ash.Resource, otp_app: :my_app, domain: MyApp.Operations, data_layer: AshPostgres.DataLayer
+
+  ...
+
+  actions do
+    defaults [:create, :read, :update, :destroy]
+    default_accept [:service_id, :location_id]
+  end
+
+  relationships do
+    belongs_to :service, MyApp.Operations.Service do
+      attribute_type :integer
+      allow_nil? false
+      primary_key? true
+    end
+
+    belongs_to :location, MyApp.Operations.Location do
+      attribute_type :integer
+      allow_nil? false
+      primary_key? true
+    end
+  end
+end
+```
+
+## Declaring the `create` and `update` actions
+
+First, we need to update our `Service` and declare custom `create` and `update` actions.
+These actions take a list of `Location` ids as an argument, and we use the `:value_is_key` option to indicate that each value should be the `:location_id` attribute on the join resource.
+We use `type: :direct_control` to cause a `ServiceLocation` to be added or removed for each `Location` as we add and remove them using our form.
+(See `Ash.Changeset.manage_relationship/4` for more.)
+
+```elixir
+# in lib/my_app/operations/service.ex
+create :create do
+  accept [:name]
+  primary? true
+  argument :locations, {:array, :integer}, allow_nil?: true
+
+  change manage_relationship(:locations, :location_relationships,
+           value_is_key: :location_id,
+           type: :direct_control
+         )
+end
+
+update :update do
+  accept [:name]
+  primary? true
+  argument :locations, {:array, :integer}, allow_nil?: true
+  require_atomic? false
+
+  change manage_relationship(:locations, :location_relationships,
+           value_is_key: :location_id,
+           type: :direct_control
+         )
+end
+```
+
+Note: in this example, we are using `integer_primary_key`, so the argument's type is `{:array, :integer}`.
+If we were using `uuid_primary_key`, the type would be `{:array, :string}`.
+
+Now we can create and update our `Services`.
+
+```elixir
+iex> service = Ash.create!(Service, %{name: "Tuneup", locations: [location_1_id, location_2_id]}, load: [:locations])
+ %MyApp.Operations.Service{
+  id: 9,
+  name: "Tuneup",
+  location_relationships: [
+    %MyApp.Operations.ServiceLocation{ service_id: 9, location_id: 1, ... },
+    %MyApp.Operations.ServiceLocation{ service_id: 9, location_id: 2, ... }
+  ],
+  locations: [
+    %MyApp.Operations.Location{ id: 1, name: "HQ", ... },
+    %MyApp.Operations.Location{ id: 2, name: "Downtown", ... }
+  ],
+  ...
+}
+iex> Ash.update!(service, %{locations: [location_2_id]}, load: [:locations])
+%MyApp.Operations.Service{
+  id: 9,
+  name: "Tuneup",
+  location_relationships: [
+    %MyApp.Operations.ServiceLocation{ service_id: 9, location_id: 2, ... }
+  ],
+  locations: [
+    %MyApp.Operations.Location{ id: 2, name: "Downtown", ... }
+  ],
+  ...
+}
+```
+
+Now, let's expose this to a user.
+
+## Adding the forms
+
+In our view, we create our form as normal.
+For update forms, we'll make sure to load our `locations`.
+
+```
+# lib/my_app_web/service_live/form_component.ex
+defp assign_form(%{assigns: %{service: service}} = socket) do
+  form =
+    if service do
+      service
+      |> Ash.load!([:locations])
+      |> AshPhoenix.Form.for_update(:update, as: "service")
+    else
+      AshPhoenix.Form.for_create(MyApp.Operations.Service, :create, as: "service")
+    end
+
+  assign(socket, form: to_form(form))
+end
+```
+
+When rendering the form, we'll have to manually provide the `options` and `value` to our `input`.
+Using Phoenix generated core components, `options` is passed to `Phoenix.HTML.Form.options_for_select/2`, which expects a list of two-element tuples.
+
+Assuming the available `Location`s are already assigned to `@locations`:
+```elixir
+<.input
+  field={@form[:locations]}
+  value={locations_value(@form)}
+  type="select"
+  multiple
+  label="Locations"
+  options={Enum.map(@locations, &{&1.name, &1.id})}
+/>
+```
+
+`locations_value` is a function we'll define to get the ids for any `Locations` our `Service` is already associated with, or the new values from the form.
+
+```elixir
+# lib/my_app_web/service_live/form_component.ex
+defp locations_value(form) do
+  case Ash.Changeset.fetch_argument(form.source.source, :locations) do
+    {:ok, location_ids} ->
+      location_ids
+
+    :error ->
+      case form.source.source.data.locations do
+        %Ash.NotLoaded{} -> []
+        locations -> Enum.map(locations, & &1.id)
+      end
+  end
+end
+```
+
+Now, when our form is submitted, we will receive a list of location ids.
+
+```elixir
+%{"service" => %{"locations" => ["1", "2"], "name" => "Overhaul"}}
+```
+
+That's all we need to do.
+We can pass these parameters to `AshPhoenix.Form.submit/2` as normal and `manage_relationship` will create and destroy our `ServiceLocation` records as needed.
