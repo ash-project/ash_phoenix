@@ -394,6 +394,60 @@ defmodule AshPhoenix.Form do
 
   import AshPhoenix.FormData.Helpers
 
+  @behaviour Access
+
+  @doc false
+  @impl Access
+  def fetch(%__MODULE__{} = _form, key) do
+    raise """
+    Cannot access AshPhoenix.Form.
+
+    You're trying to access a form field using: form[#{inspect(key)}]
+
+    This error occurs because you're missing `to_form/2` call on the form.
+
+    Instead of:
+        AshPhoenix.Form.for_create(MyApp.Blog.Post, :create)
+
+    Use:
+        AshPhoenix.Form.for_create(MyApp.Blog.Post, :create) |> to_form()
+    """
+  end
+
+  @impl Access
+  def get_and_update(%__MODULE__{} = _form, key, _function) do
+    raise """
+    Cannot access AshPhoenix.Form.
+
+    You're trying to access a form field using: form[#{inspect(key)}]
+
+    This error occurs because you're missing `to_form/2` call on the form.
+
+    Instead of:
+        AshPhoenix.Form.for_create(MyApp.Blog.Post, :create)
+
+    Use:
+        AshPhoenix.Form.for_create(MyApp.Blog.Post, :create) |> to_form()
+    """
+  end
+
+  @impl Access
+  def pop(%__MODULE__{} = _form, key) do
+    raise """
+    Cannot access AshPhoenix.Form.
+
+    You're trying to access a form field using: form[#{inspect(key)}]
+
+    This error occurs because you're missing `to_form/2` call on the form.
+
+    Instead of:
+        AshPhoenix.Form.for_create(MyApp.Blog.Post, :create)
+
+    Use:
+        AshPhoenix.Form.for_create(MyApp.Blog.Post, :create) |> to_form()
+    """
+  end
+
   @doc """
   Creates a form corresponding to any given action on a resource.
 
