@@ -2364,4 +2364,35 @@ defmodule AshPhoenix.FormTest do
       assert Enum.count(persisted_post.comments) == 1
     end
   end
+
+  describe "Access behavior" do
+    test "accessing AshPhoenix.Form without to_form/2 raises error" do
+      form = Post |> Form.for_create(:create, domain: Domain)
+
+      try do
+        form[:text]
+      rescue
+        error ->
+          assert Exception.message(error) =~
+                   """
+                   Cannot access AshPhoenix.Form.
+
+                   You're trying to access a form field using: form[:text]
+
+                   This error occurs because you're missing `to_form/2` call on the form.
+
+                   Instead of:
+                       AshPhoenix.Form.for_create(MyApp.Blog.Post, :create)
+
+                   Use:
+                       AshPhoenix.Form.for_create(MyApp.Blog.Post, :create) |> to_form()
+                   """
+      end
+
+      phoenix_form = Phoenix.HTML.FormData.to_form(form, [])
+
+      field = phoenix_form[:text]
+      assert field.field == :text
+    end
+  end
 end
