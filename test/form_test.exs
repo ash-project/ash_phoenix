@@ -2379,7 +2379,7 @@ defmodule AshPhoenix.FormTest do
 
                    You're trying to access a form field using: form[:text]
 
-                   This error occurs because you're missing `to_form/2` call on the form.
+                   If you are using Phoenix, you are likely missing to_form/2 call on the form.
 
                    Instead of:
                        AshPhoenix.Form.for_create(MyApp.Blog.Post, :create)
