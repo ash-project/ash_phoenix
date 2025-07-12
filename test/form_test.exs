@@ -2377,7 +2377,7 @@ defmodule AshPhoenix.FormTest do
                    """
                    Cannot access AshPhoenix.Form.
 
-                   You're trying to access a form field using: form[:text]
+                   You're trying to access a form field but the form is not a Phoenix.HTML.Form struct.
 
                    If you are using Phoenix, you are likely missing to_form/2 call on the form.
 
