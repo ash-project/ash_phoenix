@@ -12,16 +12,16 @@ AshPhoenix provides `AshPhoenix.Form`, a powerful module for creating and handli
 
 ```elixir
 # For creating a new resource
-form = AshPhoenix.Form.for_create(MyApp.Blog.Post, :create)
+form = AshPhoenix.Form.for_create(MyApp.Blog.Post, :create) |> to_form()
 
 # For updating an existing resource
 post = MyApp.Blog.get_post!(post_id)
-form = AshPhoenix.Form.for_update(post, :update)
+form = AshPhoenix.Form.for_update(post, :update) |> to_form()
 
 # Form with initial value
 form = AshPhoenix.Form.for_create(MyApp.Blog.Post, :create,
   params: %{title: "Draft Title"}
-)
+) |> to_form()
 ```
 
 ### Code Interfaces

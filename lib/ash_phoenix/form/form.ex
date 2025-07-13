@@ -377,6 +377,20 @@ defmodule AshPhoenix.Form do
     ]
   ]
 
+  @access_error """
+  Cannot access AshPhoenix.Form.
+
+  You're trying to access a form field but the form is not a Phoenix.HTML.Form struct.
+
+  If you are using Phoenix, you are likely missing to_form/2 call on the form.
+
+  Instead of:
+      AshPhoenix.Form.for_create(MyApp.Blog.Post, :create)
+
+  Use:
+      AshPhoenix.Form.for_create(MyApp.Blog.Post, :create) |> to_form()
+  """
+
   @doc false
   def for_opts, do: @for_opts
   @doc false
@@ -393,6 +407,18 @@ defmodule AshPhoenix.Form do
   end
 
   import AshPhoenix.FormData.Helpers
+
+  @behaviour Access
+
+  @doc false
+  @impl Access
+  def fetch(%__MODULE__{} = _form, _key), do: raise(@access_error)
+
+  @impl Access
+  def get_and_update(%__MODULE__{} = _form, _key, _function), do: raise(@access_error)
+
+  @impl Access
+  def pop(%__MODULE__{} = _form, _key), do: raise(@access_error)
 
   @doc """
   Creates a form corresponding to any given action on a resource.
