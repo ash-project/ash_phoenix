@@ -13,7 +13,10 @@ First, we have a simple `Location`
 
 ```elixir
 defmodule MyApp.Operations.Location do
-  use Ash.Resource, otp_app: :my_app, domain: MyApp.Operations, data_layer: AshPostgres.DataLayer
+  use Ash.Resource,
+    otp_app: :my_app,
+    domain: MyApp.Operations,
+    data_layer: AshPostgres.DataLayer
 
   ...
 
@@ -32,7 +35,10 @@ We add a `list` aggregate for `:location_ids` for populating the form values.
 
 ```elixir
 defmodule MyApp.Operations.Service do
-  use Ash.Resource, otp_app: :my_app, domain: MyApp.Operations, data_layer: AshPostgres.DataLayer
+  use Ash.Resource,
+    otp_app: :my_app,
+    domain: MyApp.Operations,
+    data_layer: AshPostgres.DataLayer
 
   ...
 
@@ -58,7 +64,10 @@ end
 
 ```elixir
 defmodule MyApp.Operations.ServiceLocation do
-  use Ash.Resource, otp_app: :my_app, domain: MyApp.Operations, data_layer: AshPostgres.DataLayer
+  use Ash.Resource,
+    otp_app: :my_app,
+    domain: MyApp.Operations,
+    data_layer: AshPostgres.DataLayer
 
   ...
 
