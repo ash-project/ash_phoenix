@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.11](https://github.com/ash-project/ash_phoenix/compare/v2.3.10...v2.3.11) (2025-07-17)
+
+
+
+
+### Improvements:
+
+* Add `to_form/2` in usage rules and improve error message when accessing a form without `to_form/2` (#390) by Kenneth Kostrešević
+
 ## [v2.3.10](https://github.com/ash-project/ash_phoenix/compare/v2.3.9...v2.3.10) (2025-07-09)
 
 
