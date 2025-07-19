@@ -159,6 +159,9 @@ Now, let's expose this to a user.
 In our view, we create our form as normal.
 For update forms, we'll make sure to load our `locations`.
 
+We use the `:prepare_params` option with our `for_update` form to set `"location_ids"` to an empty list if no value is provided.
+This allows the user to de-select all `Location`s to update a `Service` so that it's not available at any `Location`.
+
 ```elixir
 # lib/my_app_web/service_live/form_component.ex
 defp assign_form(%{assigns: %{service: service}} = socket) do
@@ -166,12 +169,16 @@ defp assign_form(%{assigns: %{service: service}} = socket) do
     if service do
       service
       |> Ash.load!([:locations, :location_ids])
-      |> AshPhoenix.Form.for_update(:update, as: "service")
+      |> AshPhoenix.Form.for_update(:update, as: "service", prepare_params: &prepare_params/2)
     else
       AshPhoenix.Form.for_create(MyApp.Operations.Service, :create, as: "service")
     end
 
   assign(socket, form: to_form(form))
+end
+
+defp prepare_params(params, :validate) do
+  Map.put_new(params, "location_ids", [])
 end
 ```
 
@@ -194,7 +201,6 @@ Now, when our form is submitted, we will receive a list of location ids.
 ```elixir
 %{"service" => %{"locations" => ["1", "2"], "name" => "Overhaul"}}
 ```
-
 
 That's all we need to do.
 We can pass these parameters to `AshPhoenix.Form.submit/2` as normal and `manage_relationship` will create and destroy our `ServiceLocation` records as needed.
