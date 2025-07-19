@@ -94,8 +94,7 @@ end
 
 ## Declaring the `create` and `update` actions
 
-First, we need to update our `Service` and declare custom `create` and `update` actions.
-These actions take a list of `Location` ids as an argument, and we use the `:value_is_key` option to indicate that each value should be the `:location_id` attribute on the join resource.
+First, we need to update our `Service` and declare custom `create` and `update` actions, which take a list of `Location` ids as an argument.
 We use `type: :append_and_remove` to cause a `ServiceLocation` to be added or removed for each `Location` as we add and remove them using our form.
 (See `Ash.Changeset.manage_relationship/4` for more.)
 
