@@ -160,7 +160,7 @@ Now, let's expose this to a user.
 In our view, we create our form as normal.
 For update forms, we'll make sure to load our `locations`.
 
-```
+```elixir
 # lib/my_app_web/service_live/form_component.ex
 defp assign_form(%{assigns: %{service: service}} = socket) do
   form =
