@@ -62,6 +62,7 @@ defmodule AshPhoenix.MixProject do
         "documentation/tutorials/getting-started-with-ash-and-phoenix.md",
         "documentation/topics/union-forms.md",
         "documentation/topics/nested-forms.md",
+        "documentation/topics/forms-for-relationships-between-existing-records.md",
         {"documentation/dsls/DSL-AshPhoenix.md",
          search_data: Spark.Docs.search_data_for(AshPhoenix)},
         "CHANGELOG.md"
