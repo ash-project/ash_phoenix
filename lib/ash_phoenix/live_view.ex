@@ -350,6 +350,11 @@ defmodule AshPhoenix.LiveView do
     [limit: offset.limit, offset: (offset.offset || 0) + offset.limit]
   end
 
+  def page_link_params(%Ash.Page.Keyset{before: nil, after: nil}, "prev"), do: :invalid
+
+  def page_link_params(%Ash.Page.Keyset{before: nil, after: nil, more?: false}, "next"),
+    do: :invalid
+
   def page_link_params(%Ash.Page.Keyset{more?: false, after: nil, before: before}, "prev")
       when not is_nil(before) do
     :invalid
