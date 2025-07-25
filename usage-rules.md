@@ -51,7 +51,7 @@ end
 you could then make a form with:
 
 ```elixir
-MyApp.Accounts.register_with_password(...opts)
+MyApp.Accounts.form_to_register_with_password(...opts)
 ```
 
 By default, the `args` option in `define` is ignored when building forms. If you want to have positional arguments, configure that in the `forms` section which is added by the `AshPhoenix` section. For example:
