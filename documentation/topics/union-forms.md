@@ -35,12 +35,14 @@ defmodule Content do
     constraints: [
       types: [
         normal: [
-          type: NormalContent,
+          type: :struct,
+          constraints: [instance_of: NormalContent],
           tag: :type,
           tag_value: :normal
         ],
         special: [
-          type: SpecialContent,
+          type: :struct,
+          constraints: [instance_of: SpecialContent],
           tag: :type,
           tag_value: :special
         ]
