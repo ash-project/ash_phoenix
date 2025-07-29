@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.12](https://github.com/ash-project/ash_phoenix/compare/v2.3.11...v2.3.12) (2025-07-29)
+
+
+
+
+### Bug Fixes:
+
+* fix typo in usage rules (#397) by albinkc
+
 ## [v2.3.11](https://github.com/ash-project/ash_phoenix/compare/v2.3.10...v2.3.11) (2025-07-17)
 
 
