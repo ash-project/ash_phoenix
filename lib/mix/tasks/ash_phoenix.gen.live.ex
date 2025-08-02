@@ -22,6 +22,7 @@ if Code.ensure_loaded?(Igniter) do
     * `--domain`   - Existing domain
     * `--resource` - Existing resource module name
     * `--resource-plural` - Pluralized version resource name for the route paths and templates
+    * `--resource-plural-for-routes`
     * `--phx-version` - Phoenix version 1.7 (old) or 1.8 (new). Defaults to 1.8
     """
 
@@ -36,6 +37,7 @@ if Code.ensure_loaded?(Igniter) do
           resource: :string,
           resourceplural: :string,
           resource_plural: :string,
+          resource_plural_for_routes: :string,
           phx_version: :string
         ],
         # Default values for the options in the `schema`.

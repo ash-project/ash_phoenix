@@ -36,7 +36,8 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
       full_resource: resource,
       full_domain: domain,
       singular: singular,
-      plural: opts[:resource_plural]
+      plural: opts[:resource_plural],
+      plural_for_routes: opts[:resource_plural_for_routes]
     }
 
     if Code.ensure_loaded?(resource) do
@@ -46,7 +47,15 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
       template_files(resource_html_dir, opts)
       |> generate_files(
         assigns(
-          [:domain, :full_resource, :full_domain, :resource, :singular, :plural],
+          [
+            :domain,
+            :full_resource,
+            :full_domain,
+            :resource,
+            :singular,
+            :plural,
+            :plural_for_routes
+          ],
           resource,
           opts
         ),
@@ -71,7 +80,7 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
 
   defp assigns(keys, resource, opts) do
     binding = Enum.map(keys, fn key -> {key, opts[key]} end)
-    binding = [{:route_prefix, to_string(opts[:plural])} | binding]
+    binding = [{:route_prefix, to_string(opts[:plural_for_routes] || opts[:plural])} | binding]
     binding = [{:app_name, app_name()} | binding]
     binding = [{:attributes, attributes(resource)} | binding]
     binding = [{:update_attributes, update_attributes(resource)} | binding]
@@ -117,7 +126,7 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
 
       Add the resource to your browser scope in lib/#{opts[:singular]}_web/router.ex:
 
-        resources "/#{opts[:plural]}", #{opts[:resource]}Controller
+        resources "/#{opts[:plural_for_routes] || opts[:plural]}", #{opts[:resource]}Controller
     """)
   end
 
