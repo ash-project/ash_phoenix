@@ -22,6 +22,6 @@
   <% end %>
   <%% end %>
   <:actions>
-    <.button>Save Product</.button>
+    <.button>Save</.button>
   </:actions>
 </.simple_form>
