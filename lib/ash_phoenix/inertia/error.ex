@@ -85,8 +85,13 @@ if Code.ensure_loaded?(Inertia.Errors) do
           }
     def to_errors(error_or_errors, message_func \\ &default_message_func/1)
 
-    def to_errors(%AshPhoenix.Form{errors: errors}, message_func) do
-      to_errors(errors, message_func)
+    def to_errors(%AshPhoenix.Form{} = form, message_func) do
+      form
+      |> AshPhoenix.Form.raw_errors(for_path: :all)
+      |> Enum.flat_map(fn {path, errors} ->
+        Enum.map(errors, &Ash.Error.set_path(&1, path))
+      end)
+      |> to_errors(message_func)
     end
 
     def to_errors(error_or_errors, message_func) do
