@@ -44,14 +44,8 @@ defmodule AshPhoenix.Gen do
 
     domain = Module.concat([domain])
     resource = Module.concat([resource])
-    resource_plural_for_routes = Keyword.get(parsed, :resource_plural_for_routes)
-
-    parsed =
-      Keyword.put_new_lazy(rest, :resource_plural, fn ->
-        plural_name!(resource, parsed)
-      end)
-
-    parsed = Keyword.put(parsed, :resource_plural_for_routes, resource_plural_for_routes)
+    plural_name_fun = fn -> plural_name!(resource, parsed) end
+    parsed = Keyword.put_new_lazy(parsed, :resource_plural, plural_name_fun)
     {domain, resource, parsed, rest}
   end
 
