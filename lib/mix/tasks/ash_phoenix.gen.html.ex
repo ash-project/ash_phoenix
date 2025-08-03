@@ -71,13 +71,16 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
   end
 
   defp assigns(keys, resource, opts) do
-    binding = Enum.map(keys, fn key -> {key, opts[key]} end)
-    binding = [{:route_prefix, to_string(opts[:plural_for_routes])} | binding]
-    binding = [{:app_name, app_name()} | binding]
-    binding = [{:attributes, attributes(resource)} | binding]
-    binding = [{:update_attributes, update_attributes(resource)} | binding]
-    binding = [{:create_attributes, create_attributes(resource)} | binding]
-    Enum.into(binding, %{})
+    keys
+    |> Enum.map(fn key -> {key, opts[key]} end)
+    |> Keyword.merge(
+      route_prefix: to_string(opts[:plural_for_routes]),
+      app_name: app_name(),
+      attributes: attributes(resource),
+      update_attributes: update_attributes(resource),
+      create_attributes: create_attributes(resource)
+    )
+    |> Enum.into(%{})
   end
 
   defp template_files(resource_html_dir, opts) do
