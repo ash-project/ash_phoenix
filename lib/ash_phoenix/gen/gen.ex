@@ -34,17 +34,24 @@ defmodule AshPhoenix.Gen do
 
     {parsed, _, _} =
       OptionParser.parse(rest,
-        strict: [resource_plural: :string, actor: :string, no_actor: :boolean]
+        strict: [
+          resource_plural: :string,
+          resource_plural_for_routes: :string,
+          actor: :string,
+          no_actor: :boolean
+        ]
       )
 
     domain = Module.concat([domain])
     resource = Module.concat([resource])
+    resource_plural_for_routes = Keyword.get(parsed, :resource_plural_for_routes)
 
     parsed =
       Keyword.put_new_lazy(rest, :resource_plural, fn ->
         plural_name!(resource, parsed)
       end)
 
+    parsed = Keyword.put(parsed, :resource_plural_for_routes, resource_plural_for_routes)
     {domain, resource, parsed, rest}
   end
 
