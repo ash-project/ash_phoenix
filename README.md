@@ -24,6 +24,7 @@ Add `ash_phoenix` to your list of dependencies in `mix.exs`:
 - `AshPhoenix.Form.Auto` - Tools to automatically determine nested form structures based on calls to `manage_relationship` for an action.
 - `AshPhoenix.FilterForm` - A form data structure for building filter statements
 - `AshPhoenix.LiveView` - Helpers for querying data and integrating changes
+- `AshPhoenix.LiveView.SubdomainHook` - A hook to determine a tenant using subdomains for multitenancy
 - `AshPhoenix.SubdomainPlug` - A plug to determine a tenant using subdomains for multitenancy
 - `AshPhoenix.FormData.Error` - A protocol to allow errors to be rendered in forms
 - `Phoenix.HTML.Safe` implementations for `Ash.CiString`, `Ash.NotLoaded` and `Decimal`
