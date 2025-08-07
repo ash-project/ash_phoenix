@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.13](https://github.com/ash-project/ash_phoenix/compare/v2.3.12...v2.3.13) (2025-08-07)
+
+
+
+
+### Bug Fixes:
+
+* ensure nested form errors are included (#401) by [@joangavelan](https://github.com/joangavelan)
+
+* Remove Product from Save Product button - Save button (#403) by Kenneth Kostrešević
+
+### Improvements:
+
+* add resource name for route option for `ash_phoenix.gen.html` (#402) by Kenneth Kostrešević
+
 ## [v2.3.12](https://github.com/ash-project/ash_phoenix/compare/v2.3.11...v2.3.12) (2025-07-29)
 
 

@@ -30,8 +30,7 @@ end
 ```
 
 Adding the `AshPhoenix` extension would define 
-`form_to_register_with_password/2`
-`form_to_update_user/2`.
+`form_to_register_with_password/2`.
 
 ## Usage
 
