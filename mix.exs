@@ -97,6 +97,7 @@ defmodule AshPhoenix.MixProject do
       groups_for_modules: [
         "Phoenix Helpers": [
           AshPhoenix.LiveView,
+          AshPhoenix.LiveView.SubdomainHook,
           AshPhoenix.SubdomainPlug
         ],
         Generators: [
