@@ -28,7 +28,8 @@ defmodule AshPhoenix.MixProject do
       ],
       package: package(),
       source_url: "https://github.com/ash-project/ash_phoenix",
-      homepage_url: "https://github.com/ash-project/ash_phoenix"
+      homepage_url: "https://github.com/ash-project/ash_phoenix",
+      compilers: [:phoenix_live_view] ++ Mix.compilers()
     ]
   end
 
@@ -136,6 +137,7 @@ defmodule AshPhoenix.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:lazy_html, ">= 0.0.0", only: :test},
       {:ash, ash_version("~> 3.5 and >= 3.5.13")},
       {:phoenix, "~> 1.5.6 or ~> 1.6"},
       {:phoenix_html, "~> 4.0"},
