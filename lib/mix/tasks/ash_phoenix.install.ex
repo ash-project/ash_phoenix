@@ -20,6 +20,40 @@ if Code.ensure_loaded?(Igniter) do
       igniter
       |> Igniter.Project.Formatter.import_dep(:ash_phoenix)
       |> configure_phoenix_endpoints()
+      |> patch_phoenix_agents_md()
+    end
+
+    defp patch_phoenix_agents_md(igniter) do
+      if Igniter.exists?(igniter, "AGENTS.md") do
+        Igniter.update_file(igniter, "AGENTS.md", fn source ->
+          content =
+            source.content
+            |> String.split("\n")
+            |> Enum.reduce({:cont, []}, fn
+              "<!-- phoenix:ecto-start -->", {:cont, acc} -> {:skip, acc}
+              "<!-- phoenix:ecto-end -->", {:skip, acc} -> {:cont, acc}
+              _line, {:skip, acc} -> {:skip, acc}
+              line, {:cont, acc} -> {:cont, [line | acc]}
+            end)
+            |> elem(1)
+            |> Enum.reverse()
+            |> Enum.reduce({:cont, []}, fn
+              "### Form handling", {:cont, acc} -> {:skip, acc}
+              "### " <> _ = line, {:skip, acc} -> {:cont, [line | acc]}
+              "## " <> _ = line, {:skip, acc} -> {:cont, [line | acc]}
+              "# " <> _ = line, {:skip, acc} -> {:cont, [line | acc]}
+              _line, {:skip, acc} -> {:skip, acc}
+              line, {:cont, acc} -> {:cont, [line | acc]}
+            end)
+            |> elem(1)
+            |> Enum.reverse()
+            |> Enum.join("\n")
+
+          Rewrite.Source.update(source, :content, content)
+        end)
+      else
+        igniter
+      end
     end
 
     defp configure_phoenix_endpoints(igniter) do
