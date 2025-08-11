@@ -31,6 +31,36 @@ defmodule Mix.Tasks.AshPhoenix.InstallTest do
                 get "/", PageController, :home
               end
             end
+            """,
+            "AGENTS.md" => """
+            Intro
+            <!-- usage-rules-start -->
+            <!-- phoenix:liveview-start -->
+            Liveview usage rules
+            <!-- phoenix:liveview-end -->
+            <!-- phoenix:ecto-start -->
+            REMOVE THIS
+            <!-- phoenix:ecto-end -->
+            <!-- phoenix:html-start -->
+            ## Phoenix HTML guidelines
+
+            ### Sub section
+
+            THIS REMAINS
+
+            ### Form handling
+
+            REMOVE THIS
+
+            #### Creating a form from changesets
+
+            REMOVE THIS
+
+            ### Another section
+
+            THIS REMAINS
+            <!-- phoenix:html-end -->
+            <!-- usage-rules-end -->
             """
           }
         )
@@ -47,6 +77,37 @@ defmodule Mix.Tasks.AshPhoenix.InstallTest do
     |> assert_has_patch("lib/test_web/endpoint.ex", """
     +  | plug(AshPhoenix.Plug.CheckCodegenStatus)
     """)
+  end
+
+  test "installation removes Ecto usage rules", %{
+    igniter: igniter
+  } do
+    igniter
+      |> Igniter.compose_task("ash_phoenix.install", [])
+      |> assert_content_equals("AGENTS.md", """
+      Intro
+      <!-- usage-rules-start -->
+      <!-- phoenix:liveview-start -->
+      Liveview usage rules
+      <!-- phoenix:liveview-end -->
+      <!-- phoenix:html-start -->
+      ## Phoenix HTML guidelines
+
+      ### Sub section
+
+      THIS REMAINS
+
+      ### Another section
+
+      THIS REMAINS
+      <!-- phoenix:html-end -->
+      <!-- usage-rules-end -->
+      """)
+  end
+
+  test "installation removes mentions of phoenix forms from usage rules", %{
+    igniter: igniter
+  } do
   end
 
   test "installation is idempotent", %{igniter: igniter} do
