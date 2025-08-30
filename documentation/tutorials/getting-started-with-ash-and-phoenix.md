@@ -43,7 +43,7 @@ There's a few places you can go to learn more about how to use ash:
 
 - Read more about how to query the data in your resources - `Ash.Query`
 - [Dig deeper into actions.](https://hexdocs.pm/ash/actions.html)
-- [Study resource relationship management](https://hexdocs.pm/ash/managing-relationships.html)
+- [Study resource relationship management](https://hexdocs.pm/ash/relationships.html#managing-relationships)
 
 ### Ash Authentication & Ash Authentication Phoenix
 
