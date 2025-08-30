@@ -116,8 +116,12 @@ if Code.ensure_loaded?(Inertia.Errors) do
     @doc false
     # Accepts a tuple for consistency with the Ecto.Changeset.traverse_errors convention.
     def default_message_func({message, vars}) do
-      Enum.reduce(vars || [], message, fn {key, value}, acc ->
-        String.replace(acc, "%{#{key}}", to_string(value))
+      Enum.reduce(vars || [], message, fn
+        {key, %Regex{} = value}, acc ->
+          String.replace(acc, "%{#{key}}", Regex.source(value))
+
+        {key, value}, acc ->
+          String.replace(acc, "%{#{key}}", to_string(value))
       end)
     end
   end
