@@ -35,21 +35,21 @@ defmodule AshPhoenix.Form.WrappedValue do
                Ash.Type.cast_input(
                  changeset.context.type,
                  value,
-                 changeset.context.constraints
+                 constraints
                ),
              {:constrained, {:ok, casted}} when not is_nil(casted) <-
                {:constrained,
                 Ash.Type.apply_constraints(
                   changeset.context.type,
                   casted,
-                  changeset.context.constraints
+                  constraints
                 )} do
           Ash.Changeset.force_change_attribute(changeset, :value, casted)
         else
           {:constrained, {:ok, nil}} ->
             Ash.Changeset.force_change_attribute(changeset, :value, nil)
 
-          {:constrained, {:error, error}, argument} ->
+          {:constrained, {:error, error}} ->
             add_invalid_errors(value, changeset, :value, error)
 
           {:error, error} ->

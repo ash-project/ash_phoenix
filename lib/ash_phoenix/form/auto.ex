@@ -158,11 +158,11 @@ defmodule AshPhoenix.Form.Auto do
             {type_name, type, constraints, tag, tag_value} =
               determine_type(constraints, data, params)
 
-            {embed, constraints, fake_embedded?} =
+            {embed, fake_embedded?} =
               if Ash.Type.embedded_type?(type) do
-                {type, constraints, false}
+                {type, false}
               else
-                {AshPhoenix.Form.WrappedValue, [], true}
+                {AshPhoenix.Form.WrappedValue, true}
               end
 
             prepare_source =

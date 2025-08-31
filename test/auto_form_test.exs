@@ -335,6 +335,24 @@ defmodule AshPhoenix.AutoFormTest do
 
       assert Enum.at(form[:union].value, 0)[:value].value == :update
     end
+
+    test "it works for submitting a struct inside of a union attribute type" do
+      value_to_submit = "Foo Bar"
+
+      assert {:ok, %Post{union: %{value: %{value: ^value_to_submit}}}} =
+               AshPhoenix.Form.for_create(Post, :create, forms: [auto?: true])
+               |> AshPhoenix.Form.submit(
+                 params: %{
+                   "text" => "...",
+                   "union" => %{
+                     "_union_type" => "with_struct",
+                     "value" => %{
+                       "value" => value_to_submit
+                     }
+                   }
+                 }
+               )
+    end
   end
 
   describe "list unions" do
