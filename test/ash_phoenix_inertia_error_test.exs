@@ -199,8 +199,8 @@ defmodule AshPhoenixTest.Inertia.ErrorsTest do
 
       # And it should properly format the regex
       assert result == %{
-        "code" => "must match ^[A-Za-z0-9]+$"
-      }
+               "code" => "must match ^[A-Za-z0-9]+$"
+             }
     end
 
     test "handles the exact scenario from issue #410" do
@@ -222,8 +222,8 @@ defmodule AshPhoenixTest.Inertia.ErrorsTest do
       result = Error.to_errors(errors, &Error.default_message_func/1)
 
       assert result == %{
-        "code" => "must match ^[A-Za-z0-9]+$"
-      }
+               "code" => "must match ^[A-Za-z0-9]+$"
+             }
 
       # Verify the message is properly formatted and readable
       assert is_binary(result["code"])

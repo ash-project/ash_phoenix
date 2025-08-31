@@ -83,26 +83,26 @@ defmodule Mix.Tasks.AshPhoenix.InstallTest do
     igniter: igniter
   } do
     igniter
-      |> Igniter.compose_task("ash_phoenix.install", [])
-      |> assert_content_equals("AGENTS.md", """
-      Intro
-      <!-- usage-rules-start -->
-      <!-- phoenix:liveview-start -->
-      Liveview usage rules
-      <!-- phoenix:liveview-end -->
-      <!-- phoenix:html-start -->
-      ## Phoenix HTML guidelines
+    |> Igniter.compose_task("ash_phoenix.install", [])
+    |> assert_content_equals("AGENTS.md", """
+    Intro
+    <!-- usage-rules-start -->
+    <!-- phoenix:liveview-start -->
+    Liveview usage rules
+    <!-- phoenix:liveview-end -->
+    <!-- phoenix:html-start -->
+    ## Phoenix HTML guidelines
 
-      ### Sub section
+    ### Sub section
 
-      THIS REMAINS
+    THIS REMAINS
 
-      ### Another section
+    ### Another section
 
-      THIS REMAINS
-      <!-- phoenix:html-end -->
-      <!-- usage-rules-end -->
-      """)
+    THIS REMAINS
+    <!-- phoenix:html-end -->
+    <!-- usage-rules-end -->
+    """)
   end
 
   test "installation removes mentions of phoenix forms from usage rules", %{
