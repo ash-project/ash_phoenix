@@ -16,6 +16,15 @@ defmodule AshPhoenix.Test.UnionValue do
           constraints: [
             min: 10
           ]
+        ],
+        with_struct: [
+          type: :struct,
+          constraints: [
+            instance_of: AshPhoenix.Test.EmbeddedArgument,
+            fields: [
+              value: [type: :string]
+            ]
+          ]
         ]
       ]
     ]
