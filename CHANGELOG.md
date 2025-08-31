@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.15](https://github.com/ash-project/ash_phoenix/compare/v2.3.14...v2.3.15) (2025-08-31)
+
+
+
+
+### Bug Fixes:
+
+* error in auto form creation for structs inside of union attributes (#411) by Rutgerdj
+
+* update pattern match in WrappedValue Change by Rutgerdj
+
+* Include constraints in auto form for WrappedValue by Rutgerdj
+
+* handle regexes in error vars in inertia by [@zachdaniel](https://github.com/zachdaniel)
+
 ## [v2.3.14](https://github.com/ash-project/ash_phoenix/compare/v2.3.13...v2.3.14) (2025-08-21)
 
 
