@@ -51,7 +51,13 @@ defmodule AshPhoenix.FormData.Helpers do
   end
 
   @doc false
-  def transform_errors(form, errors, path_filter \\ nil, form_keys \\ [], post_process_errors \\ nil) do
+  def transform_errors(
+        form,
+        errors,
+        path_filter \\ nil,
+        form_keys \\ [],
+        post_process_errors \\ nil
+      ) do
     errors = if List.wrap(errors) == [], do: [], else: Ash.Error.to_error_class(errors).errors
 
     additional_path_filters =
@@ -167,9 +173,11 @@ defmodule AshPhoenix.FormData.Helpers do
     |> Enum.flat_map(fn {field, {message, vars}} ->
       # Convert back to triple format for processing
       case List.wrap(post_process_errors.(form, path, {field, message, vars})) do
-        [] -> []
+        [] ->
+          []
+
         errors ->
-          Enum.map(errors, fn {new_field, new_message, new_vars} -> 
+          Enum.map(errors, fn {new_field, new_message, new_vars} ->
             {new_field, {new_message || "", transform_vars(new_vars)}}
           end)
       end

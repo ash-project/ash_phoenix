@@ -324,7 +324,12 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
              <:subtitle>Use this form to manage artist records in your database.</:subtitle>
            </.header>
 
-           <.form for={@form} id="artist-form" phx-change="validate" phx-submit="save">
+           <.form
+             for={@form}
+             id="artist-form"
+             phx-change="validate"
+             phx-submit="save"
+           >
              <.input field={@form[:name]} type="text" label="Name" />
 
              <.button phx-disable-with="Saving..." variant="primary">Save Artist</.button>

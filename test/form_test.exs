@@ -1555,7 +1555,8 @@ defmodule AshPhoenix.FormTest do
       paths = Agent.get(paths_seen, & &1) |> Enum.reverse()
 
       # Should have seen path for nested form
-      assert [:post] in paths  # Nested form path
+      # Nested form path
+      assert [:post] in paths
 
       Agent.stop(paths_seen)
     end

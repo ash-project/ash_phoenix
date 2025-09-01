@@ -211,7 +211,9 @@ defmodule AshPhoenix.Form do
                  [{field :: atom, message :: String.t(), substituations :: Keyword.t()}]),
           post_process_errors:
             nil
-            | (t(), list(String.t() | atom), {field :: atom, message :: String.t(), vars :: Keyword.t()} ->
+            | (t(),
+               list(String.t() | atom),
+               {field :: atom, message :: String.t(), vars :: Keyword.t()} ->
                  {field :: atom, message :: String.t(), vars :: Keyword.t()} | nil),
           valid?: boolean,
           errors: boolean,
@@ -4262,7 +4264,8 @@ defmodule AshPhoenix.Form do
     end)
   end
 
-  defp do_add_form(form, [key, i], opts, trail, transform_errors, post_process_errors) when is_integer(i) do
+  defp do_add_form(form, [key, i], opts, trail, transform_errors, post_process_errors)
+       when is_integer(i) do
     config =
       get_form_key(form.form_keys, key) ||
         raise AshPhoenix.Form.NoFormConfigured,
@@ -4349,7 +4352,8 @@ defmodule AshPhoenix.Form do
     %{form | forms: new_forms, touched_forms: MapSet.put(form.touched_forms, to_string(key))}
   end
 
-  defp do_add_form(form, [key, i | rest], opts, trail, transform_errors, post_process_errors) when is_integer(i) do
+  defp do_add_form(form, [key, i | rest], opts, trail, transform_errors, post_process_errors)
+       when is_integer(i) do
     unless get_form_key(form.form_keys, key) do
       raise AshPhoenix.Form.NoFormConfigured,
         resource: form.resource,
@@ -4542,7 +4546,11 @@ defmodule AshPhoenix.Form do
       end
 
     new_forms =
-      Map.update!(form.forms, key, &do_add_form(&1, rest, opts, [key | trail], transform_errors, post_process_errors))
+      Map.update!(
+        form.forms,
+        key,
+        &do_add_form(&1, rest, opts, [key | trail], transform_errors, post_process_errors)
+      )
 
     %{form | forms: new_forms, touched_forms: MapSet.put(form.touched_forms, to_string(key))}
   end
@@ -4737,7 +4745,8 @@ defmodule AshPhoenix.Form do
 
     %{
       form
-      | submit_errors: transform_errors(form, errors, path, form.form_keys, form.post_process_errors),
+      | submit_errors:
+          transform_errors(form, errors, path, form.form_keys, form.post_process_errors),
         forms: new_forms
     }
   end
@@ -4779,7 +4788,14 @@ defmodule AshPhoenix.Form do
 
     %{
       form
-      | submit_errors: transform_errors(form, errors ++ further_errors, trail, form.form_keys, form.post_process_errors),
+      | submit_errors:
+          transform_errors(
+            form,
+            errors ++ further_errors,
+            trail,
+            form.form_keys,
+            form.post_process_errors
+          ),
         forms: new_forms
     }
   end
@@ -6108,7 +6124,13 @@ defmodule AshPhoenix.Form do
           if form.just_submitted? do
             form.submit_errors
           else
-            transform_errors(form, form.source.errors, [], form.form_keys, form.post_process_errors)
+            transform_errors(
+              form,
+              form.source.errors,
+              [],
+              form.form_keys,
+              form.post_process_errors
+            )
           end
         else
           []
