@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.16](https://github.com/ash-project/ash_phoenix/compare/v2.3.15...v2.3.16) (2025-09-01)
+
+
+
+
+### Improvements:
+
+* add `post_process_errors` option by [@zachdaniel](https://github.com/zachdaniel)
+
 ## [v2.3.15](https://github.com/ash-project/ash_phoenix/compare/v2.3.14...v2.3.15) (2025-08-31)
 
 
