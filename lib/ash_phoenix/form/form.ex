@@ -124,6 +124,31 @@ defmodule AshPhoenix.Form do
     />
   ```
 
+  ### Handling errors for composite inputs
+
+  When working with composite inputs like the example above, you may need to map errors from the composite field
+  to the individual input fields. The `post_process_errors` option can help with this:
+
+  ```elixir
+  AshPhoenix.Form.for_create(Transfer, :create,
+    post_process_errors: fn _form, _path, {field, message, vars} ->
+      # Map amount field errors to the amount input specifically
+      case field do
+        :amount ->
+          # Could check the error message to determine which sub-field
+          if String.contains?(message, "currency") do
+            {:amount_currency, message, vars}
+          else
+            {:amount_amount, message, vars}
+          end
+        _ ->
+          # you can return `nil`
+          {field, message, vars}
+      end
+    end
+  )
+  ```
+
   The above will allow the fields to be used by the `AshPhoenix.Form` when creating or updating a Transfer.
   You can follow the same style with other compound types.
   """
@@ -145,6 +170,7 @@ defmodule AshPhoenix.Form do
     :opts,
     :id,
     :transform_errors,
+    :post_process_errors,
     :original_data,
     :transform_params,
     :prepare_params,
@@ -183,6 +209,10 @@ defmodule AshPhoenix.Form do
             nil
             | (source, error :: Ash.Error.t() ->
                  [{field :: atom, message :: String.t(), substituations :: Keyword.t()}]),
+          post_process_errors:
+            nil
+            | (t(), list(String.t() | atom), {field :: atom, message :: String.t(), vars :: Keyword.t()} ->
+                 {field :: atom, message :: String.t(), vars :: Keyword.t()} | nil),
           valid?: boolean,
           errors: boolean,
           submitted_once?: boolean,
@@ -230,7 +260,7 @@ defmodule AshPhoenix.Form do
     transform_errors: [
       type: {:or, [{:fun, 2}, {:literal, nil}]},
       doc: """
-      Allows for manual manipulation and transformation of errors.
+      Allows for manual manipulation and transformation of errors. You may prefer `post_process_errors` as a simpler API.
 
       If possible, try to implement `AshPhoenix.FormData.Error` for the error (if it as a custom one, for example).
       If that isn't possible, you can provide this function which will get the changeset and the error, and should
@@ -245,6 +275,39 @@ defmodule AshPhoenix.Form do
         _changeset, error ->
           error
       end
+      ```
+      """
+    ],
+    post_process_errors: [
+      type: {:or, [{:fun, 3}, {:literal, nil}]},
+      doc: """
+      Allows for post-processing of errors after they have been converted to the standard triple format.
+
+      This function receives the form, the path to the form, and an error triple `{field, message, vars}`.
+      It should return either a modified triple or `nil` to filter out the error.
+
+      This is useful for:
+      * Filtering out certain errors based on custom criteria 
+      * Remapping field names from one field to another
+      * Modifying error messages or variables
+
+      Example:
+      ```
+      AshPhoenix.Form.for_create(..., post_process_errors: fn form, _path, {field, message, vars} ->
+        case field do
+          :status -> 
+            # hide these errors
+            nil
+
+          field when field in [:currency, :amount] -> 
+            # remap the field, and replace the error message
+            {:money, "please enter a real money amount", []}
+
+          field -> 
+            # leave the others unchanged
+            {field, message, vars}
+        end
+      end)
       ```
       """
     ],
@@ -554,6 +617,7 @@ defmodule AshPhoenix.Form do
       raw_params: opts[:params] || %{},
       errors: opts[:errors],
       transform_errors: opts[:transform_errors],
+      post_process_errors: opts[:post_process_errors],
       warn_on_unhandled_errors?: opts[:warn_on_unhandled_errors?],
       name: name,
       forms: forms,
@@ -650,6 +714,7 @@ defmodule AshPhoenix.Form do
       raw_params: opts[:params] || %{},
       errors: opts[:errors],
       transform_errors: opts[:transform_errors],
+      post_process_errors: opts[:post_process_errors],
       warn_on_unhandled_errors?: opts[:warn_on_unhandled_errors?],
       name: name,
       forms: forms,
@@ -747,6 +812,7 @@ defmodule AshPhoenix.Form do
       params: params,
       errors: opts[:errors],
       transform_errors: opts[:transform_errors],
+      post_process_errors: opts[:post_process_errors],
       warn_on_unhandled_errors?: opts[:warn_on_unhandled_errors?],
       forms: forms,
       form_keys: Keyword.new(List.wrap(opts[:forms])),
@@ -883,6 +949,7 @@ defmodule AshPhoenix.Form do
       raw_params: opts[:params] || %{},
       errors: opts[:errors],
       transform_errors: opts[:transform_errors],
+      post_process_errors: opts[:post_process_errors],
       warn_on_unhandled_errors?: opts[:warn_on_unhandled_errors?],
       original_data: data,
       forms: forms,
@@ -1541,6 +1608,7 @@ defmodule AshPhoenix.Form do
                             warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
                             prev_data_trail: prev_data_trail,
                             transform_errors: form.transform_errors,
+                            post_process_errors: form.post_process_errors,
                             as: form.name <> "[#{key}][#{index}]",
                             id: form.id <> "_#{key}_#{index}"
                           )
@@ -1568,6 +1636,7 @@ defmodule AshPhoenix.Form do
                             warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
                             prev_data_trail: prev_data_trail,
                             transform_errors: form.transform_errors,
+                            post_process_errors: form.post_process_errors,
                             as: form.name <> "[#{key}][#{index}]",
                             id: form.id <> "_#{key}_#{index}"
                           )
@@ -1662,6 +1731,7 @@ defmodule AshPhoenix.Form do
                       errors: errors?,
                       prev_data_trail: prev_data_trail,
                       transform_errors: form.transform_errors,
+                      post_process_errors: form.post_process_errors,
                       as: form.name <> "[#{key}]",
                       id: form.id <> "_#{key}"
                     )
@@ -1737,6 +1807,7 @@ defmodule AshPhoenix.Form do
                           prev_data_trail: prev_data_trail,
                           forms: opts[:forms] || [],
                           transform_errors: form.transform_errors,
+                          post_process_errors: form.post_process_errors,
                           as: form.name <> "[#{key}]",
                           id: form.id <> "_#{key}"
                         )
@@ -1760,6 +1831,7 @@ defmodule AshPhoenix.Form do
                             prev_data_trail: prev_data_trail,
                             forms: opts[:forms] || [],
                             transform_errors: form.transform_errors,
+                            post_process_errors: form.post_process_errors,
                             as: form.name <> "[#{key}][#{index}]",
                             id: form.id <> "_#{key}_#{index}"
                           )
@@ -1808,6 +1880,7 @@ defmodule AshPhoenix.Form do
                           forms: opts[:forms] || [],
                           data: data,
                           transform_errors: form.transform_errors,
+                          post_process_errors: form.post_process_errors,
                           as: form.name <> "[#{key}]",
                           id: form.id <> "_#{key}"
                         )
@@ -1837,6 +1910,7 @@ defmodule AshPhoenix.Form do
                             forms: opts[:forms] || [],
                             data: data,
                             transform_errors: form.transform_errors,
+                            post_process_errors: form.post_process_errors,
                             as: form.name <> "[#{key}][#{index}]",
                             id: form.id <> "_#{key}_#{index}"
                           )
@@ -1876,6 +1950,7 @@ defmodule AshPhoenix.Form do
                               forms: opts[:forms] || [],
                               data: data,
                               transform_errors: form.transform_errors,
+                              post_process_errors: form.post_process_errors,
                               as: form.name <> "[#{key}][#{index}]",
                               id: form.id <> "_#{key}_#{index}"
                             )
@@ -1918,6 +1993,7 @@ defmodule AshPhoenix.Form do
                             forms: opts[:forms] || [],
                             data: opts[:data],
                             transform_errors: form.transform_errors,
+                            post_process_errors: form.post_process_errors,
                             as: form.name <> "[#{key}]",
                             id: form.id <> "_#{key}"
                           )
@@ -3650,7 +3726,7 @@ defmodule AshPhoenix.Form do
     path = parse_path!(form, path, skip_last?: true)
 
     form =
-      do_add_form(form, path, opts, [], form.transform_errors)
+      do_add_form(form, path, opts, [], form.transform_errors, form.post_process_errors)
 
     if opts[:validate?] do
       validate(form, params(form, transform?: false, hidden?: true), opts[:validate_opts] || [])
@@ -4186,7 +4262,7 @@ defmodule AshPhoenix.Form do
     end)
   end
 
-  defp do_add_form(form, [key, i], opts, trail, transform_errors) when is_integer(i) do
+  defp do_add_form(form, [key, i], opts, trail, transform_errors, post_process_errors) when is_integer(i) do
     config =
       get_form_key(form.form_keys, key) ||
         raise AshPhoenix.Form.NoFormConfigured,
@@ -4233,7 +4309,8 @@ defmodule AshPhoenix.Form do
           warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
           forms: config[:forms] || [],
           data: opts[:data],
-          transform_errors: transform_errors
+          transform_errors: transform_errors,
+          post_process_errors: post_process_errors
         )
       )
 
@@ -4272,7 +4349,7 @@ defmodule AshPhoenix.Form do
     %{form | forms: new_forms, touched_forms: MapSet.put(form.touched_forms, to_string(key))}
   end
 
-  defp do_add_form(form, [key, i | rest], opts, trail, transform_errors) when is_integer(i) do
+  defp do_add_form(form, [key, i | rest], opts, trail, transform_errors, post_process_errors) when is_integer(i) do
     unless get_form_key(form.form_keys, key) do
       raise AshPhoenix.Form.NoFormConfigured,
         resource: form.resource,
@@ -4305,14 +4382,14 @@ defmodule AshPhoenix.Form do
         List.update_at(
           forms,
           index,
-          &do_add_form(&1, rest, opts, [i, key | trail], transform_errors)
+          &do_add_form(&1, rest, opts, [i, key | trail], transform_errors, post_process_errors)
         )
       end)
 
     %{form | forms: new_forms, touched_forms: MapSet.put(form.touched_forms, to_string(key))}
   end
 
-  defp do_add_form(form, [key], opts, trail, transform_errors) do
+  defp do_add_form(form, [key], opts, trail, transform_errors, post_process_errors) do
     config =
       get_form_key(form.form_keys, key) ||
         raise AshPhoenix.Form.NoFormConfigured,
@@ -4381,7 +4458,8 @@ defmodule AshPhoenix.Form do
                   warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
                   forms: config[:forms] || [],
                   data: opts[:data],
-                  transform_errors: transform_errors
+                  transform_errors: transform_errors,
+                  post_process_errors: post_process_errors
                 )
               )
 
@@ -4416,7 +4494,8 @@ defmodule AshPhoenix.Form do
                   warn_on_unhandled_errors?: form.warn_on_unhandled_errors?,
                   forms: config[:forms] || [],
                   data: opts[:data],
-                  transform_errors: transform_errors
+                  transform_errors: transform_errors,
+                  post_process_errors: post_process_errors
                 )
               )
 
@@ -4445,7 +4524,7 @@ defmodule AshPhoenix.Form do
     }
   end
 
-  defp do_add_form(form, [key | rest], opts, trail, transform_errors) do
+  defp do_add_form(form, [key | rest], opts, trail, transform_errors, post_process_errors) do
     unless get_form_key(form.form_keys, key) do
       raise AshPhoenix.Form.NoFormConfigured,
         resource: form.resource,
@@ -4463,12 +4542,12 @@ defmodule AshPhoenix.Form do
       end
 
     new_forms =
-      Map.update!(form.forms, key, &do_add_form(&1, rest, opts, [key | trail], transform_errors))
+      Map.update!(form.forms, key, &do_add_form(&1, rest, opts, [key | trail], transform_errors, post_process_errors))
 
     %{form | forms: new_forms, touched_forms: MapSet.put(form.touched_forms, to_string(key))}
   end
 
-  defp do_add_form(_form, path, _opts, trail, _) do
+  defp do_add_form(_form, path, _opts, trail, _, _) do
     raise InvalidPath, path: Enum.reverse(trail, List.wrap(path))
   end
 
@@ -4658,7 +4737,7 @@ defmodule AshPhoenix.Form do
 
     %{
       form
-      | submit_errors: transform_errors(form, errors, path, form.form_keys),
+      | submit_errors: transform_errors(form, errors, path, form.form_keys, form.post_process_errors),
         forms: new_forms
     }
   end
@@ -4700,7 +4779,7 @@ defmodule AshPhoenix.Form do
 
     %{
       form
-      | submit_errors: transform_errors(form, errors ++ further_errors, trail, form.form_keys),
+      | submit_errors: transform_errors(form, errors ++ further_errors, trail, form.form_keys, form.post_process_errors),
         forms: new_forms
     }
   end
@@ -6029,7 +6108,7 @@ defmodule AshPhoenix.Form do
           if form.just_submitted? do
             form.submit_errors
           else
-            transform_errors(form, form.source.errors, [], form.form_keys)
+            transform_errors(form, form.source.errors, [], form.form_keys, form.post_process_errors)
           end
         else
           []
@@ -6163,6 +6242,7 @@ defmodule AshPhoenix.Form do
     Keyword.drop(opts, [
       :forms,
       :transform_errors,
+      :post_process_errors,
       :params,
       :errors,
       :id,

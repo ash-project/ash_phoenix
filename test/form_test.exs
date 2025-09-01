@@ -1451,6 +1451,114 @@ defmodule AshPhoenix.FormTest do
                "text" => "text"
              } = Form.params(form)
     end
+
+    test "post_process_errors can filter and remap errors" do
+      # Test filtering out errors
+      form =
+        Post
+        |> Form.for_create(:create,
+          post_process_errors: fn _form, _path, {field, message, vars} ->
+            # Filter out text field errors
+            if field == :text do
+              nil
+            else
+              {field, message, vars}
+            end
+          end
+        )
+        |> Form.validate(%{})
+        |> form_for("action")
+
+      # The text field error should be filtered out
+      assert form.errors == []
+
+      # Test remapping field names
+      form =
+        Post
+        |> Form.for_create(:create,
+          post_process_errors: fn _form, _path, {field, message, vars} ->
+            # Remap :text field to :content
+            new_field = if field == :text, do: :content, else: field
+            {new_field, message, vars}
+          end
+        )
+        |> Form.validate(%{})
+        |> form_for("action")
+
+      assert form.errors == [{:content, {"is required", []}}]
+
+      # Test modifying error messages
+      form =
+        Post
+        |> Form.for_create(:create,
+          post_process_errors: fn _form, _path, {field, message, vars} ->
+            {field, "Custom: #{message}", vars}
+          end
+        )
+        |> Form.validate(%{})
+        |> form_for("action")
+
+      assert form.errors == [{:text, {"Custom: is required", []}}]
+    end
+
+    test "post_process_errors is inherited by nested forms" do
+      params = %{"text" => "text", "post" => %{}}
+      post = [resource: Post, create_action: :create]
+
+      form =
+        Comment
+        |> Form.for_create(:create,
+          domain: Domain,
+          forms: [post: post],
+          post_process_errors: fn _form, path, {field, message, vars} ->
+            # Add path info to message for nested forms
+            if path == [] do
+              {field, message, vars}
+            else
+              {field, "Nested: #{message}", vars}
+            end
+          end
+        )
+        |> Form.add_form(:post, params: %{})
+        |> Form.validate(params)
+        |> Form.submit(force?: true, params: params)
+        |> elem(1)
+        |> form_for("action")
+
+      assert form.errors == []
+
+      # The nested form should have the modified error message
+      assert hd(inputs_for(form, :post)).errors == [{:text, {"Nested: is required", []}}]
+    end
+
+    test "post_process_errors receives correct path for nested forms" do
+      paths_seen = Agent.start_link(fn -> [] end) |> elem(1)
+
+      params = %{"text" => "text", "post" => %{}}
+      post = [resource: Post, create_action: :create]
+
+      Comment
+      |> Form.for_create(:create,
+        domain: Domain,
+        forms: [post: post],
+        post_process_errors: fn _form, path, error ->
+          Agent.update(paths_seen, &[path | &1])
+          error
+        end
+      )
+      |> Form.add_form(:post, params: %{})
+      |> Form.validate(params)
+      |> Form.submit(force?: true, params: params)
+      |> elem(1)
+      |> form_for("action")
+
+      paths = Agent.get(paths_seen, & &1) |> Enum.reverse()
+
+      # Should have seen path for nested form
+      assert [:post] in paths  # Nested form path
+
+      Agent.stop(paths_seen)
+    end
   end
 
   describe "submit" do
