@@ -511,12 +511,12 @@ defmodule AshPhoenix.Form do
           {module, module.__struct__(), opts}
 
         %Ash.Union{value: %resource{} = data, type: type} ->
-          if Ash.Resource.Info.resource?(resource) do
-            opts =
-              opts
-              |> Keyword.put_new(:params, %{})
-              |> Keyword.update!(:params, &Map.put(&1, "_union_type", to_string(type)))
+          opts =
+            opts
+            |> Keyword.put_new(:params, %{})
+            |> Keyword.update!(:params, &Map.put(&1, "_union_type", to_string(type)))
 
+          if Ash.Resource.Info.resource?(resource) do
             {resource, data, opts}
           else
             {AshPhoenix.Form.WrappedValue, %AshPhoenix.Form.WrappedValue{value: data}, opts}

@@ -369,7 +369,19 @@ defmodule AshPhoenix.AutoFormTest do
                  }
                )
 
-      form = AshPhoenix.Form.for_update(post, :update, forms: [auto?: true])
+      new_date = Date.add(value_to_submit, 10)
+
+      assert {:ok, %Post{union: %{value: ^new_date, type: :date}}} =
+               AshPhoenix.Form.for_update(post, :update, forms: [auto?: true])
+               |> AshPhoenix.Form.submit(
+                 params: %{
+                   "text" => "...",
+                   "union" => %{
+                     "_union_type" => "date",
+                     "value" => new_date
+                   }
+                 }
+               )
     end
   end
 
