@@ -383,6 +383,17 @@ defmodule AshPhoenix.AutoFormTest do
                  }
                )
     end
+
+    test "it automatically adds a form if a union attribute has a type, but no value" do
+      union_type = :predefined
+
+      assert %{forms: %{union: union_form}} =
+               SimplePost
+               |> Ash.create!(%{union: %Ash.Union{value: nil, type: union_type}})
+               |> AshPhoenix.Form.for_update(:update, forms: [auto?: true])
+
+      assert AshPhoenix.Form.value(union_form, :type) == union_type
+    end
   end
 
   describe "list unions" do
