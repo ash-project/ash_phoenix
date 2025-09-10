@@ -5201,10 +5201,6 @@ defmodule AshPhoenix.Form do
             opts[:data]
           end
         end
-        |> case do
-          %Ash.Union{value: nil} -> nil
-          value -> value
-        end
 
       cond do
         opts[:update_action] ->
