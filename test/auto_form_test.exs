@@ -353,6 +353,36 @@ defmodule AshPhoenix.AutoFormTest do
                  }
                )
     end
+
+    test "it works for submitting a date inside of a union attribute type and creating update form" do
+      value_to_submit = Date.utc_today()
+
+      assert {:ok, %Post{union: %{value: ^value_to_submit, type: :date}} = post} =
+               AshPhoenix.Form.for_create(Post, :create, forms: [auto?: true])
+               |> AshPhoenix.Form.submit(
+                 params: %{
+                   "text" => "...",
+                   "union" => %{
+                     "_union_type" => "date",
+                     "value" => value_to_submit
+                   }
+                 }
+               )
+
+      new_date = Date.add(value_to_submit, 10)
+
+      assert {:ok, %Post{union: %{value: ^new_date, type: :date}}} =
+               AshPhoenix.Form.for_update(post, :update, forms: [auto?: true])
+               |> AshPhoenix.Form.submit(
+                 params: %{
+                   "text" => "...",
+                   "union" => %{
+                     "_union_type" => "date",
+                     "value" => new_date
+                   }
+                 }
+               )
+    end
   end
 
   describe "list unions" do

@@ -25,6 +25,9 @@ defmodule AshPhoenix.Test.UnionValue do
               value: [type: :string]
             ]
           ]
+        ],
+        date: [
+          type: :date
         ]
       ]
     ]
