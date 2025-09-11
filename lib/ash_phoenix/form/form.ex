@@ -289,7 +289,7 @@ defmodule AshPhoenix.Form do
       It should return either a modified triple or `nil` to filter out the error.
 
       This is useful for:
-      * Filtering out certain errors based on custom criteria 
+      * Filtering out certain errors based on custom criteria
       * Remapping field names from one field to another
       * Modifying error messages or variables
 
@@ -297,15 +297,15 @@ defmodule AshPhoenix.Form do
       ```
       AshPhoenix.Form.for_create(..., post_process_errors: fn form, _path, {field, message, vars} ->
         case field do
-          :status -> 
+          :status ->
             # hide these errors
             nil
 
-          field when field in [:currency, :amount] -> 
+          field when field in [:currency, :amount] ->
             # remap the field, and replace the error message
             {:money, "please enter a real money amount", []}
 
-          field -> 
+          field ->
             # leave the others unchanged
             {field, message, vars}
         end
@@ -510,16 +510,17 @@ defmodule AshPhoenix.Form do
         module when is_atom(resource_or_data) and not is_nil(resource_or_data) ->
           {module, module.__struct__(), opts}
 
-        %Ash.Union{value: %resource{} = data, type: type} ->
+        %Ash.Union{value: data, type: type} ->
           opts =
             opts
             |> Keyword.put_new(:params, %{})
             |> Keyword.update!(:params, &Map.put(&1, "_union_type", to_string(type)))
 
-          if Ash.Resource.Info.resource?(resource) do
+          with %resource{} <- data,
+               true <- Ash.Resource.Info.resource?(resource) do
             {resource, data, opts}
           else
-            {AshPhoenix.Form.WrappedValue, %AshPhoenix.Form.WrappedValue{value: data}, opts}
+            _ -> {AshPhoenix.Form.WrappedValue, %AshPhoenix.Form.WrappedValue{value: data}, opts}
           end
 
         %resource{} = data ->
@@ -3303,6 +3304,10 @@ defmodule AshPhoenix.Form do
       {:ok, value} ->
         value
     end
+  end
+
+  defp get_data_value(%AshPhoenix.Form.WrappedValue{value: value}, :value) do
+    {:ok, value}
   end
 
   defp get_data_value(%AshPhoenix.Form.WrappedValue{value: value}, field) do
