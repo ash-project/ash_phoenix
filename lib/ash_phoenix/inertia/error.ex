@@ -120,6 +120,9 @@ if Code.ensure_loaded?(Inertia.Errors) do
         {key, %Regex{} = value}, acc ->
           String.replace(acc, "%{#{key}}", Regex.source(value))
 
+        {key, value}, acc when is_list(value) ->
+          String.replace(acc, "%{#{key}}", Enum.join(value, ","))
+
         {key, value}, acc ->
           String.replace(acc, "%{#{key}}", to_string(value))
       end)
