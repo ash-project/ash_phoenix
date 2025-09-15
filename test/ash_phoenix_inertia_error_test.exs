@@ -60,6 +60,29 @@ defmodule AshPhoenixTest.Inertia.ErrorsTest do
       assert result == "This is a simple message"
     end
 
+    test "handles multiple fields in vars list" do
+      message = "at least %{at_least} of %{keys} must be present"
+
+      vars = [
+        fields: [:first_name, :last_name],
+        keys: "first_name,last_name",
+        at_least: 1
+      ]
+
+      result = Error.default_message_func({message, vars})
+
+      assert result == "at least 1 of first_name,last_name must be present"
+    end
+
+    test "handles simple message with complex vars list" do
+      message = "must be present"
+      vars = [fields: [:name], keys: "name", exactly: 1]
+
+      result = Error.default_message_func({message, vars})
+
+      assert result == "must be present"
+    end
+
     test "handles integer values in vars" do
       message = "Must be at least %{min} characters"
       vars = [min: 8]
