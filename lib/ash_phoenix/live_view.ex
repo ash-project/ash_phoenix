@@ -240,8 +240,69 @@ defmodule AshPhoenix.LiveView do
       iex> AshPhoenix.LiveView.page_from_params(%{"offset" => "10", "count" => "true"}, 20)
       [count: true, limit: 20, offset: 10]
   """
+  @doc deprecated: " Use params_to_page_opts/3 instead"
   @spec page_from_params(page_params(), pos_integer(), boolean()) :: Keyword.t()
   def page_from_params(params, default_limit, count? \\ false) do
+    params
+    |> page_request_params(default_limit)
+    |> Keyword.put(:count, count? || params["count"] == "true")
+  end
+
+  @doc """
+  Generates page request options for pagination based on the passed in parameters.
+
+  ## Counting records
+
+  Count queries are **only** included if `count?` is explicitly set to `true`.
+
+  Unlike `page_from_params/3`, this function does **not** override `:count` based on user params, even if params map contains "count" key.
+  This makes developer intent more explicit, and prevents potentially expensive queries from being run unexpectedly.
+
+  If you'd like to include a count query from user params, you can explicitly do:
+
+  ```elixir
+  AshPhoenix.LiveView.params_to_page_opts(params, default_limit, params["count"] == "true")
+  ```
+
+  ## Examples
+
+      iex> AshPhoenix.LiveView.params_to_page_opts(%{"offset" => "10", "limit" => "10"}, 20, true)
+      [count: true, limit: 10, offset: 10]
+
+      iex> AshPhoenix.LiveView.params_to_page_opts(%{"offset" => "10", "limit" => "10"}, 20)
+      [count: false, limit: 10, offset: 10]
+
+      iex> AshPhoenix.LiveView.params_to_page_opts(%{"offset" => "10", "count" => "true"}, 20)
+      [count: false, limit: 20, offset: 10]
+
+
+  ### User params
+
+  This function safely ignores any keys in the params map that are not related to pagination (`"after"`, `"before"`, `"limit"`, `"offset"`).
+  You can pass the entire user params map directly to this function since extra keys will be ignored.
+
+  This makes it easy to use with LiveView's `handle_params/3` callback, for example:
+
+  ```elixir
+  def handle_params(params, _url, socket) do
+    page_opts = AshPhoenix.LiveView.params_to_page_opts(params, @limit)
+
+    page = MyDomain.search_resources!(query_text, page: page_opts)
+
+    {:noreply, assign(socket, :page, page)}
+  end
+  ```
+
+  This allows you to change the pagination type (keyset or offset) without changing your view code.
+  """
+  @spec params_to_page_opts(page_params(), pos_integer(), boolean()) :: Keyword.t()
+  def params_to_page_opts(params, default_limit, count? \\ false) do
+    params
+    |> page_request_params(default_limit)
+    |> Keyword.put(:count, count?)
+  end
+
+  defp page_request_params(params, default_limit) do
     params = params || %{}
 
     params
@@ -258,7 +319,6 @@ defmodule AshPhoenix.LiveView do
       end
     end)
     |> Keyword.put_new(:limit, default_limit)
-    |> Keyword.put(:count, count? || params["count"] == "true")
   end
 
   @doc """
