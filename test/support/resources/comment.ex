@@ -32,6 +32,10 @@ defmodule AshPhoenix.Test.Comment do
       change(manage_relationship(:post, type: :direct_control))
     end
 
+    create :create_with_post_id do
+      accept [:post_id, :text]
+    end
+
     create :create_with_unknown_error do
       change(UnknownError)
     end
@@ -54,6 +58,6 @@ defmodule AshPhoenix.Test.Comment do
   end
 
   relationships do
-    belongs_to(:post, AshPhoenix.Test.Post)
+    belongs_to(:post, AshPhoenix.Test.Post, allow_nil?: false)
   end
 end

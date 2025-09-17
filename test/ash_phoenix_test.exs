@@ -23,6 +23,17 @@ defmodule AshPhoenixTest do
              AshPhoenix.Test.Domain.form_to_update_user(%AshPhoenix.Test.User{id: id})
   end
 
+  test "functions on the domain take custom input into account" do
+    assert form =
+             %AshPhoenix.Form{} =
+             AshPhoenix.Test.Domain.form_to_create_with_custom_input(
+               %AshPhoenix.Test.Post{id: 1},
+               params: %{text: "some text"}
+             )
+
+    assert {:ok, _resource} = AshPhoenix.Form.submit(form)
+  end
+
   test "adding a form retains original params" do
     form =
       AshPhoenix.Test.Domain.form_to_create_post(
