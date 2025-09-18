@@ -1345,7 +1345,7 @@ defmodule AshPhoenix.Form do
                 case Map.fetch(params, to_string(field)) do
                   {:ok, v} ->
                     v ==
-                      to_string(AshPhoenix.Form.value(nested_form, field))
+                      AshPhoenix.Form.value(nested_form, field)
 
                   _ ->
                     false
