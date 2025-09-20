@@ -24,14 +24,20 @@ defmodule AshPhoenixTest do
   end
 
   test "functions on the domain take custom input into account" do
+    # Create a post first so the foreign key reference is valid
+    post =
+      AshPhoenix.Test.Post
+      |> Ash.Changeset.for_create(:create, %{text: "test post"})
+      |> Ash.create!(domain: AshPhoenix.Test.Domain)
+
     assert form =
              %AshPhoenix.Form{} =
              AshPhoenix.Test.Domain.form_to_create_with_custom_input(
-               %AshPhoenix.Test.Post{id: 1},
+               post,
                params: %{text: "some text"}
              )
 
-    assert {:ok, _resource} = AshPhoenix.Form.submit(form)
+    AshPhoenix.Form.submit!(form, params: %{text: "some text"})
   end
 
   test "adding a form retains original params" do

@@ -106,7 +106,7 @@ defmodule Mix.Tasks.AshPhoenix.InstallTest do
   end
 
   test "installation removes mentions of phoenix forms from usage rules", %{
-    igniter: igniter
+    igniter: _igniter
   } do
   end
 

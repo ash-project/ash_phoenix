@@ -5,8 +5,9 @@ defmodule AshPhoenix do
   There is currently no DSL for this extension.
 
   This defines a `form_to_<name>` function for each code interface
-  function. Positional arguments are ignored, given that in forms,
-  all input typically comes from the `params` map.
+  function. Arguments are processed according to any custom input
+  transformations defined on the code interface, while the `params`
+  option remains untouched.
 
   The generated function passes all options through to
   `AshPhoenix.Form.for_action/3`
@@ -26,8 +27,37 @@ defmodule AshPhoenix do
   end
   ```
 
-  Adding the `AshPhoenix` extension would define 
+  Adding the `AshPhoenix` extension would define
   `form_to_register_with_password/2`.
+
+  ## Custom Input Transformations
+
+  If your code interface defines custom inputs with transformations,
+  the form interface will honor those transformations for arguments,
+  but not for params passed via the `params` option:
+
+  ```elixir
+  # In your domain
+  resource MyApp.Blog.Comment do
+    define :create_with_post do
+      action :create_with_post_id
+      args [:post]
+
+      custom_input :post, :struct do
+        constraints instance_of: MyApp.Blog.Post
+        transform to: :post_id, using: & &1.id
+      end
+    end
+  end
+
+  # Usage - the post argument will be transformed
+  form = MyApp.Blog.form_to_create_with_post(
+    %MyApp.Blog.Post{id: "some-id"},
+    params: %{"text" => "Hello world"}
+  )
+  # The post struct gets transformed to post_id in the form
+  # The params remain unchanged
+  ```
 
   ## Usage
 
@@ -45,10 +75,10 @@ defmodule AshPhoenix do
   #=> %AshPhoenix.Form{}
   ```
 
-  With 
+  With a record for update actions:
 
   ```elixir
-  MyApp.Accounts.form_to_update_user(params: %{"email" => "placeholder@email"})
+  MyApp.Accounts.form_to_update_user(user, params: %{"email" => "placeholder@email"})
   #=> %AshPhoenix.Form{}
   ```
   """

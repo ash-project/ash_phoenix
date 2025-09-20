@@ -133,17 +133,32 @@ defmodule AshPhoenix.Transformers.AddFormCodeInterfaces do
                  """
                  |> Ash.CodeInterface.trim_double_newlines()
             def unquote(name)(unquote_splicing(arg_vars_function), form_opts \\ []) do
+              # Only transform the argument params (merge_params), not all form params
+              transformed_merge_params =
+                unquote(__MODULE__).handle_custom_inputs(
+                  unquote(merge_params),
+                  unquote(Macro.escape(interface.custom_inputs))
+                )
+
               form_opts =
                 form_opts
                 |> unquote(__MODULE__).merge_and_drop_params(
-                  unquote(merge_params),
+                  transformed_merge_params,
                   unquote(delete)
                 )
                 |> unquote(__MODULE__).set_private_arguments(unquote(private_args_merge))
 
               AshPhoenix.Form.for_action(unquote(resource), unquote(action.name), form_opts)
-              |> Map.update!(:params, &Map.merge(&1, unquote(merge_params)))
-              |> Map.update!(:raw_params, &Map.merge(&1, unquote(merge_params)))
+              |> Map.update!(:params, fn params ->
+                params
+                |> Map.drop(unquote(delete))
+                |> Map.merge(transformed_merge_params)
+              end)
+              |> Map.update!(:raw_params, fn params ->
+                params
+                |> Map.drop(unquote(delete))
+                |> Map.merge(transformed_merge_params)
+              end)
             end
           end
 
@@ -207,5 +222,83 @@ defmodule AshPhoenix.Transformers.AddFormCodeInterfaces do
       private_args_merge,
       &Map.merge(&1 || %{}, private_args_merge)
     )
+  end
+
+  @doc false
+  def handle_custom_inputs(params, []) do
+    params
+  end
+
+  def handle_custom_inputs(params, custom_inputs) do
+    Enum.reduce(custom_inputs, params, fn custom_input, acc_params ->
+      case fetch_key(acc_params, custom_input.name) do
+        {:ok, key, value} ->
+          value = Ash.Type.Helpers.handle_indexed_maps(custom_input.type, value)
+
+          case Ash.Type.cast_input(custom_input.type, value, custom_input.constraints) do
+            {:ok, casted} ->
+              case Ash.Type.apply_constraints(custom_input.type, casted, custom_input.constraints) do
+                {:ok, casted} ->
+                  if is_nil(casted) && !custom_input.allow_nil? do
+                    acc_params
+                  else
+                    apply_custom_input_transform(acc_params, casted, key, custom_input)
+                  end
+
+                _error ->
+                  acc_params
+              end
+
+            _error ->
+              acc_params
+          end
+
+        :error ->
+          acc_params
+      end
+    end)
+  end
+
+  defp apply_custom_input_transform(params, casted, key, %{transform: nil}) do
+    Map.put(params, key, casted)
+  end
+
+  defp apply_custom_input_transform(params, casted, key, %{
+         transform: %{to: nil, using: nil}
+       }) do
+    Map.put(params, key, casted)
+  end
+
+  defp apply_custom_input_transform(params, casted, key, %{
+         transform: %{to: to, using: nil}
+       }) do
+    params
+    |> Map.delete(key)
+    |> Map.put(to_string(to), casted)
+  end
+
+  defp apply_custom_input_transform(params, casted, key, %{
+         transform: %{to: nil, using: using}
+       }) do
+    Map.put(params, key, using.(casted))
+  end
+
+  defp apply_custom_input_transform(params, casted, key, %{
+         transform: %{to: to, using: using}
+       }) do
+    params
+    |> Map.delete(key)
+    |> Map.put(to_string(to), using.(casted))
+  end
+
+  defp fetch_key(map, key) do
+    with {_key, :error} <- {key, Map.fetch(map, key)},
+         string_key = to_string(key),
+         {_key, :error} <- {string_key, Map.fetch(map, string_key)} do
+      :error
+    else
+      {key, {:ok, value}} ->
+        {:ok, key, value}
+    end
   end
 end
