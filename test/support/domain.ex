@@ -23,6 +23,7 @@ defmodule AshPhoenix.Test.Domain do
     resource(AshPhoenix.Test.SimplePost)
 
     resource(AshPhoenix.Test.TodoTask)
+    resource(AshPhoenix.Test.TaskAction)
     resource(AshPhoenix.Test.Context)
     resource(AshPhoenix.Test.TodoTaskContext)
   end
