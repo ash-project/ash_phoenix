@@ -12,9 +12,9 @@ defmodule AshPhoenix.FormTest do
     Domain,
     Post,
     PostWithDefault,
+    TaskAction,
     TodoTask,
-    TodoTaskContext,
-    TaskAction
+    TodoTaskContext
   }
 
   alias Phoenix.HTML.FormData
