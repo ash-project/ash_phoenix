@@ -31,6 +31,17 @@ defmodule AshPhoenix.Test.TodoTask do
                  type: :direct_control
                )
       end
+
+      update :update_with_actions do
+        accept [:name]
+        argument :actions, {:array, :map}, default: []
+        require_atomic? false
+
+        change manage_relationship(:actions, :actions,
+                 type: :direct_control,
+                 debug?: true
+               )
+      end
     end
 
     attributes do
@@ -39,6 +50,10 @@ defmodule AshPhoenix.Test.TodoTask do
     end
 
     relationships do
+      has_many :actions, AshPhoenix.Test.TaskAction do
+        destination_attribute :task_id
+      end
+
       has_many :context_relationships, AshPhoenix.Test.TodoTaskContext do
         destination_attribute :task_id
       end
@@ -100,6 +115,42 @@ defmodule AshPhoenix.Test.TodoTaskContext do
         attribute_type :integer
         allow_nil? false
         primary_key? true
+      end
+    end
+  end
+end
+
+defmodule AshPhoenix.Test.TaskAction do
+  @moduledoc false
+  use Ash.Resource,
+    domain: AshPhoenix.Test.Domain,
+    data_layer: Ash.DataLayer.Ets
+
+  resource do
+    ets do
+      private? true
+    end
+
+    actions do
+      defaults [:create, :read, :update, :destroy]
+
+      default_accept :*
+    end
+
+    attributes do
+      integer_primary_key :id, writable?: true
+      attribute :description, :string, public?: true
+
+      attribute :status, :atom,
+        constraints: [one_of: [:done, :pending, :postponed]],
+        default: :pending,
+        public?: true
+    end
+
+    relationships do
+      belongs_to :task, AshPhoenix.Test.TodoTask do
+        attribute_type :integer
+        allow_nil? false
       end
     end
   end

@@ -27,6 +27,16 @@ defmodule AshPhoenix.Test.Author do
 
       validate {AshPhoenix.Test.ValidateEmbeddedArgument, []}
     end
+
+    update :update_with_posts do
+      require_atomic? false
+      argument :posts, {:array, :map}
+
+      change manage_relationship(
+               :posts,
+               type: :direct_control
+             )
+    end
   end
 
   relationships do

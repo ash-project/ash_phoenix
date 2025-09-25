@@ -12,6 +12,7 @@ defmodule AshPhoenix.FormTest do
     Domain,
     Post,
     PostWithDefault,
+    TaskAction,
     TodoTask,
     TodoTaskContext
   }
@@ -2503,5 +2504,129 @@ defmodule AshPhoenix.FormTest do
       field = phoenix_form[:text]
       assert field.field == :text
     end
+  end
+
+  test "nested forms should accurately report the type of the change when the primary key is UUID" do
+    author = Ash.Seed.seed!(Author, %{email: "zach@ry.ash"})
+
+    post =
+      Ash.Seed.seed!(Post, %{
+        title: "Ash Weekly: #14",
+        text:
+          "Announcing AshTypescript, a new member of the team, articles, conference talks, videos, and tons of other new goodies.",
+        author_id: author.id
+      })
+
+    form =
+      Form.for_update(author, :update_with_posts,
+        forms: [
+          posts: [
+            type: :list,
+            data: [post],
+            resource: Post,
+            create_action: :create,
+            update_action: :update
+          ]
+        ]
+      )
+      |> Phoenix.Component.to_form()
+
+    result =
+      form
+      |> Form.update_form([:posts, 0], fn %{params: params} =
+                                            nested_form ->
+        Form.validate(
+          nested_form,
+          Map.put(
+            params,
+            "text",
+            "UPDATED Announcing AshTypescript, a new member of the team, articles, conference talks, videos, and tons of other new goodies."
+          )
+        )
+      end)
+      |> Form.add_form("form[posts]",
+        params: %{"title" => "Ash Weekly: #13", "text" => "Something ..."}
+      )
+      |> then(&Form.validate(&1, &1.params))
+
+    # validate that the forms have the correct action types
+    assert [:update, :create] ==
+             result.source.forms.posts |> Enum.map(fn f -> f.type end)
+
+    # validate that the forms gets submitted successfully
+    assert {:ok,
+            %Author{
+              posts: [
+                %{
+                  title: "Ash Weekly: #14",
+                  text:
+                    "UPDATED Announcing AshTypescript, a new member of the team, articles, conference talks, videos, and tons of other new goodies."
+                },
+                %{
+                  title: "Ash Weekly: #13",
+                  text: "Something ..."
+                }
+              ]
+            }} = Form.submit(result, params: result.params)
+  end
+
+  test "nested forms should accurately report the type of the change when the primary key is an integer" do
+    task =
+      Ash.Seed.seed!(TodoTask, %{
+        id: 1,
+        name: "create regression test for nested forms wrong action type"
+      })
+
+    action =
+      Ash.Seed.seed!(TaskAction, %{
+        id: 1,
+        description: "Create test for resources with UUID keys",
+        task_id: task.id
+      })
+
+    form =
+      Form.for_update(task, :update_with_actions,
+        forms: [
+          actions: [
+            type: :list,
+            data: [action],
+            resource: TaskAction,
+            create_action: :create,
+            update_action: :update
+          ]
+        ]
+      )
+      |> Phoenix.Component.to_form()
+
+    result =
+      form
+      |> Form.update_form([:actions, 0], fn %{params: params} =
+                                              nested_form ->
+        Form.validate(nested_form, Map.put(params, "status", "done"))
+      end)
+      |> Form.add_form("form[actions]",
+        params: %{"id" => 2, "description" => "Create test for resources with integer keys"}
+      )
+      |> then(&Form.validate(&1, &1.params))
+
+    # validate that the forms have the correct action types
+    assert [:update, :create] ==
+             result.source.forms.actions
+             |> Enum.map(fn f -> f.type end)
+
+    assert {:ok,
+            %TodoTask{
+              actions: [
+                %{
+                  id: 1,
+                  description: "Create test for resources with UUID keys",
+                  status: :done
+                },
+                %{
+                  id: 2,
+                  description: "Create test for resources with integer keys"
+                }
+              ]
+            }} = Form.submit(result, params: result.params)
   end
 end
