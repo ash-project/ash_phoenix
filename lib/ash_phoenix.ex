@@ -75,9 +75,18 @@ defmodule AshPhoenix do
   #=> %AshPhoenix.Form{}
   ```
 
-  With a record for update actions:
+  For update/destroy actions, the record is required as the first parameter:
 
   ```elixir
+  user = MyApp.Accounts.get_user!(id)
+  MyApp.Accounts.form_to_update_user(user)
+  #=> %AshPhoenix.Form{}
+  ```
+
+  Update/destroy with options
+
+  ```elixir
+  user = MyApp.Accounts.get_user!(id)
   MyApp.Accounts.form_to_update_user(user, params: %{"email" => "placeholder@email"})
   #=> %AshPhoenix.Form{}
   ```
