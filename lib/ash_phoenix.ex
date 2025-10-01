@@ -94,7 +94,7 @@ defmodule AshPhoenix do
 
   defmodule FormDefinition do
     @moduledoc "A customized form code interface"
-    defstruct [:name, :args]
+    defstruct [:name, :args, :__spark_metadata__]
   end
 
   @form %Spark.Dsl.Entity{
