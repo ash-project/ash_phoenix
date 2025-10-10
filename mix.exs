@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule AshPhoenix.MixProject do
   use Mix.Project
 
@@ -42,12 +46,19 @@ defmodule AshPhoenix.MixProject do
 
   defp package do
     [
-      name: :ash_phoenix,
+      maintainers: [
+        "Zach Daniel <zach@zachdaniel.dev>"
+      ],
       licenses: ["MIT"],
       files: ~w(lib .formatter.exs mix.exs README* LICENSE*
       CHANGELOG* documentation priv usage-rules.md),
       links: %{
-        GitHub: "https://github.com/ash-project/ash_phoenix"
+        "GitHub" => "https://github.com/ash-project/ash_phoenix",
+        "Changelog" => "https://github.com/ash-project/ash_phoenix/blob/main/CHANGELOG.md",
+        "Discord" => "https://discord.gg/HTHRaaVPUc",
+        "Website" => "https://ash-hq.org",
+        "Forum" => "https://elixirforum.com/c/elixir-framework-forums/ash-framework-forum",
+        "REUSE Compliance" => "https://api.reuse.software/info/github.com/ash-project/ash_phoenix"
       }
     ]
   end

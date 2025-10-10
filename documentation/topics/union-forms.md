@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2020 Zach Daniel
+
+SPDX-License-Identifier: MIT
+-->
+
 # Union Forms
 
 When building a form for a union, you use `inputs_for` as normal, but a few things are done for you under the hood.

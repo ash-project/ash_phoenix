@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule AshPhoenixTest.Inertia.ErrorsTest do
   use ExUnit.Case
   doctest AshPhoenix.Inertia.Error

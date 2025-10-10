@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule AshPhoenix.Form.NoFormConfigured do
   @moduledoc "Raised when attempting to refer to a form but no nested form with that name was configured."
   defexception [:field, :available, :path, :action, :resource]

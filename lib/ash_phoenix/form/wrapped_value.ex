@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule AshPhoenix.Form.WrappedValue do
   @moduledoc "A sentinal value used when editing a union that has non-map values"
   use Ash.Resource,

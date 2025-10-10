@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defimpl Plug.Exception, for: Ash.Error.Framework.PendingCodegen do
   def status(_), do: 500
 

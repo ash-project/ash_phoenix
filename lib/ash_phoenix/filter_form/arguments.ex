@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule AshPhoenix.FilterForm.Arguments do
   @moduledoc "Represents the arguments to a calculation being filtered on"
 

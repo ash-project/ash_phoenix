@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defprotocol AshPhoenix.FormData.Error do
   @moduledoc """
   A protocol for allowing errors to be rendered into a form.

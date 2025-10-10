@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule AshPhoenix.Test.ValidateEmbeddedArgument do
   @moduledoc """
   This is a contrived example, but we want to validate one or more arguments' attributes

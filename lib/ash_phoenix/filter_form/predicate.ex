@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule AshPhoenix.FilterForm.Predicate do
   @moduledoc """
   Represents an individual predicate appearing in a filter form.

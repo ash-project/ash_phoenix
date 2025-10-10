@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule AshPhoenix.Test.EmbeddedArgument do
   @moduledoc false
   use Ash.Resource, data_layer: :embedded

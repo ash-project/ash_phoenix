@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 if Code.ensure_loaded?(Inertia.Errors) do
   defmodule AshPhoenix.Inertia.Error do
     @moduledoc ~S"""

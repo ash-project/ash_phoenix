@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule AshPhoenix.LiveView do
   @moduledoc """
   Utilities for keeping Ash query results up to date in a LiveView.

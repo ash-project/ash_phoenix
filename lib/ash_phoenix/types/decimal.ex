@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 unless Phoenix.HTML.Safe.impl_for(Decimal) do
   defimpl Phoenix.HTML.Safe, for: Decimal do
     defdelegate to_iodata(data), to: Decimal, as: :to_string

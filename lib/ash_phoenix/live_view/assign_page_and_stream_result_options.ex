@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule AshPhoenix.LiveView.AssignPageAndStreamResultOptions do
   @moduledoc false
   use Spark.Options.Validator,
