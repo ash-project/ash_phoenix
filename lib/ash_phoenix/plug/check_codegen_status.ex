@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule AshPhoenix.Plug.CheckCodegenStatus do
   @moduledoc """
   A plug that checks if there are pending codegen tasks for your application.

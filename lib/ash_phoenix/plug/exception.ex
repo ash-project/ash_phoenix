@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 errors = [
   {Ash.Error.Invalid.InvalidPrimaryKey, 400},
   {Ash.Error.Query.InvalidArgument, 400},

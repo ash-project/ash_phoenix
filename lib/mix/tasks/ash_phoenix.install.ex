@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 if Code.ensure_loaded?(Igniter) do
   defmodule Mix.Tasks.AshPhoenix.Install do
     @shortdoc "Installs AshPhoenix into a project. Should be called with `mix igniter.install ash_phoenix`"

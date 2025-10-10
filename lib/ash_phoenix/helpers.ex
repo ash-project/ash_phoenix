@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule AshPhoenix.Helpers do
   @moduledoc false
   def get_subdomain(%Plug.Conn{host: host}, endpoint) when is_atom(endpoint) do

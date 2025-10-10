@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule AshPhoenix.AshEnum do
   @moduledoc """
   Utilities for using [`Ash.Type.Enum`](https://hexdocs.pm/ash/Ash.Type.Enum.html)

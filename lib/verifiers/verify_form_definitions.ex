@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule AshPhoenix.Verifiers.VerifyFormDefinitions do
   @moduledoc false
   use Spark.Dsl.Verifier

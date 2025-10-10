@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule AshPhoenix.Form.NoActionConfigured do
   @moduledoc "Raised when a form action should happen but no action of the appropriate type has been configured"
   defexception [:action, :path]

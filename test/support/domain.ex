@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule AshPhoenix.Test.Domain do
   @moduledoc false
   use Ash.Domain, extensions: [AshPhoenix]

@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2020 Zach Daniel
+
+SPDX-License-Identifier: MIT
+-->
+
 # Get Started with Ash and Phoenix
 
 This is a small guide to get you started with Ash & Phoenix.
