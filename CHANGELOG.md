@@ -11,6 +11,29 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.17](https://github.com/ash-project/ash_phoenix/compare/v2.3.16...v2.3.17) (2025-10-16)
+
+
+
+
+### Bug Fixes:
+
+* removed to_string because it was causing related entities to be recreated instead of updated (#421) by Abdessabour Moutik [(#421)](https://github.com/ash-project/ash_phoenix/pull/421)
+
+* removed to_string because it was causing related entities to be recreated instead of being updated by Abdessabour Moutik [(#421)](https://github.com/ash-project/ash_phoenix/pull/421)
+
+* AshPhoenix.Inertia.Error argument error when reporting validation errors (#418) by rmaspoch [(#418)](https://github.com/ash-project/ash_phoenix/pull/418)
+
+* bug when creating a form for a union type which has `nil` as it's value (#417) by Rutgerdj [(#417)](https://github.com/ash-project/ash_phoenix/pull/417)
+
+### Improvements:
+
+* add AshPhoenix.AshEnum by sevenseacat [(#413)](https://github.com/ash-project/ash_phoenix/pull/413)
+
+* soft deprecate page_from_params/3 and introduce params_to_page_opts/3 (#422) by hy2k [(#422)](https://github.com/ash-project/ash_phoenix/pull/422)
+
+* add AshPhoenix.AshEnum by Aidan Gauland [(#413)](https://github.com/ash-project/ash_phoenix/pull/413)
+
 ## [v2.3.16](https://github.com/ash-project/ash_phoenix/compare/v2.3.15...v2.3.16) (2025-09-01)
 
 
