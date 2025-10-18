@@ -23,10 +23,7 @@ defmodule AshPhoenix.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       docs: &docs/0,
-      preferred_cli_env: [
-        coveralls: :test,
-        "coveralls.github": :test
-      ],
+      cli: &cli/0,
       dialyzer: [
         plt_add_apps: [:ex_unit, :mix]
       ],
@@ -42,6 +39,10 @@ defmodule AshPhoenix.MixProject do
 
   defp elixirc_paths(_env) do
     ["lib/"]
+  end
+
+  def cli do
+    [preferred_envs: [coveralls: :test, "coveralls.github": :test]]
   end
 
   defp package do
