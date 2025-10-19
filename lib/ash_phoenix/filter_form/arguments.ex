@@ -5,7 +5,7 @@
 defmodule AshPhoenix.FilterForm.Arguments do
   @moduledoc "Represents the arguments to a calculation being filtered on"
 
-  defstruct [:input, :params, :arguments, errors: []]
+  defstruct [:input, :params, :arguments, :transform_errors, errors: []]
 
   def new(params, []) do
     %__MODULE__{input: %{}, params: params, arguments: [], errors: []}
@@ -101,6 +101,11 @@ defmodule AshPhoenix.FilterForm.Arguments do
   defimpl Phoenix.HTML.FormData do
     @impl true
     def to_form(arguments, opts) do
+      arguments = %{
+        arguments
+        | transform_errors: opts[:transform_errors] || arguments.transform_errors
+      }
+
       errors = AshPhoenix.FilterForm.Arguments.errors(arguments, opts[:transform_errors])
 
       %Phoenix.HTML.Form{
