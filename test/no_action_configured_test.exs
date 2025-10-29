@@ -86,12 +86,11 @@ defmodule ThisTest do
         end)
     }
 
-    refute_raise(AshPhoenix.Form.NoActionConfigured, fn ->
-      AshPhoenix.Form.for_update(question, :update)
-      |> Phoenix.Component.to_form()
-      |> AshPhoenix.Form.validate(params)
-      |> AshPhoenix.Form.params()
-    end)
+    assert %{} =
+             AshPhoenix.Form.for_update(question, :update)
+             |> Phoenix.Component.to_form()
+             |> AshPhoenix.Form.validate(params)
+             |> AshPhoenix.Form.params()
   end
 
   def question do
