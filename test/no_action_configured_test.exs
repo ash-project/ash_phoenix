@@ -82,26 +82,19 @@ defmodule ThisTest do
       "choices" =>
         Enum.with_index(question.choices)
         |> Map.new(fn {choice, index} ->
-          # no error!
-          {to_string(index), %{"content" => "updated #{index}"}}
-
-          # no error!
-          {to_string(index), %{"content" => "updated #{index}", id: to_string(choice.id)}}
-
-          # error!
           {to_string(index), %{"content" => "updated #{index}", "id" => to_string(choice.id)}}
         end)
     }
 
-    # error!
-    AshPhoenix.Form.for_update(question, :update)
-    |> Phoenix.Component.to_form()
-    |> AshPhoenix.Form.validate(params)
-    |> AshPhoenix.Form.params()
-    |> IO.inspect()
+    refute_raise(AshPhoenix.Form.NoActionConfigured, fn ->
+      AshPhoenix.Form.for_update(question, :update)
+      |> Phoenix.Component.to_form()
+      |> AshPhoenix.Form.validate(params)
+      |> AshPhoenix.Form.params()
+    end)
   end
 
-  def question() do
+  def question do
     changeset_generator(
       ThisTest.Question,
       :create,
@@ -114,7 +107,7 @@ defmodule ThisTest do
     )
   end
 
-  defp id() do
+  defp id do
     sequence(:id, &Function.identity/1)
   end
 end
