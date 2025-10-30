@@ -1349,7 +1349,10 @@ defmodule AshPhoenix.Form do
                 case Map.fetch(params, to_string(field)) do
                   {:ok, params_value} ->
                     form_value = AshPhoenix.Form.value(nested_form, field)
-                    params_value == form_value or params_value == to_string(form_value)
+
+                    params_value == form_value or
+                      (not is_nil(String.Chars.impl_for(form_value)) and
+                         params_value == to_string(form_value))
 
                   _ ->
                     false
