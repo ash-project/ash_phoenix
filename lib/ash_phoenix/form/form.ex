@@ -1347,9 +1347,9 @@ defmodule AshPhoenix.Form do
                  Enum.all?(pkey_fields, &Map.has_key?(params, to_string(&1))) do
               Enum.all?(pkey_fields, fn field ->
                 case Map.fetch(params, to_string(field)) do
-                  {:ok, v} ->
-                    v ==
-                      AshPhoenix.Form.value(nested_form, field)
+                  {:ok, params_value} ->
+                    form_value = AshPhoenix.Form.value(nested_form, field)
+                    params_value == form_value or params_value == to_string(form_value)
 
                   _ ->
                     false
