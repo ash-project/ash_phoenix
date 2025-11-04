@@ -1484,7 +1484,7 @@ defmodule AshPhoenix.Form do
   @spec merge_options(Phoenix.HTML.Form.t(), Keyword.t()) :: Phoenix.HTML.Form.t()
   def merge_options(%Phoenix.HTML.Form{} = form, opts) do
     form.source
-    |> update_options(opts)
+    |> merge_options(opts)
     |> Phoenix.HTML.FormData.to_form(form.options)
   end
 
