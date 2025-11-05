@@ -11,6 +11,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.18](https://github.com/ash-project/ash_phoenix/compare/v2.3.17...v2.3.18) (2025-11-05)
+
+
+
+
+### Bug Fixes:
+
+* merge_options function to use correct update method (#438) by A.S. Zwaan
+
+* cast to string before comparison by Minsub Kim
+
+* fix type warnings and compile issues on elixir 1.19 by [@zachdaniel](https://github.com/zachdaniel)
+
 ## [v2.3.17](https://github.com/ash-project/ash_phoenix/compare/v2.3.16...v2.3.17) (2025-10-16)
 
 
