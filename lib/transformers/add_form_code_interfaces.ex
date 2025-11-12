@@ -99,7 +99,7 @@ defmodule AshPhoenix.Transformers.AddFormCodeInterfaces do
 
                  #{Spark.Options.docs(AshPhoenix.Form.nested_form_opts())}
                  """
-                 |> Ash.CodeInterface.trim_double_newlines()
+                 |> Ash.CodeInterface.trim_triple_newlines()
 
             def unquote(name)(record, unquote_splicing(arg_vars_function), form_opts \\ []) do
               form_opts =
@@ -135,7 +135,7 @@ defmodule AshPhoenix.Transformers.AddFormCodeInterfaces do
 
                  #{Spark.Options.docs(AshPhoenix.Form.nested_form_opts())}
                  """
-                 |> Ash.CodeInterface.trim_double_newlines()
+                 |> Ash.CodeInterface.trim_triple_newlines()
             def unquote(name)(unquote_splicing(arg_vars_function), form_opts \\ []) do
               # Only transform the argument params (merge_params), not all form params
               transformed_merge_params =
