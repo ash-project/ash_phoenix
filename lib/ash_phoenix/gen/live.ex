@@ -138,7 +138,10 @@ if Code.ensure_loaded?(Igniter) do
       template_folder = template_folder(path)
       action? = assigns[:update_action] || assigns[:create_action]
 
-      Enum.reduce(File.ls!(template_folder), igniter, fn
+      template_folder
+      |> File.ls!()
+      |> Enum.reject(&String.ends_with?(&1, ".license"))
+      |> Enum.reduce(igniter, fn
         "form.ex.eex", igniter when is_nil(action?) ->
           igniter
 
