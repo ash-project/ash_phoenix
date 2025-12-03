@@ -3800,7 +3800,11 @@ defmodule AshPhoenix.Form do
       form = set_changed?(form)
 
       if opts[:validate?] do
-        validate(form, params(form, transform?: false, hidden?: true), opts[:validate_opts] || [])
+        validate(
+          form,
+          params(form, transform?: false, hidden?: true, indexed_lists?: true),
+          opts[:validate_opts] || []
+        )
       else
         form
       end
