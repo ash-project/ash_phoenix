@@ -517,6 +517,25 @@ defmodule AshPhoenix.FormTest do
 
       assert Form.value(form, :text) == "new_text"
     end
+
+    test "update_params receives nested forms as indexed maps after remove_form" do
+      form =
+        Post
+        |> Form.for_create(:create, domain: Domain)
+        |> Form.add_form([:comments], params: %{"text" => "comment 1"})
+        |> Form.add_form([:comments], params: %{"text" => "comment 2"})
+        |> Form.remove_form([:comments, 0])
+
+      # After remove_form, update_params should receive nested forms as a map with string indices,
+      # not as a list. This is important for code that uses Access-style lookups like
+      # get_in(params, ["comments", "0", "text"])
+      Form.update_params(form, fn params ->
+        comments = params["comments"]
+        assert is_map(comments), "Expected comments to be a map, got: #{inspect(comments)}"
+        assert Map.has_key?(comments, "0"), "Expected comments to have key \"0\""
+        params
+      end)
+    end
   end
 
   describe "clear_value/1" do
