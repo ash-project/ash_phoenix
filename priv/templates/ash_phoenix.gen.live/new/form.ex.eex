@@ -105,7 +105,7 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Form do
         <% @update_action -> %>
           AshPhoenix.Form.for_update(<%= @resource_singular %>, <%= inspect @update_action.name %>, as: <%= inspect @resource_singular %><%= @actor_opt %>)
         <% @create_action -> %>
-          AshPhoenix.Form.for_create(<%= @resource_singular %>, <%= inspect @create_action.name %>, as: <%= inspect @resource_singular %><%= @actor_opt %>)
+          AshPhoenix.Form.for_create(<%= @resource %>, <%= inspect @create_action.name %>, as: <%= inspect @resource_singular %><%= @actor_opt %>)
       <% end %>
 
     assign(socket, form: to_form(form))
