@@ -1387,7 +1387,7 @@ defmodule AshPhoenix.FormTest do
       # raw_errors should return the actual error structs from the source
       raw_errors = Form.raw_errors(form.source)
       assert is_list(raw_errors)
-      assert length(raw_errors) > 0
+      assert raw_errors != []
 
       # All errors should be actual error structs, not formatted tuples
       Enum.each(raw_errors, fn error ->
