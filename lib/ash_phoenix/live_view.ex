@@ -130,8 +130,6 @@ defmodule AshPhoenix.LiveView do
   data they could be unauthorized to see, or having state in the socket that is inconsistent.
   """
 
-  require Ash.Query
-
   @type callback_result :: struct() | list(struct()) | Ash.Page.page() | nil
   @type callback :: (socket -> callback_result) | (socket, Keyword.t() | nil -> callback_result)
 

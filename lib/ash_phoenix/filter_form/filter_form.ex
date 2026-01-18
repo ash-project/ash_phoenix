@@ -206,7 +206,6 @@ defmodule AshPhoenix.FilterForm do
   ]
 
   alias AshPhoenix.FilterForm.Predicate
-  require Ash.Query
   require Ash.Expr
 
   @new_opts [
