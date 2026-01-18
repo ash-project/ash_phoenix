@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2020 ash_phoenix contributors <https://github.com/ash-project/ash_phoenix/graphs.contributors>
+# SPDX-FileCopyrightText: 2020 ash_phoenix contributors <https://github.com/ash-project/ash_phoenix/graphs/contributors>
 #
 # SPDX-License-Identifier: MIT
 
@@ -131,7 +131,7 @@ defmodule AshPhoenix do
     describe: "Customize the definition of forms for code interfaces",
     examples: [
       """
-      forms do 
+      forms do
         # customize the generated `form_to_create_student` function
         form :create_student, args: [:school_id]
       end
