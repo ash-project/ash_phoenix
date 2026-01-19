@@ -11,6 +11,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.19](https://github.com/ash-project/ash_phoenix/compare/v2.3.18...v2.3.19) (2026-01-19)
+
+
+
+
+### Bug Fixes:
+
+* credo issue compare to empty list instead of length() > 0 by diogomrts [(#451)](https://github.com/ash-project/ash_phoenix/pull/451)
+
+* create takes resource instead of resource_singular (#447) by Hemanth Bollamreddi [(#447)](https://github.com/ash-project/ash_phoenix/pull/447)
+
+* Ensure that `AshPhoenix.Form.update_params` callback always receives a map for nested forms (#445) by sevenseacat [(#445)](https://github.com/ash-project/ash_phoenix/pull/445)
+
+* don't generate license files by [@zachdaniel](https://github.com/zachdaniel)
+
 ## [v2.3.18](https://github.com/ash-project/ash_phoenix/compare/v2.3.17...v2.3.18) (2025-11-05)
 
 
