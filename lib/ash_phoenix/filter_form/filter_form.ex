@@ -919,7 +919,7 @@ defmodule AshPhoenix.FilterForm do
     |> Enum.filter(fn function ->
       try do
         predicate? = struct(function) |> Map.get(:__predicate__?)
-        predicate? && Enum.any?(function.args.(), &match?([_, _], &1))
+        predicate? && Enum.any?(function.args(), &match?([_, _], &1))
       rescue
         _ -> false
       end
