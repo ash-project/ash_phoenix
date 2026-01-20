@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2020 ash_phoenix contributors <https://github.com/ash-project/ash_phoenix/graphs.contributors>
+# SPDX-FileCopyrightText: 2020 ash_phoenix contributors <https://github.com/ash-project/ash_phoenix/graphs/contributors>
 #
 # SPDX-License-Identifier: MIT
 
@@ -129,8 +129,6 @@ defmodule AshPhoenix.LiveView do
   the data directly. However, this will need to be carefully considered, as the risks involve showing users
   data they could be unauthorized to see, or having state in the socket that is inconsistent.
   """
-
-  require Ash.Query
 
   @type callback_result :: struct() | list(struct()) | Ash.Page.page() | nil
   @type callback :: (socket -> callback_result) | (socket, Keyword.t() | nil -> callback_result)

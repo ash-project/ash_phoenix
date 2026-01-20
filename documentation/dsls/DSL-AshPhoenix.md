@@ -104,7 +104,7 @@ Customize the definition of forms for code interfaces
 
 ### Examples
 ```
-forms do 
+forms do
   # customize the generated `form_to_create_student` function
   form :create_student, args: [:school_id]
 end
