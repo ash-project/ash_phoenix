@@ -373,8 +373,6 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
        def handle_event("save", %{"artist" => artist_params}, socket) do
          case AshPhoenix.Form.submit(socket.assigns.form, params: artist_params) do
            {:ok, artist} ->
-             notify_parent({:saved, artist})
-
              socket =
                socket
                |> put_flash(:info, "Artist \#{socket.assigns.form.source.type}d successfully")
@@ -386,8 +384,6 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
              {:noreply, assign(socket, form: form)}
          end
        end
-
-       defp notify_parent(msg), do: send(self(), {__MODULE__, msg})
 
        defp assign_form(%{assigns: %{artist: artist}} = socket) do
          form =

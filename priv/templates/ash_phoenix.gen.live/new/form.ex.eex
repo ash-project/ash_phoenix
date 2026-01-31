@@ -70,7 +70,6 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Form do
   def handle_event("save", %{"<%= @resource_singular %>" => <%= @resource_singular %>_params}, socket) do
     case AshPhoenix.Form.submit(socket.assigns.form, params: <%= @resource_singular %>_params) do
       {:ok, <%= @resource_singular %>} ->
-        notify_parent({:saved, <%= @resource_singular %>})
 
       socket =
         socket
@@ -90,8 +89,6 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Form do
         {:noreply, assign(socket, form: form)}
     end
   end
-
-  defp notify_parent(msg), do: send(self(), {__MODULE__, msg})
 
   defp assign_form(%{assigns: %{<%= @resource_singular %>: <%= @resource_singular %>}} = socket) do
     form =
