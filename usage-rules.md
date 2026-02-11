@@ -10,25 +10,6 @@ SPDX-License-Identifier: MIT
 
 AshPhoenix is a package for integrating Ash Framework with Phoenix Framework. It provides tools for integrating with Phoenix forms (`AshPhoenix.Form`), Phoenix LiveViews (`AshPhoenix.LiveView`), and more. AshPhoenix makes it seamless to use Phoenix's powerful UI capabilities with Ash's data management features.
 
-## Error Handling
-
-AshPhoenix provides helpful error handling mechanisms:
-
-```elixir
-# In your LiveView
-def handle_event("submit", %{"form" => params}, socket) do
-  case AshPhoenix.Form.submit(socket.assigns.form, params: params) do
-    {:ok, post} ->
-      # Success path
-      {:noreply, success_path(socket, post)}
-
-    {:error, form} ->
-      # Show validation errors
-      {:noreply, assign(socket, form: form)}
-  end
-end
-```
-
 ## Debugging Form Submission
 
 Errors on forms are only shown when they implement the `AshPhoenix.FormData.Error` protocol and have a `field` or `fields` set. 
