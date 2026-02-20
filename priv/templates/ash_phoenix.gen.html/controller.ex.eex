@@ -4,7 +4,7 @@ defmodule <%= @app_name %>Web.<%= @resource %>Controller do
   alias <%= inspect @full_resource %>
 
   def index(conn, _params) do
-    <%= @plural %> = Ash.read!(<%= @resource %>)
+    <%= @plural %> = Ash.read!(<%= @resource %><%= @actor_opt %>)
     render(conn, :index, <%= @plural %>: <%= @plural %>)
   end
 
@@ -30,18 +30,18 @@ defmodule <%= @app_name %>Web.<%= @resource %>Controller do
   end
 
   def show(conn, %{"id" => id}) do
-    <%= @singular %> = Ash.get!(<%= @resource %>, id)
+    <%= @singular %> = Ash.get!(<%= @resource %>, id<%= @actor_opt %>)
     render(conn, :show, <%= @singular %>: <%= @singular %>)
   end
 
   def edit(conn, %{"id" => id}) do
-    <%= @singular %> = Ash.get!(<%= @resource %>, id)
+    <%= @singular %> = Ash.get!(<%= @resource %>, id<%= @actor_opt %>)
 
     render(conn, :edit, <%= @singular %>: <%= @singular %>, form: update_form(<%= @singular %>))
   end
 
   def update(conn, %{"<%= @singular %>" => <%= @singular %>_params, "id" => id}) do
-    <%= @singular %> = Ash.get!(<%= @resource %>, id)
+    <%= @singular %> = Ash.get!(<%= @resource %>, id<%= @actor_opt %>)
 
     <%= @singular %>
     |> update_form(<%= @singular %>_params)
@@ -60,8 +60,8 @@ defmodule <%= @app_name %>Web.<%= @resource %>Controller do
   end
 
   def delete(conn, %{"id" => id}) do
-    <%= @singular %> = Ash.get!(<%= @resource %>, id)
-    Ash.destroy!(<%= @singular %>)
+    <%= @singular %> = Ash.get!(<%= @resource %>, id<%= @actor_opt %>)
+    Ash.destroy!(<%= @singular %><%= @actor_opt %>)
 
     conn
     |> put_flash(:info, "<%= @resource %> deleted successfully.")
@@ -69,10 +69,10 @@ defmodule <%= @app_name %>Web.<%= @resource %>Controller do
   end
 
   defp create_form(params \\ nil) do
-    AshPhoenix.Form.for_create(<%= @resource %>, :create, as: "<%= @singular %>", params: params)
+    AshPhoenix.Form.for_create(<%= @resource %>, :create, as: "<%= @singular %>", params: params<%= @actor_opt %>)
   end
 
   defp update_form(<%= @singular %>, params \\ nil) do
-    AshPhoenix.Form.for_update(<%= @singular %>, :update, as: "<%= @singular %>", params: params)
+    AshPhoenix.Form.for_update(<%= @singular %>, :update, as: "<%= @singular %>", params: params<%= @actor_opt %>)
   end
 end

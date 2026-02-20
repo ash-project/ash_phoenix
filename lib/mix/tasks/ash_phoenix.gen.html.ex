@@ -31,7 +31,9 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
     not_umbrella!()
     Mix.Task.run("compile")
 
-    {domain, resource, opts, _} = AshPhoenix.Gen.parse_opts(args)
+    {domain, resource, parsed_opts, _} = AshPhoenix.Gen.parse_opts(args)
+
+    parsed_opts = AshPhoenix.Gen.prompt_for_multitenancy(parsed_opts)
 
     singular = to_string(Ash.Resource.Info.short_name(resource))
 
@@ -40,8 +42,12 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
       full_resource: resource,
       full_domain: domain,
       singular: singular,
-      plural: opts[:resource_plural],
-      plural_for_routes: opts[:resource_plural_for_routes] || opts[:resource_plural]
+      plural: parsed_opts[:resource_plural],
+      plural_for_routes: parsed_opts[:resource_plural_for_routes] || parsed_opts[:resource_plural],
+      actor: parsed_opts[:actor],
+      scope: parsed_opts[:scope],
+      tenant: parsed_opts[:tenant],
+      actor_opt: AshPhoenix.Gen.actor_opt(parsed_opts, "conn.assigns")
     }
 
     if Code.ensure_loaded?(resource) do
@@ -80,6 +86,7 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
     |> Keyword.merge(
       route_prefix: to_string(opts[:plural_for_routes]),
       app_name: app_name(),
+      actor_opt: opts[:actor_opt] || "",
       attributes: attributes(resource),
       update_attributes: update_attributes(resource),
       create_attributes: create_attributes(resource)
@@ -170,4 +177,5 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
       public?: attr.public?
     }
   end
+
 end
