@@ -33,32 +33,10 @@ if Code.ensure_loaded?(Igniter) do
       Code.ensure_compiled!(resource)
 
       opts =
-        cond do
-          opts[:scope] ->
-            opts
-
-          opts[:no_actor] ->
-            Keyword.put(opts, :actor, nil)
-
-          opts[:actor] || opts[:tenant] ->
-            opts
-
-          opts[:interactive?] ->
-            if Mix.shell().yes?("Are you using multi-tenancy?") do
-              if Mix.shell().yes?(
-                   "Would you like to use scope, or separate actor and tenant? Choose yes for scope, no for separate actor and tenant."
-                 ) do
-                Keyword.put(opts, :scope, true)
-              else
-                opts = prompt_for_actor(opts)
-                prompt_for_tenant(opts)
-              end
-            else
-              prompt_for_actor(opts)
-            end
-
-          true ->
-            opts
+        if opts[:interactive?] do
+          AshPhoenix.Gen.prompt_for_multitenancy(opts)
+        else
+          opts
         end
 
       opts =
@@ -84,7 +62,7 @@ if Code.ensure_loaded?(Igniter) do
           actor: opts[:actor],
           scope: opts[:scope],
           tenant: opts[:tenant],
-          actor_opt: actor_opt(opts)
+          actor_opt: AshPhoenix.Gen.actor_opt(opts, "socket.assigns")
         ]
         |> add_resource_assigns(resource, opts)
 
@@ -306,13 +284,13 @@ if Code.ensure_loaded?(Igniter) do
           nil ->
             """
             #{short_name} = #{get_by_pkey}
-            Ash.destroy!(#{short_name}#{actor_opt(opts)})
+            Ash.destroy!(#{short_name}#{AshPhoenix.Gen.actor_opt(opts, "socket.assigns")})
             """
 
           interface ->
             """
             #{short_name} = #{get_by_pkey}
-            #{inspect(resource)}.#{interface.name}!(#{short_name}#{actor_opt(opts)})
+            #{inspect(resource)}.#{interface.name}!(#{short_name}#{AshPhoenix.Gen.actor_opt(opts, "socket.assigns")})
             """
         end
       end
@@ -326,59 +304,10 @@ if Code.ensure_loaded?(Igniter) do
       end)
       |> case do
         nil ->
-          "Ash.get!(#{inspect(resource)}, #{pkey}#{actor_opt(opts)})"
+          "Ash.get!(#{inspect(resource)}, #{pkey}#{AshPhoenix.Gen.actor_opt(opts, "socket.assigns")})"
 
         interface ->
-          "#{inspect(resource)}.#{interface.name}!(#{pkey}#{actor_opt(opts)})"
-      end
-    end
-
-    defp actor_opt(opts) do
-      cond do
-        opts[:scope] ->
-          ", scope: socket.assigns.scope"
-
-        opts[:actor] && opts[:tenant] ->
-          ", actor: socket.assigns.#{opts[:actor]}, tenant: socket.assigns.#{opts[:tenant]}"
-
-        opts[:actor] ->
-          ", actor: socket.assigns.#{opts[:actor]}"
-
-        opts[:tenant] ->
-          ", tenant: socket.assigns.#{opts[:tenant]}"
-
-        true ->
-          ""
-      end
-    end
-
-    defp prompt_for_actor(opts) do
-      if Mix.shell().yes?(
-           "Would you like to name your actor? For example: `current_user`. If you choose no, we will not add any actor logic."
-         ) do
-        actor =
-          Mix.shell().prompt("What would you like to name it? Default: `current_user`")
-          |> String.trim()
-
-        if actor == "" do
-          Keyword.put(opts, :actor, "current_user")
-        else
-          Keyword.put(opts, :actor, actor)
-        end
-      else
-        opts
-      end
-    end
-
-    defp prompt_for_tenant(opts) do
-      tenant =
-        Mix.shell().prompt("What would you like to name your tenant? Default: `current_tenant`")
-        |> String.trim()
-
-      if tenant == "" do
-        Keyword.put(opts, :tenant, "current_tenant")
-      else
-        Keyword.put(opts, :tenant, tenant)
+          "#{inspect(resource)}.#{interface.name}!(#{pkey}#{AshPhoenix.Gen.actor_opt(opts, "socket.assigns")})"
       end
     end
 

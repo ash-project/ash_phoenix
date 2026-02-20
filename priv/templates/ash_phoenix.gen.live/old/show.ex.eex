@@ -31,14 +31,15 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Show do
         id={@<%= @resource_singular %>.id}
         title={@page_title}
         action={@live_action}
-        <%= if @scope do %>
+        <%= cond do %>
+        <% @scope -> %>
           scope={@scope}
-        <% end %>
-        <%= if @actor do %>
+        <% @actor && @tenant -> %>
           <%= @actor %>={@<%= @actor %>}
-        <% end %>
-        <%= if @tenant do %>
           <%= @tenant %>={@<%= @tenant %>}
+        <% @actor -> %>
+          <%= @actor %>={@<%= @actor %>}
+        <% true -> %>
         <% end %>
         <%= @resource_singular %>={@<%= @resource_singular %>}
         patch={~p"<%= @route_prefix %>/#{@<%= @resource_singular %>}"}

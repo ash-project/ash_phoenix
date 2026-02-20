@@ -50,14 +50,15 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Index d
             module={<%= inspect Module.concat(@web_module, @resource_alias) %>Live.FormComponent}
             id={(@<%= @resource_singular %> && @<%= @resource_singular%>.<%= @pkey %>) || :new}
             title={@page_title}
-            <%= if @scope do %>
+            <%= cond do %>
+            <% @scope -> %>
               scope={@scope}
-            <% end %>
-            <%= if @actor do %>
+            <% @actor && @tenant -> %>
               <%= @actor %>={@<%= @actor %>}
-            <% end %>
-            <%= if @tenant do %>
               <%= @tenant %>={@<%= @tenant %>}
+            <% @actor -> %>
+              <%= @actor %>={@<%= @actor %>}
+            <% true -> %>
             <% end %>
             action={@live_action}
             <%= @resource_singular %>={@<%= @resource_singular %>}
@@ -68,14 +69,15 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Index d
         <.modal :if={@live_action == :new} id="<%= @resource_singular %>-modal" show on_cancel={JS.patch(~p"<%= @route_prefix %>")}>
           <.live_component
             module={<%= inspect Module.concat(@web_module, @resource_alias) %>Live.FormComponent}
-            <%= if @scope do %>
+            <%= cond do %>
+            <% @scope -> %>
               scope={@scope}
-            <% end %>
-            <%= if @actor do %>
+            <% @actor && @tenant -> %>
               <%= @actor %>={@<%= @actor %>}
-            <% end %>
-            <%= if @tenant do %>
               <%= @tenant %>={@<%= @tenant %>}
+            <% @actor -> %>
+              <%= @actor %>={@<%= @actor %>}
+            <% true -> %>
             <% end %>
             id={:new}
             title={@page_title}
@@ -89,14 +91,15 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Index d
           <.live_component
             module={<%= inspect Module.concat(@web_module, @resource_alias) %>Live.FormComponent}
             id={@<%= @resource_singular %>.<%= @pkey %>}
-            <%= if @scope do %>
+            <%= cond do %>
+            <% @scope -> %>
               scope={@scope}
-            <% end %>
-            <%= if @actor do %>
+            <% @actor && @tenant -> %>
               <%= @actor %>={@<%= @actor %>}
-            <% end %>
-            <%= if @tenant do %>
               <%= @tenant %>={@<%= @tenant %>}
+            <% @actor -> %>
+              <%= @actor %>={@<%= @actor %>}
+            <% true -> %>
             <% end %>
             title={@page_title}
             action={@live_action}
