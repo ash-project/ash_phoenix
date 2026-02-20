@@ -17,9 +17,11 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
   end
 
   test "generate old phoenix live views from resource" do
+    # no multitenancy
     send(self(), {:mix_shell_input, :yes?, false})
-    send(self(), {:mix_shell_input, :yes?, false})
+    # not naming actor
     send(self(), {:mix_shell_input, :yes?, "n"})
+    # "What would you like to name it?" → "" (defaults to current_user)
     send(self(), {:mix_shell_input, :prompt, ""})
 
     form_path = "lib/ash_phoenix_web/live/artist_live/form_component.ex"
@@ -179,8 +181,8 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
          def mount(_params, _session, socket) do
            {:ok,
             socket
-            |> stream(:Artists, Ash.read!(AshPhoenix.Test.Artist, actor: socket.assigns[:current_user]))
-            |> assign_new(:current_user, fn -> nil end)}
+            |> assign_new(:current_user, fn -> nil end)
+            |> stream(:Artists, Ash.read!(AshPhoenix.Test.Artist, actor: socket.assigns[:current_user]))}
          end
 
          @impl true
@@ -311,9 +313,11 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
   end
 
   test "generate phoenix live views from resource" do
+    # not using multitenancy
     send(self(), {:mix_shell_input, :yes?, false})
-    send(self(), {:mix_shell_input, :yes?, false})
+    # will name actor
     send(self(), {:mix_shell_input, :yes?, "n"})
+    # name it empty -> should now default to :current_user
     send(self(), {:mix_shell_input, :prompt, ""})
 
     form_path = "lib/ash_phoenix_web/live/artist_live/form.ex"
