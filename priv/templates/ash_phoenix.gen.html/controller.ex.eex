@@ -9,12 +9,12 @@ defmodule <%= @app_name %>Web.<%= @resource %>Controller do
   end
 
   def new(conn, _params) do
-    render(conn, :new, form: create_form())
+    render(conn, :new, form: create_form(conn))
   end
 
   def create(conn, %{"<%= @singular %>" => <%= @singular %>_params}) do
     <%= @singular %>_params
-      |> create_form()
+      |> create_form(conn)
       |> AshPhoenix.Form.submit()
       |> case do
         {:ok, <%= @singular %>} ->
@@ -37,14 +37,14 @@ defmodule <%= @app_name %>Web.<%= @resource %>Controller do
   def edit(conn, %{"id" => id}) do
     <%= @singular %> = Ash.get!(<%= @resource %>, id<%= @actor_opt %>)
 
-    render(conn, :edit, <%= @singular %>: <%= @singular %>, form: update_form(<%= @singular %>))
+    render(conn, :edit, <%= @singular %>: <%= @singular %>, form: update_form(conn, <%= @singular %>))
   end
 
   def update(conn, %{"<%= @singular %>" => <%= @singular %>_params, "id" => id}) do
     <%= @singular %> = Ash.get!(<%= @resource %>, id<%= @actor_opt %>)
 
     <%= @singular %>
-    |> update_form(<%= @singular %>_params)
+    |> update_form(conn, <%= @singular %>_params)
     |> AshPhoenix.Form.submit()
     |> case do
       {:ok, <%= @singular %>} ->
@@ -68,11 +68,11 @@ defmodule <%= @app_name %>Web.<%= @resource %>Controller do
     |> redirect(to: ~p"/<%= @plural %>")
   end
 
-  defp create_form(params \\ nil) do
+  defp create_form(conn, params \\ nil) do
     AshPhoenix.Form.for_create(<%= @resource %>, :create, as: "<%= @singular %>", params: params<%= @actor_opt %>)
   end
 
-  defp update_form(<%= @singular %>, params \\ nil) do
+  defp update_form(conn, <%= @singular %>, params \\ nil) do
     AshPhoenix.Form.for_update(<%= @singular %>, :update, as: "<%= @singular %>", params: params<%= @actor_opt %>)
   end
 end
