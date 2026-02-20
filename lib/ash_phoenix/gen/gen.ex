@@ -43,7 +43,10 @@ defmodule AshPhoenix.Gen do
           resource_plural: :string,
           resource_plural_for_routes: :string,
           actor: :string,
-          no_actor: :boolean
+          no_actor: :boolean,
+          scope: :boolean,
+          tenant: :string,
+          no_tenant: :boolean
         ]
       )
 
