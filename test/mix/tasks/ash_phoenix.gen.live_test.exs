@@ -17,6 +17,8 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
   end
 
   test "generate old phoenix live views from resource" do
+    send(self(), {:mix_shell_input, :yes?, false})
+    send(self(), {:mix_shell_input, :yes?, false})
     send(self(), {:mix_shell_input, :yes?, "n"})
     send(self(), {:mix_shell_input, :prompt, ""})
 
@@ -309,6 +311,8 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
   end
 
   test "generate phoenix live views from resource" do
+    send(self(), {:mix_shell_input, :yes?, false})
+    send(self(), {:mix_shell_input, :yes?, false})
     send(self(), {:mix_shell_input, :yes?, "n"})
     send(self(), {:mix_shell_input, :prompt, ""})
 
