@@ -15,6 +15,7 @@ defmodule AshPhoenix.Gen do
     ## Options
 
     - `--resource-plural` - The plural resource name (e.g. "products")
+    - `--resource-plural-for-routes` - Override the plural name used in route paths (e.g. "random-things"). Useful when the route prefix contains dashes.
     """
   end
 

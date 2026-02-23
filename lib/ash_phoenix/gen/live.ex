@@ -21,6 +21,7 @@ if Code.ensure_loaded?(Igniter) do
       opts = [
         interactive?: true,
         resource_plural: resource_plural,
+        resource_plural_for_routes: options[:resource_plural_for_routes],
         phx_version: options[:phx_version]
       ]
 
@@ -105,18 +106,19 @@ if Code.ensure_loaded?(Igniter) do
 
     defp live_route_instructions(assigns, phx_version) do
       module = if String.starts_with?(phx_version, "1.8"), do: "Form", else: "Index"
+      prefix = assigns[:route_prefix]
 
       [
-        ~s|live "/#{assigns[:resource_plural]}", #{assigns[:resource_alias]}Live.Index, :index\n|,
+        ~s|live "#{prefix}", #{assigns[:resource_alias]}Live.Index, :index\n|,
         if assigns[:create_action] do
-          ~s|live "/#{assigns[:resource_plural]}/new", #{assigns[:resource_alias]}Live.#{module}, :new\n|
+          ~s|live "#{prefix}/new", #{assigns[:resource_alias]}Live.#{module}, :new\n|
         end,
         if assigns[:update_action] do
-          ~s|live "/#{assigns[:resource_plural]}/:id/edit", #{assigns[:resource_alias]}Live.#{module}, :edit\n\n|
+          ~s|live "#{prefix}/:id/edit", #{assigns[:resource_alias]}Live.#{module}, :edit\n\n|
         end,
-        ~s|live "/#{assigns[:resource_plural]}/:id", #{assigns[:resource_alias]}Live.Show, :show\n|,
+        ~s|live "#{prefix}/:id", #{assigns[:resource_alias]}Live.Show, :show\n|,
         if assigns[:update_action] do
-          ~s|live "/#{assigns[:resource_plural]}/:id/show/edit", #{assigns[:resource_alias]}Live.Show, :edit|
+          ~s|live "#{prefix}/:id/show/edit", #{assigns[:resource_alias]}Live.Show, :edit|
         end
       ]
       |> Enum.reject(&is_nil/1)
@@ -180,6 +182,8 @@ if Code.ensure_loaded?(Igniter) do
       create_action = action(resource, opts, :create)
       update_action = action(resource, opts, :update)
 
+      route_prefix = "/#{opts[:resource_plural_for_routes] || plural_name}"
+
       Keyword.merge(assigns,
         resource_singular: short_name,
         resource_alias: Macro.camelize(short_name),
@@ -194,7 +198,7 @@ if Code.ensure_loaded?(Igniter) do
         pkey: pkey,
         get_by_pkey: get_by_pkey,
         attrs: attrs(resource),
-        route_prefix: "/#{plural_name}"
+        route_prefix: route_prefix
       )
     end
 
