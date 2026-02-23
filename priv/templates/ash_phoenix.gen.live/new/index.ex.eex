@@ -7,11 +7,13 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Index d
     <Layouts.app flash={@flash}>
       <.header>
         Listing <%= @resource_human_plural %>
+        <%= if @create_action do %>
         <:actions>
           <.button variant="primary" navigate={~p"<%= @route_prefix %>/new"}>
             <.icon name="hero-plus" /> New <%= @resource_human_singular %>
           </.button>
         </:actions>
+      <% end %>
       </.header>
 
       <.table

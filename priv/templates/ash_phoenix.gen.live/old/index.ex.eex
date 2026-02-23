@@ -6,11 +6,13 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Index d
     ~H"""
     <.header>
       Listing <%= @resource_human_plural %>
-      <:actions>
-        <.link patch={~p"<%= @route_prefix %>/new"}>
-        <.button>New <%= @resource_human_singular %></.button>
-        </.link>
-      </:actions>
+      <%= if @create_action do %>
+        <:actions>
+          <.link patch={~p"<%= @route_prefix %>/new"}>
+            <.button>New <%= @resource_human_singular %></.button>
+          </.link>
+        </:actions>
+      <% end %>
     </.header>
 
     <.table
@@ -123,9 +125,7 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Index d
     defp apply_action(socket, :new, _params) do
       socket
       |> assign(:page_title, "New <%= @resource_human_singular %>")
-      <%= if @update_action do %>
-        |> assign(:<%= @resource_singular %>, nil)
-      <% end %>
+      |> assign(:<%= @resource_singular %>, nil)
     end
   <% end %>
 

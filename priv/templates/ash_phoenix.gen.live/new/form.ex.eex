@@ -37,7 +37,7 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Form do
         <.button phx-disable-with="Saving..." variant="primary">Save <%= @resource_human_singular %></.button>
         <.button navigate={return_path(@return_to, @<%= @resource_singular %>)} >Cancel</.button>
       </.form>
-    </div>
+    </Layouts.app>
     """
   end
 
