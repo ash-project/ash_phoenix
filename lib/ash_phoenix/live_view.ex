@@ -17,7 +17,13 @@ defmodule AshPhoenix.LiveView do
   @opts [
     subscribe: [
       type: {:custom, __MODULE__, :subscriptions, []},
-      doc: "A topic or list of topics that should cause this data to update."
+      doc:
+        "A topic or list of topics that should cause this data to update. Can also be a 1-arity function that receives the fetch result and returns a topic or list of topics, allowing dynamic subscriptions based on the fetched data."
+    ],
+    pub_sub: [
+      type: :atom,
+      doc:
+        "A module with `subscribe/1` and `unsubscribe/1` functions (e.g. a Phoenix endpoint) to use instead of `socket.endpoint`."
     ],
     refetch?: [
       type: :boolean,
@@ -56,12 +62,14 @@ defmodule AshPhoenix.LiveView do
 
   @doc false
   def subscriptions(subscription) when is_binary(subscription), do: {:ok, subscription}
+  def subscriptions(subscription) when is_function(subscription, 1), do: {:ok, subscription}
 
   def subscriptions(subscriptions) do
     if is_list(subscriptions) and Enum.all?(subscriptions, &is_binary/1) do
       {:ok, subscriptions}
     else
-      {:error, "expected subscriptions to be a list of strings, got: #{inspect(subscriptions)}"}
+      {:error,
+       "expected subscriptions to be a list of strings or a 1-arity function, got: #{inspect(subscriptions)}"}
     end
   end
 
@@ -145,20 +153,6 @@ defmodule AshPhoenix.LiveView do
         :timer.send_interval(opts[:refetch_interval], {:refetch, assign, []})
       end
 
-      case socket do
-        %Phoenix.LiveView.Socket{} ->
-          if Phoenix.LiveView.connected?(socket) do
-            for topic <- List.wrap(opts[:subscribe]) do
-              (opts[:pub_sub] || socket.endpoint).subscribe(topic)
-            end
-          end
-
-        _ ->
-          for topic <- List.wrap(opts[:subscribe]) do
-            (opts[:pub_sub] || socket.endpoint).subscribe(topic)
-          end
-      end
-
       live_config = Map.get(socket.assigns, :ash_live_config, %{})
 
       result =
@@ -172,15 +166,45 @@ defmodule AshPhoenix.LiveView do
             |> mark_page_as_first()
         end
 
+      subscribed_topics = compute_topics(opts[:subscribe], result)
+      do_subscribe(socket, opts, subscribed_topics)
+
       this_config = %{
         last_fetched_at: System.monotonic_time(:millisecond),
         callback: callback,
-        opts: opts
+        opts: opts,
+        subscribed_topics: subscribed_topics
       }
 
       socket
       |> assign_result(assign, result, opts)
       |> assign(:ash_live_config, Map.put(live_config, assign, this_config))
+    end
+  end
+
+  defp compute_topics(subscribe, result) when is_function(subscribe, 1) do
+    subscribe.(result) |> List.wrap()
+  end
+
+  # nil means "no filter" — don't wrap into a list
+  defp compute_topics(nil, _result), do: nil
+  defp compute_topics(subscribe, _result), do: List.wrap(subscribe)
+
+  defp do_subscribe(_socket, _opts, nil), do: :ok
+
+  defp do_subscribe(socket, opts, topics) do
+    case socket do
+      %Phoenix.LiveView.Socket{} ->
+        if Phoenix.LiveView.connected?(socket) do
+          for topic <- topics do
+            (opts[:pub_sub] || socket.endpoint).subscribe(topic)
+          end
+        end
+
+      _ ->
+        for topic <- topics do
+          (opts[:pub_sub] || socket.endpoint).subscribe(topic)
+        end
     end
   end
 
@@ -554,14 +578,17 @@ defmodule AshPhoenix.LiveView do
   def handle_live(socket, topic, assign, refetch_info) when is_binary(topic) do
     config = Map.get(socket.assigns.ash_live_config, assign)
 
-    if config.opts[:subscribe] do
-      if topic in List.wrap(config.opts[:subscribe]) do
+    case config[:subscribed_topics] do
+      nil ->
+        # No subscribe filter configured — refetch on any topic
         handle_live(socket, :refetch, assign, refetch_info)
-      else
-        socket
-      end
-    else
-      handle_live(socket, :refetch, assign, refetch_info)
+
+      subscribed_topics ->
+        if topic in subscribed_topics do
+          handle_live(socket, :refetch, assign, refetch_info)
+        else
+          socket
+        end
     end
   end
 
@@ -601,9 +628,28 @@ defmodule AshPhoenix.LiveView do
               run_callback(config.callback, socket, nil)
           end
 
+        new_subscribed_topics =
+          if is_function(config.opts[:subscribe], 1) do
+            new_topics = compute_topics(config.opts[:subscribe], result)
+            old_topics = config[:subscribed_topics] || []
+
+            for topic <- old_topics -- new_topics do
+              (config.opts[:pub_sub] || socket.endpoint).unsubscribe(topic)
+            end
+
+            for topic <- new_topics -- old_topics do
+              (config.opts[:pub_sub] || socket.endpoint).subscribe(topic)
+            end
+
+            new_topics
+          else
+            config[:subscribed_topics]
+          end
+
         new_config =
           config
           |> Map.put(:last_fetched_at, System.monotonic_time(:millisecond))
+          |> Map.put(:subscribed_topics, new_subscribed_topics)
 
         new_full_config = Map.put(socket.assigns.ash_live_config, assign, new_config)
 
