@@ -137,10 +137,12 @@ if Code.ensure_loaded?(Igniter) do
           {"old", igniter}
         end
 
-      template_folder = template_folder(path)
+      user_template_files = user_template_files()
+
+      default_template_folder = default_template_folder(path)
       action? = assigns[:update_action] || assigns[:create_action]
 
-      template_folder
+      default_template_folder
       |> File.ls!()
       |> Enum.reject(&String.ends_with?(&1, ".license"))
       |> Enum.reduce(igniter, fn
@@ -154,7 +156,7 @@ if Code.ensure_loaded?(Igniter) do
           {formatter_function, _options} =
             Mix.Tasks.Format.formatter_for_file(destination_path)
 
-          path = Path.join(template_folder, file)
+          path = Map.get(user_template_files, file, Path.join(default_template_folder, file))
           contents = path |> EEx.eval_file(assigns: assigns) |> formatter_function.()
           Igniter.create_new_file(igniter, destination_path, contents, generate_opts)
       end)
@@ -342,10 +344,27 @@ if Code.ensure_loaded?(Igniter) do
       Igniter.Libs.Phoenix.web_module(igniter)
     end
 
-    defp template_folder(path) do
+    def default_template_folder(path) do
       :code.priv_dir(:ash_phoenix)
       |> Path.join("templates/ash_phoenix.gen.live")
       |> Path.join(path)
+    end
+
+    defp user_template_files() do
+      user_template_folder =
+        File.cwd!()
+        |> Path.join("priv/templates/ash_phoenix.gen.live")
+
+      case File.exists?(user_template_folder) do
+        true ->
+          File.ls!(user_template_folder)
+          |> Enum.reduce(%{}, fn file_handle, file_map ->
+            Map.put(file_map, file_handle, Path.join(user_template_folder, file_handle))
+          end)
+
+        false ->
+          %{}
+      end
     end
 
     def inputs(resource, action) do
