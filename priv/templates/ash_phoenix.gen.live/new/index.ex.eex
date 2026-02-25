@@ -52,10 +52,20 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Index d
     {:ok,
       socket
       |> assign(:page_title, "Listing <%= @resource_human_plural %>")
-      <%= if @actor do %>
+      <%= cond do %>
+      <% @scope -> %>
+      |> stream(:<%= @resource_plural %>, Ash.read!(<%= @resource %>, scope: socket.assigns.scope))}
+      <% @actor && @tenant -> %>
+      |> assign_new(:<%= @actor %>, fn -> nil end)
+      |> assign_new(:<%= @tenant %>, fn -> nil end)
+      |> stream(:<%= @resource_plural %>, Ash.read!(<%= @resource %>, actor: socket.assigns[:<%= @actor %>], tenant: socket.assigns[:<%= @tenant %>]))}
+      <% @actor -> %>
       |> assign_new(:<%= @actor %>, fn -> nil end)
       |> stream(:<%= @resource_plural %>, Ash.read!(<%= @resource %>, actor: socket.assigns[:<%= @actor %>]))}
-      <% else %>
+      <% @tenant -> %>
+      |> assign_new(:<%= @tenant %>, fn -> nil end)
+      |> stream(:<%= @resource_plural %>, Ash.read!(<%= @resource %>, tenant: socket.assigns[:<%= @tenant %>]))}
+      <% true -> %>
       |> stream(:<%= @resource_plural %>, Ash.read!(<%= @resource %>))}
       <% end %>
   end
