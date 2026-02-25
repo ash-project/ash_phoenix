@@ -58,6 +58,8 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Index d
               <%= @tenant %>={@<%= @tenant %>}
             <% @actor -> %>
               <%= @actor %>={@<%= @actor %>}
+            <% @tenant -> %>
+              <%= @tenant %>={@<%= @tenant %>}
             <% true -> %>
             <% end %>
             action={@live_action}
@@ -77,6 +79,8 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Index d
               <%= @tenant %>={@<%= @tenant %>}
             <% @actor -> %>
               <%= @actor %>={@<%= @actor %>}
+            <% @tenant -> %>
+              <%= @tenant %>={@<%= @tenant %>}
             <% true -> %>
             <% end %>
             id={:new}
@@ -99,6 +103,8 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Index d
               <%= @tenant %>={@<%= @tenant %>}
             <% @actor -> %>
               <%= @actor %>={@<%= @actor %>}
+            <% @tenant -> %>
+              <%= @tenant %>={@<%= @tenant %>}
             <% true -> %>
             <% end %>
             title={@page_title}

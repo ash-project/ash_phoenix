@@ -39,6 +39,8 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Show do
           <%= @tenant %>={@<%= @tenant %>}
         <% @actor -> %>
           <%= @actor %>={@<%= @actor %>}
+        <% @tenant -> %>
+          <%= @tenant %>={@<%= @tenant %>}
         <% true -> %>
         <% end %>
         <%= @resource_singular %>={@<%= @resource_singular %>}
