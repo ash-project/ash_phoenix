@@ -45,7 +45,7 @@ if Code.ensure_loaded?(Igniter) do
           scope: :boolean,
           tenant: :string,
           no_tenant: :boolean,
-          phx_version: :string,
+          phx_version: :string
         ],
         # Default values for the options in the `schema`.
         defaults: [phx_version: "1.8"],

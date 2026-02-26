@@ -43,7 +43,8 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
       full_domain: domain,
       singular: singular,
       plural: parsed_opts[:resource_plural],
-      plural_for_routes: parsed_opts[:resource_plural_for_routes] || parsed_opts[:resource_plural],
+      plural_for_routes:
+        parsed_opts[:resource_plural_for_routes] || parsed_opts[:resource_plural],
       actor: parsed_opts[:actor],
       scope: parsed_opts[:scope],
       tenant: parsed_opts[:tenant],
@@ -177,5 +178,4 @@ defmodule Mix.Tasks.AshPhoenix.Gen.Html do
       public?: attr.public?
     }
   end
-
 end
