@@ -140,7 +140,7 @@ defmodule Mix.Tasks.AshPhoenix.Gen.HtmlTest do
 
       shell_output =
         capture_io(fn ->
-          Mix.Task.run("ash_phoenix.gen.html", [
+          Mix.Task.rerun("ash_phoenix.gen.html", [
             "AshPhoenix.Test.Domain",
             "AshPhoenix.Test.Artist",
             "--resource-plural",
