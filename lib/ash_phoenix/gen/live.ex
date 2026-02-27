@@ -33,22 +33,8 @@ if Code.ensure_loaded?(Igniter) do
       Code.ensure_compiled!(resource)
 
       opts =
-        if !opts[:actor] && opts[:interactive?] && !opts[:no_actor] do
-          if Mix.shell().yes?(
-               "Would you like to name your actor? For example: `current_user`. If you choose no, we will not add any actor logic."
-             ) do
-            actor =
-              Mix.shell().prompt("What would you like to name it? Default: `current_user`")
-              |> String.trim()
-
-            if actor == "" do
-              Keyword.put(opts, :actor, "current_user")
-            else
-              Keyword.put(opts, :actor, actor)
-            end
-          else
-            opts
-          end
+        if opts[:interactive?] do
+          AshPhoenix.Gen.prompt_for_multitenancy(opts)
         else
           opts
         end
@@ -74,7 +60,9 @@ if Code.ensure_loaded?(Igniter) do
           resource: inspect(resource),
           web_module: inspect(web_module(igniter)),
           actor: opts[:actor],
-          actor_opt: actor_opt(opts)
+          scope: opts[:scope],
+          tenant: opts[:tenant],
+          actor_opt: AshPhoenix.Gen.actor_opt(opts, "socket.assigns")
         ]
         |> add_resource_assigns(resource, opts)
 
@@ -296,13 +284,13 @@ if Code.ensure_loaded?(Igniter) do
           nil ->
             """
             #{short_name} = #{get_by_pkey}
-            Ash.destroy!(#{short_name}#{actor_opt(opts)})
+            Ash.destroy!(#{short_name}#{AshPhoenix.Gen.actor_opt(opts, "socket.assigns")})
             """
 
           interface ->
             """
             #{short_name} = #{get_by_pkey}
-            #{inspect(resource)}.#{interface.name}!(#{short_name}#{actor_opt(opts)})
+            #{inspect(resource)}.#{interface.name}!(#{short_name}#{AshPhoenix.Gen.actor_opt(opts, "socket.assigns")})
             """
         end
       end
@@ -316,18 +304,10 @@ if Code.ensure_loaded?(Igniter) do
       end)
       |> case do
         nil ->
-          "Ash.get!(#{inspect(resource)}, #{pkey}#{actor_opt(opts)})"
+          "Ash.get!(#{inspect(resource)}, #{pkey}#{AshPhoenix.Gen.actor_opt(opts, "socket.assigns")})"
 
         interface ->
-          "#{inspect(resource)}.#{interface.name}!(#{pkey}#{actor_opt(opts)})"
-      end
-    end
-
-    defp actor_opt(opts) do
-      if opts[:actor] do
-        ", actor: socket.assigns.#{opts[:actor]}"
-      else
-        ""
+          "#{inspect(resource)}.#{interface.name}!(#{pkey}#{AshPhoenix.Gen.actor_opt(opts, "socket.assigns")})"
       end
     end
 
