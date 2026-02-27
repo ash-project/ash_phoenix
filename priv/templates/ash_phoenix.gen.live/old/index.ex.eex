@@ -50,8 +50,17 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Index d
             module={<%= inspect Module.concat(@web_module, @resource_alias) %>Live.FormComponent}
             id={(@<%= @resource_singular %> && @<%= @resource_singular%>.<%= @pkey %>) || :new}
             title={@page_title}
-            <%= if @actor do %>
+            <%= cond do %>
+            <% @scope -> %>
+              scope={@scope}
+            <% @actor && @tenant -> %>
               <%= @actor %>={@<%= @actor %>}
+              <%= @tenant %>={@<%= @tenant %>}
+            <% @actor -> %>
+              <%= @actor %>={@<%= @actor %>}
+            <% @tenant -> %>
+              <%= @tenant %>={@<%= @tenant %>}
+            <% true -> %>
             <% end %>
             action={@live_action}
             <%= @resource_singular %>={@<%= @resource_singular %>}
@@ -62,8 +71,17 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Index d
         <.modal :if={@live_action == :new} id="<%= @resource_singular %>-modal" show on_cancel={JS.patch(~p"<%= @route_prefix %>")}>
           <.live_component
             module={<%= inspect Module.concat(@web_module, @resource_alias) %>Live.FormComponent}
-            <%= if @actor do %>
+            <%= cond do %>
+            <% @scope -> %>
+              scope={@scope}
+            <% @actor && @tenant -> %>
               <%= @actor %>={@<%= @actor %>}
+              <%= @tenant %>={@<%= @tenant %>}
+            <% @actor -> %>
+              <%= @actor %>={@<%= @actor %>}
+            <% @tenant -> %>
+              <%= @tenant %>={@<%= @tenant %>}
+            <% true -> %>
             <% end %>
             id={:new}
             title={@page_title}
@@ -77,8 +95,17 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Index d
           <.live_component
             module={<%= inspect Module.concat(@web_module, @resource_alias) %>Live.FormComponent}
             id={@<%= @resource_singular %>.<%= @pkey %>}
-            <%= if @actor do %>
+            <%= cond do %>
+            <% @scope -> %>
+              scope={@scope}
+            <% @actor && @tenant -> %>
               <%= @actor %>={@<%= @actor %>}
+              <%= @tenant %>={@<%= @tenant %>}
+            <% @actor -> %>
+              <%= @actor %>={@<%= @actor %>}
+            <% @tenant -> %>
+              <%= @tenant %>={@<%= @tenant %>}
+            <% true -> %>
             <% end %>
             title={@page_title}
             action={@live_action}
@@ -94,16 +121,26 @@ defmodule <%= inspect Module.concat(@web_module, @resource_alias) %>Live.Index d
 
   @impl true
   def mount(_params, _session, socket) do
-    <%= if @actor do %>
+    <%= cond do %>
+    <% @scope -> %>
+      {:ok, stream(socket, :<%= @resource_plural %>, Ash.read!(<%= @resource %>, scope: socket.assigns.scope))}
+    <% @actor && @tenant -> %>
       {:ok,
         socket
-        <%= if @actor do %>
-          |> stream(:<%= @resource_plural %>, Ash.read!(<%= @resource %>, actor: socket.assigns[:<%= @actor %>]))
-        <% else %>
-          |> stream(:<%= @resource_plural %>, Ash.read!(<%= @resource %>))
-        <% end %>
-        |> assign_new(:<%= @actor %>, fn -> nil end)}
-    <% else %>
+        |> assign_new(:<%= @actor %>, fn -> nil end)
+        |> assign_new(:<%= @tenant %>, fn -> nil end)
+        |> stream(:<%= @resource_plural %>, Ash.read!(<%= @resource %>, actor: socket.assigns[:<%= @actor %>], tenant: socket.assigns[:<%= @tenant %>]))}
+    <% @actor -> %>
+      {:ok,
+        socket
+        |> assign_new(:<%= @actor %>, fn -> nil end)
+        |> stream(:<%= @resource_plural %>, Ash.read!(<%= @resource %>, actor: socket.assigns[:<%= @actor %>]))}
+    <% @tenant -> %>
+      {:ok,
+        socket
+        |> assign_new(:<%= @tenant %>, fn -> nil end)
+        |> stream(:<%= @resource_plural %>, Ash.read!(<%= @resource %>, tenant: socket.assigns[:<%= @tenant %>]))}
+    <% true -> %>
       {:ok, stream(socket, :<%= @resource_plural %>, Ash.read!(<%= @resource %>))}
     <% end %>
   end

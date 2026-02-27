@@ -52,6 +52,9 @@ if Code.ensure_loaded?(Igniter) do
           resourceplural: :string,
           resource_plural: :string,
           resource_plural_for_routes: :string,
+          scope: :boolean,
+          tenant: :string,
+          no_tenant: :boolean,
           phx_version: :string
         ],
         # Default values for the options in the `schema`.

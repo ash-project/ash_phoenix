@@ -39,6 +39,96 @@ defmodule Mix.Tasks.AshPhoenix.Gen.HtmlTest do
   end
 
   describe "generate phoenix HTML controller and views from resource" do
+    test "with no auth" do
+      controller_path = "lib/ash_phoenix_web/controllers/artist_controller.ex"
+
+      capture_io(fn ->
+        Mix.Task.rerun("ash_phoenix.gen.html", [
+          "AshPhoenix.Test.Domain",
+          "AshPhoenix.Test.Artist",
+          "--resource-plural",
+          "artists",
+          "--no-actor"
+        ])
+      end)
+
+      controller = File.read!(controller_path)
+      refute controller =~ "actor:"
+      refute controller =~ "tenant:"
+      refute controller =~ "scope:"
+    end
+
+    test "with --actor" do
+      controller_path = "lib/ash_phoenix_web/controllers/artist_controller.ex"
+
+      capture_io(fn ->
+        Mix.Task.rerun("ash_phoenix.gen.html", [
+          "AshPhoenix.Test.Domain",
+          "AshPhoenix.Test.Artist",
+          "--resource-plural",
+          "artists",
+          "--actor",
+          "current_user"
+        ])
+      end)
+
+      assert File.read!(controller_path) =~ "actor: conn.assigns.current_user"
+    end
+
+    test "with --scope" do
+      controller_path = "lib/ash_phoenix_web/controllers/artist_controller.ex"
+
+      capture_io(fn ->
+        Mix.Task.rerun("ash_phoenix.gen.html", [
+          "AshPhoenix.Test.Domain",
+          "AshPhoenix.Test.Artist",
+          "--resource-plural",
+          "artists",
+          "--scope"
+        ])
+      end)
+
+      assert File.read!(controller_path) =~ "scope: conn.assigns.scope"
+    end
+
+    test "with --tenant" do
+      controller_path = "lib/ash_phoenix_web/controllers/artist_controller.ex"
+
+      capture_io(fn ->
+        Mix.Task.rerun("ash_phoenix.gen.html", [
+          "AshPhoenix.Test.Domain",
+          "AshPhoenix.Test.Artist",
+          "--resource-plural",
+          "artists",
+          "--tenant",
+          "current_tenant"
+        ])
+      end)
+
+      assert File.read!(controller_path) =~ "tenant: conn.assigns.current_tenant"
+    end
+
+    test "with --actor and --tenant" do
+      controller_path = "lib/ash_phoenix_web/controllers/artist_controller.ex"
+
+      capture_io(fn ->
+        Mix.Task.rerun("ash_phoenix.gen.html", [
+          "AshPhoenix.Test.Domain",
+          "AshPhoenix.Test.Artist",
+          "--resource-plural",
+          "artists",
+          "--actor",
+          "current_user",
+          "--tenant",
+          "current_tenant"
+        ])
+      end)
+
+      controller = File.read!(controller_path)
+      assert controller =~ "actor: conn.assigns.current_user"
+      assert controller =~ "tenant: conn.assigns.current_tenant"
+    end
+
     test "with --resource-plural-for-routes" do
       controller_path = "lib/ash_phoenix_web/controllers/artist_controller.ex"
       html_path = "lib/ash_phoenix_web/controllers/artist_html.ex"
@@ -50,7 +140,7 @@ defmodule Mix.Tasks.AshPhoenix.Gen.HtmlTest do
 
       shell_output =
         capture_io(fn ->
-          Mix.Task.run("ash_phoenix.gen.html", [
+          Mix.Task.rerun("ash_phoenix.gen.html", [
             "AshPhoenix.Test.Domain",
             "AshPhoenix.Test.Artist",
             "--resource-plural",
