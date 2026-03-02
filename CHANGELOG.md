@@ -11,6 +11,27 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.20](https://github.com/ash-project/ash_phoenix/compare/v2.3.19...v2.3.20) (2026-03-02)
+
+
+
+
+### Bug Fixes:
+
+* handle resources w/ no structs in generic actions by [@zachdaniel](https://github.com/zachdaniel)
+
+* handle missing primary actions in gen tasks by [@zachdaniel](https://github.com/zachdaniel)
+
+### Improvements:
+
+* Add multitenancy to and create consistency between gen.html and gen.live (#459) by aVikingTrex [(#459)](https://github.com/ash-project/ash_phoenix/pull/459)
+
+* add `--resource-plural-for-routes` to gen tasks by [@zachdaniel](https://github.com/zachdaniel)
+
+* allow dynamic subscriptions in `keep_live` by [@zachdaniel](https://github.com/zachdaniel)
+
+* Split up usage rules into sub-rules (#458) by [@mylanconnolly](https://github.com/mylanconnolly) [(#458)](https://github.com/ash-project/ash_phoenix/pull/458)
+
 ## [v2.3.19](https://github.com/ash-project/ash_phoenix/compare/v2.3.18...v2.3.19) (2026-01-19)
 
 
