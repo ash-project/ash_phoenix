@@ -512,7 +512,13 @@ defmodule AshPhoenix.Form do
     {resource, data, opts} =
       case resource_or_data do
         module when is_atom(resource_or_data) and not is_nil(resource_or_data) ->
-          {module, module.__struct__(), opts}
+          action = Ash.Resource.Info.action(resource_or_data, action)
+
+          if action.type == :action do
+            {module, nil, opts}
+          else
+            {module, module.__struct__(), opts}
+          end
 
         %Ash.Union{value: data, type: type} ->
           opts =
