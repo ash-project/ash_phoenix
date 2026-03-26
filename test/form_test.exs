@@ -2652,4 +2652,19 @@ defmodule AshPhoenix.FormTest do
               ]
             }} = Form.submit(result, params: result.params)
   end
+
+  test "context is propagated" do
+    form =
+      Post
+      |> Form.for_create(:create,
+        domain: Domain,
+        context: %{some_other_key: "value"},
+        params: %{"text" => "post", "comments" => [%{"text" => "comment"}]}
+      )
+
+    assert form.source.context[:some_other_key] == "value"
+
+    [comment_form] = form.forms[:comments]
+    assert comment_form.source.context[:some_other_key] == "value"
+  end
 end
