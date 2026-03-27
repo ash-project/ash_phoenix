@@ -5134,6 +5134,11 @@ defmodule AshPhoenix.Form do
          warn_on_unhandled_errors?,
          trail \\ []
        ) do
+    context =
+      if context do
+        Map.take(context, [:shared])
+      end
+
     Enum.reduce(form_keys, {%{}, params}, fn {key, opts}, {forms, params} ->
       key_name = to_string(opts[:as] || key)
 
