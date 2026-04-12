@@ -52,7 +52,7 @@ defmodule AshPhoenix.MixProject do
       ],
       licenses: ["MIT"],
       files: ~w(lib .formatter.exs mix.exs README* LICENSE*
-      CHANGELOG* documentation priv usage-rules.md),
+      CHANGELOG* documentation priv usage-rules.md usage-rules),
       links: %{
         "GitHub" => "https://github.com/ash-project/ash_phoenix",
         "Changelog" => "https://github.com/ash-project/ash_phoenix/blob/main/CHANGELOG.md",
