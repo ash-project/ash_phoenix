@@ -11,6 +11,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.21](https://github.com/ash-project/ash_phoenix/compare/v2.3.20...v2.3.21) (2026-04-13)
+
+
+
+
+### Bug Fixes:
+
+* Add missing usage_rules files to hex package (#470) by [@Munksgaard](https://github.com/Munksgaard) [(#470)](https://github.com/ash-project/ash_phoenix/pull/470)
+
+* propagate context to nested forms (#465) by [@rapidfsub](https://github.com/rapidfsub) [(#465)](https://github.com/ash-project/ash_phoenix/pull/465)
+
 ## [v2.3.20](https://github.com/ash-project/ash_phoenix/compare/v2.3.19...v2.3.20) (2026-03-02)
 
 
