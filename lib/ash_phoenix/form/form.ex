@@ -1341,6 +1341,8 @@ defmodule AshPhoenix.Form do
 
     prepare_source = form.prepare_source || (& &1)
 
+    new_params = strip_array_empty_values(form, new_params)
+
     new_params =
       if form.prepare_params do
         form.prepare_params.(new_params, :validate)
@@ -6135,6 +6137,102 @@ defmodule AshPhoenix.Form do
 
   defp form_for_method(:create), do: "post"
   defp form_for_method(_), do: "put"
+
+  # Phoenix's `multiple_select/3` and checkbox-group widgets emit a hidden
+  # `""` input so the field is always submitted. Plug parses those sentinels
+  # into the list, e.g. `%{"tags" => ["", "a", "b"]}`. Left in place, the
+  # `""` items break typed arrays: `:string` casts `""` to nil and trips
+  # `nil_items?: false`; `:integer` fails to cast outright.
+  #
+  # `{:array, _}` types in Ash declare an `empty_values` constraint
+  # (default `[""]`). We honour it by filtering matching items out of
+  # list-valued params before they reach the changeset. Set
+  # `constraints: [empty_values: []]` on the attribute/argument to opt out
+  # of filtering for a given field.
+  #
+  # Must match `Ash.Type`'s default for the `empty_values` array constraint
+  # (see `lib/ash/type/type.ex` `@array_constraints`).
+  @default_array_empty_values [""]
+
+  defp strip_array_empty_values(form, params) when is_map(params) and not is_struct(params) do
+    case resolve_form_action(form) do
+      nil ->
+        params
+
+      action ->
+        skip = nested_form_key_set(form)
+
+        Enum.reduce(params, params, fn {key, value}, acc ->
+          if is_list(value) && !MapSet.member?(skip, key) do
+            case array_empty_values(action, form.resource, key) do
+              nil -> acc
+              values -> Map.put(acc, key, Enum.reject(value, &(&1 in values)))
+            end
+          else
+            acc
+          end
+        end)
+    end
+  end
+
+  defp strip_array_empty_values(_form, params), do: params
+
+  defp resolve_form_action(form) do
+    case Map.get(form.source || %{}, :action) do
+      action_name when is_atom(action_name) and not is_nil(action_name) ->
+        Ash.Resource.Info.action(form.resource, action_name)
+
+      action ->
+        action
+    end
+  end
+
+  defp nested_form_key_set(form) do
+    form.form_keys
+    |> Keyword.keys()
+    |> Enum.flat_map(&[&1, to_string(&1)])
+    |> MapSet.new()
+  end
+
+  # Returns the non-empty list of sentinel values to strip from the list
+  # value of `key`, or nil when the key doesn't map to an `{:array, _}`
+  # input or when filtering is opted out (`empty_values: []`).
+  defp array_empty_values(action, resource, key) do
+    with name when is_atom(name) <- safe_existing_atom(key),
+         %{type: {:array, _}, constraints: constraints} <-
+           find_input(action, resource, name) do
+      case constraints[:empty_values] || @default_array_empty_values do
+        [] -> nil
+        values -> values
+      end
+    else
+      _ -> nil
+    end
+  end
+
+  # Action inputs are either explicit arguments or accepted attributes.
+  # Read actions have no `:accept` field, hence the `Map.get/3`.
+  defp find_input(action, resource, name) do
+    case Enum.find(action.arguments, &(&1.name == name)) do
+      nil ->
+        if name in (Map.get(action, :accept) || []) do
+          Ash.Resource.Info.attribute(resource, name)
+        end
+
+      argument ->
+        argument
+    end
+  end
+
+  defp safe_existing_atom(name) when is_atom(name), do: name
+
+  defp safe_existing_atom(name) when is_binary(name) do
+    String.to_existing_atom(name)
+  rescue
+    ArgumentError -> nil
+  end
+
+  defp safe_existing_atom(_), do: nil
 
   defp exclude_empty_fields(params, []) do
     params

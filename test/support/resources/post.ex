@@ -21,6 +21,17 @@ defmodule AshPhoenix.Test.Post do
     attribute(:union, AshPhoenix.Test.UnionValue, public?: true)
     attribute(:union_array, {:array, AshPhoenix.Test.UnionValue}, public?: true)
     attribute(:list_of_ints, {:array, :integer}, public?: true)
+
+    attribute(:list_of_strings_custom_empties, {:array, :string},
+      public?: true,
+      constraints: [empty_values: ["skip", ""]]
+    )
+
+    attribute(:raw_list_of_strings, {:array, :string},
+      public?: true,
+      constraints: [empty_values: []]
+    )
+
     attribute(:title, :string, public?: true)
     attribute(:inline_atom_field, :atom, public?: true)
     attribute(:custom_atom_field, AshPhoenix.Test.Action, public?: true)

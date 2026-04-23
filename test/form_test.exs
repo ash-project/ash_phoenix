@@ -761,6 +761,71 @@ defmodule AshPhoenix.FormTest do
     assert post.title == nil
   end
 
+  describe "empty_values constraint on array fields" do
+    test "default [\"\"] is stripped from list-valued params (Phoenix multiple_select case)" do
+      form = Form.for_create(Post, :create, domain: Domain)
+      form = Form.validate(form, %{"text" => "x", "list_of_ints" => ["", "1", "2"]})
+
+      assert form.valid?, "expected form valid, got errors: #{inspect(form.source.errors)}"
+      assert form.params["list_of_ints"] == ["1", "2"]
+    end
+
+    test "cleared multi-select (only the hidden \"\") becomes an empty list" do
+      form = Form.for_create(Post, :create, domain: Domain)
+      form = Form.validate(form, %{"text" => "x", "list_of_ints" => [""]})
+
+      assert form.valid?
+      assert form.params["list_of_ints"] == []
+    end
+
+    test "non-list values for the same field are left alone" do
+      form = Form.for_create(Post, :create, domain: Domain)
+      form = Form.validate(form, %{"text" => "x", "title" => ""})
+
+      assert form.params["title"] == ""
+    end
+
+    test "honours empty_values on action arguments too" do
+      form =
+        Form.for_create(Post, :create_with_non_map_relationship_args, domain: Domain)
+
+      form = Form.validate(form, %{"comment_ids" => ["", "1", "2"]})
+
+      assert form.params["comment_ids"] == ["1", "2"]
+    end
+
+    test "respects a custom empty_values constraint on an attribute" do
+      form = Form.for_create(Post, :create, domain: Domain)
+
+      form =
+        Form.validate(form, %{
+          "text" => "x",
+          "list_of_strings_custom_empties" => ["skip", "", "a", "b"]
+        })
+
+      assert form.params["list_of_strings_custom_empties"] == ["a", "b"]
+    end
+
+    test "empty_values: [] on an attribute opts out of filtering" do
+      form = Form.for_create(Post, :create, domain: Domain)
+
+      form =
+        Form.validate(form, %{
+          "text" => "x",
+          "raw_list_of_strings" => ["", "a", "b"]
+        })
+
+      assert form.params["raw_list_of_strings"] == ["", "a", "b"]
+    end
+
+    test "unknown param keys pass through untouched" do
+      form = Form.for_create(Post, :create, domain: Domain)
+      form = Form.validate(form, %{"text" => "x", "not_a_field" => ["", "a"]})
+
+      assert form.params["not_a_field"] == ["", "a"]
+    end
+  end
+
   test "phoenix forms are accepted as input in some cases" do
     form = Form.for_create(PostWithDefault, :create, domain: Domain)
     form = AshPhoenix.Form.validate(form, %{"text" => ""}, errors: form.submitted_once?)
