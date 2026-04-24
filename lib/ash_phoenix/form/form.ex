@@ -6149,11 +6149,6 @@ defmodule AshPhoenix.Form do
   # list-valued params before they reach the changeset. Set
   # `constraints: [empty_values: []]` on the attribute/argument to opt out
   # of filtering for a given field.
-  #
-  # Must match `Ash.Type`'s default for the `empty_values` array constraint
-  # (see `lib/ash/type/type.ex` `@array_constraints`).
-  @default_array_empty_values [""]
-
   defp strip_array_empty_values(form, params) when is_map(params) and not is_struct(params) do
     case resolve_form_action(form) do
       nil ->
@@ -6199,9 +6194,10 @@ defmodule AshPhoenix.Form do
   # input or when filtering is opted out (`empty_values: []`).
   defp array_empty_values(action, resource, key) do
     with name when is_atom(name) <- safe_existing_atom(key),
-         %{type: {:array, _}, constraints: constraints} <-
-           find_input(action, resource, name) do
-      case constraints[:empty_values] || @default_array_empty_values do
+         %{type: {:array, _} = type, constraints: constraints} <-
+           find_input(action, resource, name),
+         {:ok, resolved} <- Ash.Type.validate_constraints(type, constraints) do
+      case resolved[:empty_values] do
         [] -> nil
         values -> values
       end
