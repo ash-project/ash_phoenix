@@ -11,6 +11,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.22](https://github.com/ash-project/ash_phoenix/compare/v2.3.21...v2.3.22) (2026-05-02)
+
+
+
+
+### Bug Fixes:
+
+* filter empty values from array form params (#471) by sevenseacat [(#471)](https://github.com/ash-project/ash_phoenix/pull/471)
+
 ## [v2.3.21](https://github.com/ash-project/ash_phoenix/compare/v2.3.20...v2.3.21) (2026-04-13)
 
 
