@@ -16,6 +16,7 @@ defmodule AshPhoenix.Test.Author do
   attributes do
     uuid_primary_key(:id)
     attribute(:email, :string, allow_nil?: false, public?: true)
+    attribute(:address, AshPhoenix.Test.Address, allow_nil?: true, public?: true)
   end
 
   actions do
