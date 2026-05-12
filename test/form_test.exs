@@ -1464,6 +1464,66 @@ defmodule AshPhoenix.FormTest do
       assert is_map(all_raw_errors)
       assert Map.has_key?(all_raw_errors, [])
     end
+
+    test "embedded forms are not validated in isolation when parent cast_input allows empty values" do
+      form =
+        Author
+        |> Form.for_create(:create, forms: [auto?: true])
+        |> Form.add_form(:address, params: %{})
+        |> Form.validate(%{
+          "email" => "me@example.com",
+          "address" => %{"line1" => "", "city" => "", "postcode" => ""}
+        })
+
+      assert Form.errors(form, for_path: :all) == %{}
+      assert form.valid?
+    end
+
+    test "embedded forms still surface parent errors for partial input" do
+      form =
+        Author
+        |> Form.for_create(:create, forms: [auto?: true])
+        |> Form.add_form(:address, params: %{})
+        |> Form.validate(%{
+          "email" => "me@example.com",
+          "address" => %{"line1" => "1 Main St", "city" => "", "postcode" => ""}
+        })
+
+      errors = Form.errors(form, for_path: [:address])
+      assert {:postcode, _} = List.keyfind(errors, :postcode, 0)
+      refute form.valid?
+    end
+
+    test "manage_relationship forms still validate standalone on validate" do
+      form =
+        Comment
+        |> Form.for_create(:create, forms: [auto?: true])
+        |> Form.add_form(:post, params: %{})
+        |> Form.validate(%{"text" => "comment text", "post" => %{}})
+
+      assert Form.errors(form, for_path: [:post]) == [text: "is required"]
+      refute form.valid?
+    end
+
+    test "update form with existing embedded data is valid without changes" do
+      author = %Author{
+        id: Ash.UUID.generate(),
+        email: "me@example.com",
+        address: %AshPhoenix.Test.Address{
+          line1: "1 Main St",
+          city: "Sydney",
+          postcode: "2000"
+        }
+      }
+
+      form =
+        author
+        |> Form.for_update(:update, forms: [auto?: true])
+        |> Form.validate(%{"email" => "new@example.com"})
+
+      assert Form.errors(form, for_path: :all) == %{}
+      assert form.valid?
+    end
   end
 
   describe "data" do
