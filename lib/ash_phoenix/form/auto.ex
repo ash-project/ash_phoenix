@@ -212,6 +212,7 @@ defmodule AshPhoenix.Form.Auto do
               prepare_source: prepare_source,
               transform_params: transform_params,
               embed?: true,
+              union?: true,
               save_updates?: false,
               forms:
                 Keyword.new(

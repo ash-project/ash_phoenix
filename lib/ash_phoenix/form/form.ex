@@ -1604,7 +1604,7 @@ defmodule AshPhoenix.Form do
                     opts = update_opts(opts, nil, params)
 
                     new_form =
-                      (cond do
+                      cond do
                         !opts[:create_action] && !opts[:read_action] ->
                           raise AshPhoenix.Form.NoActionConfigured,
                             path: form.name <> "[#{key}][#{index}]",
@@ -1667,7 +1667,7 @@ defmodule AshPhoenix.Form do
                             as: form.name <> "[#{key}][#{index}]",
                             id: form.id <> "_#{key}_#{index}"
                           )
-                      end)
+                      end
                       |> clear_embed_source_errors(opts)
 
                     Map.update(forms, key, [new_form], &(&1 ++ [new_form]))
@@ -2413,11 +2413,12 @@ defmodule AshPhoenix.Form do
   # bypasses parent-level logic. We still need the standalone source for
   # rendering; `carry_over_errors/2` replays any real errors from the parent.
   #
-  # Skipped when `transform_params` is set — unions rewrite params into an
-  # `%Ash.Union{}` struct before handing them up, so the parent can't catch
-  # input errors and the standalone validation is the only line of defense.
+  # Unions are excluded: they rewrite params into an `%Ash.Union{}` struct
+  # before handing them up, so the parent can't catch input errors and the
+  # standalone validation is the only line of defense. `union?` is set by
+  # `AshPhoenix.Form.Auto.unions/3` to mark these forms explicitly.
   defp clear_embed_source_errors(form, opts) do
-    if opts[:embed?] && form.source && !opts[:transform_params] do
+    if opts[:embed?] && !opts[:union?] && form.source do
       %{form | source: %{form.source | errors: [], valid?: true}}
     else
       form
