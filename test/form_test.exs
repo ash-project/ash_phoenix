@@ -2718,7 +2718,7 @@ defmodule AshPhoenix.FormTest do
             }} = Form.submit(result, params: result.params)
   end
 
-  test "context is propagated" do
+  test "only shared context is propagated to nested forms built from initial params" do
     form =
       Post
       |> Form.for_create(:create,
@@ -2729,6 +2729,36 @@ defmodule AshPhoenix.FormTest do
 
     assert form.source.context[:some_other_key] == "value"
     assert form.source.context[:shared] == %{shared_key: "shared_value"}
+
+    [comment_form] = form.forms[:comments]
+    assert comment_form.source.context[:shared] == %{shared_key: "shared_value"}
+    refute comment_form.source.context[:some_other_key]
+  end
+
+  test "only shared context is propagated to nested forms added via add_form" do
+    form =
+      Post
+      |> Form.for_create(:create,
+        domain: Domain,
+        context: %{some_other_key: "value", shared: %{shared_key: "shared_value"}},
+        params: %{"text" => "post"}
+      )
+      |> Form.add_form(:comments, params: %{"text" => "comment"})
+
+    [comment_form] = form.forms[:comments]
+    assert comment_form.source.context[:shared] == %{shared_key: "shared_value"}
+    refute comment_form.source.context[:some_other_key]
+  end
+
+  test "only shared context is propagated to nested forms added during validate" do
+    form =
+      Post
+      |> Form.for_create(:create,
+        domain: Domain,
+        context: %{some_other_key: "value", shared: %{shared_key: "shared_value"}},
+        params: %{"text" => "post"}
+      )
+      |> Form.validate(%{"text" => "post", "comments" => [%{"text" => "comment"}]})
 
     [comment_form] = form.forms[:comments]
     assert comment_form.source.context[:shared] == %{shared_key: "shared_value"}
