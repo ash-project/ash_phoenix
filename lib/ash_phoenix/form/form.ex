@@ -1668,6 +1668,7 @@ defmodule AshPhoenix.Form do
                             id: form.id <> "_#{key}_#{index}"
                           )
                       end
+                      |> clear_embed_source_errors(opts)
 
                     Map.update(forms, key, [new_form], &(&1 ++ [new_form]))
 
@@ -1686,6 +1687,7 @@ defmodule AshPhoenix.Form do
                       )
                       |> Map.put(:name, form.name <> "[#{key}][#{index}]")
                       |> Map.put(:id, form.id <> "_#{key}_#{index}")
+                      |> clear_embed_source_errors(opts)
 
                     Map.update(forms, key, [validated], fn nested_forms ->
                       nested_forms ++
@@ -1726,6 +1728,7 @@ defmodule AshPhoenix.Form do
                       accessing_from: opts[:managed_relationship],
                       prepare_source: opts[:prepare_source]
                     )
+                    |> clear_embed_source_errors(opts)
 
                   Map.put(forms, key, new_form)
                 else
@@ -1763,6 +1766,7 @@ defmodule AshPhoenix.Form do
                       as: form.name <> "[#{key}]",
                       id: form.id <> "_#{key}"
                     )
+                    |> clear_embed_source_errors(opts)
 
                   Map.put(forms, key, new_form)
                 end
@@ -2401,6 +2405,23 @@ defmodule AshPhoenix.Form do
          |> carry_over_errors()
          |> Map.put(:valid?, false)}
       end
+    end
+  end
+
+  # The parent action casts and validates embedded params inline, so running
+  # the embed's own action would produce a second, duplicate validation that
+  # bypasses parent-level logic. We still need the standalone source for
+  # rendering; `carry_over_errors/2` replays any real errors from the parent.
+  #
+  # Unions are excluded: they rewrite params into an `%Ash.Union{}` struct
+  # before handing them up, so the parent can't catch input errors and the
+  # standalone validation is the only line of defense. `union?` is set by
+  # `AshPhoenix.Form.Auto.unions/3` to mark these forms explicitly.
+  defp clear_embed_source_errors(form, opts) do
+    if opts[:embed?] && !opts[:union?] && form.source do
+      %{form | source: %{form.source | errors: [], valid?: true}}
+    else
+      form
     end
   end
 

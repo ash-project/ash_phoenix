@@ -1464,6 +1464,81 @@ defmodule AshPhoenix.FormTest do
       assert is_map(all_raw_errors)
       assert Map.has_key?(all_raw_errors, [])
     end
+
+    test "embedded sub-forms defer validation to the parent's cast" do
+      # Structural assertion: the embed's own :create action would reject
+      # this input (city and postcode are required), but its source is
+      # explicitly marked valid and its standalone errors cleared. The
+      # parent's cast is now the sole source of validation for the embed.
+      form =
+        Author
+        |> Form.for_create(:create, forms: [auto?: true])
+        |> Form.add_form(:address, params: %{})
+        |> Form.validate(%{
+          "email" => "me@example.com",
+          "address" => %{"line1" => "1 Main St", "city" => "", "postcode" => ""}
+        })
+
+      assert form.forms[:address].source.valid?
+
+      # Parent's cast surfaces the real errors, which carry over for
+      # rendering without duplicating the sub-form's own pass.
+      errors = Form.errors(form, for_path: [:address])
+      assert {:postcode, _} = List.keyfind(errors, :postcode, 0)
+      assert {:city, _} = List.keyfind(errors, :city, 0)
+      refute form.valid?
+    end
+
+    test "consumer's cast_input override determines acceptance of blank input" do
+      # User-facing demonstration: when the embed's cast_input collapses
+      # all-blank input to {:ok, nil} (see AshPhoenix.Test.Address), the
+      # parent's nullable :address attribute accepts the value and the
+      # form is valid. Without deferred sub-form validation this would
+      # fail: the sub-form's own :create action would still reject the
+      # blank input as missing required attributes.
+      form =
+        Author
+        |> Form.for_create(:create, forms: [auto?: true])
+        |> Form.add_form(:address, params: %{})
+        |> Form.validate(%{
+          "email" => "me@example.com",
+          "address" => %{"line1" => "", "city" => "", "postcode" => ""}
+        })
+
+      assert Form.errors(form, for_path: :all) == %{}
+      assert form.valid?
+    end
+
+    test "manage_relationship forms still validate standalone on validate" do
+      form =
+        Comment
+        |> Form.for_create(:create, forms: [auto?: true])
+        |> Form.add_form(:post, params: %{})
+        |> Form.validate(%{"text" => "comment text", "post" => %{}})
+
+      assert Form.errors(form, for_path: [:post]) == [text: "is required"]
+      refute form.valid?
+    end
+
+    test "update form with existing embedded data is valid without changes" do
+      author = %Author{
+        id: Ash.UUID.generate(),
+        email: "me@example.com",
+        address: %AshPhoenix.Test.Address{
+          line1: "1 Main St",
+          city: "Sydney",
+          postcode: "2000"
+        }
+      }
+
+      form =
+        author
+        |> Form.for_update(:update, forms: [auto?: true])
+        |> Form.validate(%{"email" => "new@example.com"})
+
+      assert Form.errors(form, for_path: :all) == %{}
+      assert form.valid?
+    end
   end
 
   describe "data" do
