@@ -28,6 +28,16 @@ if Code.ensure_loaded?(Igniter) do
     * `--resource-plural` - Pluralized version resource name for the route paths and templates
     * `--resource-plural-for-routes` - Override the plural name used in route paths (e.g. "random-things"). Useful when the route prefix contains dashes.
     * `--phx-version` - Phoenix version 1.7 (old) or 1.8 (new). Defaults to 1.8
+
+    ## Custom Templates
+
+    If you wish to use custom generator templates, they must be placed in your `priv/templates/ash_phoenix.gen.live` directory. Any custom templates located will replace the standard AshPhoenix template file for that file name.  
+
+    AshPhoenix will allow use of the following files for templates: 
+    * `form.ex.eex`
+    * `index.ex.eex`
+    * `show.ex.eex`
+
     """
 
     def info(_argv, _composing_task) do
