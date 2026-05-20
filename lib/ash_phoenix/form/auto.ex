@@ -503,14 +503,19 @@ defmodule AshPhoenix.Form.Auto do
   defp map_type?(Ash.Type.Map), do: true
 
   defp map_type?(type) do
-    if Ash.Type.embedded_type?(type) do
-      if is_atom(type) && :erlang.function_exported(type, :admin_map_type?, 0) do
-        type.admin_map_type?()
-      else
+    cond do
+      Ash.Type.NewType.new_type?(type) ->
+        map_type?(Ash.Type.NewType.subtype_of(type))
+
+      Ash.Type.embedded_type?(type) ->
+        if is_atom(type) && :erlang.function_exported(type, :admin_map_type?, 0) do
+          type.admin_map_type?()
+        else
+          false
+        end
+
+      true ->
         false
-      end
-    else
-      false
     end
   end
 

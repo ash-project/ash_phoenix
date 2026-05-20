@@ -35,6 +35,17 @@ defmodule AshPhoenix.AutoFormTest do
     assert update_opts(forms[:linked_posts], %{})[:create_action] == :create
   end
 
+  test "it works when the relationship arg type is a NewType with subtype_of: :map" do
+    forms =
+      Post
+      |> auto_forms(:create_with_new_type_map_arg)
+      |> Keyword.get(:forms)
+
+    refute is_nil(forms[:comments])
+    assert update_opts(forms[:comments], %{})[:create_action] == :create
+    assert update_opts(forms[:comments], %{})[:update_action] == :update
+  end
+
   test "when using a non-map value it operates on maps, then transforms the params accordingly" do
     form =
       Post

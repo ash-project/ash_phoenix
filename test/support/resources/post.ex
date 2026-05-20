@@ -86,6 +86,11 @@ defmodule AshPhoenix.Test.Post do
       change(manage_relationship(:comment_ids, :comments, type: :append_and_remove))
     end
 
+    create :create_with_new_type_map_arg do
+      argument(:comments, {:array, AshPhoenix.Test.MapType})
+      change(manage_relationship(:comments, type: :direct_control))
+    end
+
     create :create_author_required do
       argument(:author, :map, allow_nil?: false)
       change(manage_relationship(:author, type: :direct_control, on_missing: :unrelate))
