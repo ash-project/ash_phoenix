@@ -11,6 +11,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.23](https://github.com/ash-project/ash_phoenix/compare/v2.3.22...v2.3.23) (2026-06-05)
+
+
+
+
+### Bug Fixes:
+
+* unwrap `NewType` in auto-form `map_type?` check (#475) by sevenseacat [(#475)](https://github.com/ash-project/ash_phoenix/pull/475)
+
+* Skip embed form standalone validation (#474) by sevenseacat [(#474)](https://github.com/ash-project/ash_phoenix/pull/474)
+
+* propagate shared context to nested forms in add_form and validate (#472) by [@nallwhy](https://github.com/nallwhy) [(#472)](https://github.com/ash-project/ash_phoenix/pull/472)
+
 ## [v2.3.22](https://github.com/ash-project/ash_phoenix/compare/v2.3.21...v2.3.22) (2026-05-02)
 
 

@@ -22,7 +22,7 @@ Welcome! This is the package for integrating [Phoenix Framework](https://www.pho
 Add `ash_phoenix` to your list of dependencies in `mix.exs`:
 
 ```elixir
-{:ash_phoenix, "~> 2.3.22"}
+{:ash_phoenix, "~> 2.3.23"}
 ```
 
 ## Whats in the box?
