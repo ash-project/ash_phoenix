@@ -193,7 +193,7 @@ defmodule AshPhoenix.Form do
 
   alias AshPhoenix.Form.InvalidPath
 
-  @type source :: Ash.Changeset.t() | Ash.Query.t() | Ash.Resource.record()
+  @type source :: Ash.Changeset.t() | Ash.Query.t() | Ash.Resource.Record.t()
 
   @type t :: %__MODULE__{
           resource: Ash.Resource.t(),
@@ -202,7 +202,7 @@ defmodule AshPhoenix.Form do
           params: map,
           source: source,
           transform_params: nil | (map, atom -> term) | (t(), map, atom -> term),
-          data: nil | Ash.Resource.record(),
+          data: nil | Ash.Resource.Record.t(),
           form_keys: Keyword.t(),
           forms: map,
           method: String.t(),
@@ -765,7 +765,7 @@ defmodule AshPhoenix.Form do
 
   #{Spark.Options.docs(@nested_form_opts)}
   """
-  @spec for_update(Ash.Resource.record(), action :: atom, opts :: Keyword.t()) :: t()
+  @spec for_update(Ash.Resource.Record.t(), action :: atom, opts :: Keyword.t()) :: t()
   def for_update(%resource{} = data, action, opts \\ []) do
     opts =
       opts
@@ -904,7 +904,7 @@ defmodule AshPhoenix.Form do
 
   #{Spark.Options.docs(@nested_form_opts)}
   """
-  @spec for_destroy(Ash.Resource.record(), action :: atom, opts :: Keyword.t()) :: t()
+  @spec for_destroy(Ash.Resource.Record.t(), action :: atom, opts :: Keyword.t()) :: t()
   def for_destroy(%resource{} = data, action, opts \\ []) do
     opts =
       opts
@@ -2125,14 +2125,14 @@ defmodule AshPhoenix.Form do
   #{Spark.Options.docs(@submit_opts)}
   """
   @spec submit(t(), Keyword.t()) ::
-          {:ok, Ash.Resource.record() | nil | list(Ash.Notifier.Notification.t())}
-          | {:ok, Ash.Resource.record(), list(Ash.Notifier.Notification.t())}
+          {:ok, Ash.Resource.Record.t() | nil | list(Ash.Notifier.Notification.t())}
+          | {:ok, Ash.Resource.Record.t(), list(Ash.Notifier.Notification.t())}
           | :ok
           | {:error, t()}
 
   @spec submit(Phoenix.HTML.Form.t(), Keyword.t()) ::
-          {:ok, Ash.Resource.record() | nil | list(Ash.Notifier.Notification.t())}
-          | {:ok, Ash.Resource.record(), list(Ash.Notifier.Notification.t())}
+          {:ok, Ash.Resource.Record.t() | nil | list(Ash.Notifier.Notification.t())}
+          | {:ok, Ash.Resource.Record.t(), list(Ash.Notifier.Notification.t())}
           | :ok
           | {:error, Phoenix.HTML.Form.t()}
   def submit(form, opts \\ [])
@@ -2488,7 +2488,7 @@ defmodule AshPhoenix.Form do
   @doc """
   Same as `submit/2`, but raises an error if the submission fails.
   """
-  @spec submit!(t(), Keyword.t()) :: Ash.Resource.record() | :ok | no_return
+  @spec submit!(t(), Keyword.t()) :: Ash.Resource.Record.t() | :ok | no_return
   def submit!(form, opts \\ []) do
     case submit(form, Keyword.put(opts, :raise?, true)) do
       {:ok, value} ->
