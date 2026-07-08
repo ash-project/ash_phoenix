@@ -11,6 +11,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.24](https://github.com/ash-project/ash_phoenix/compare/v2.3.23...v2.3.24) (2026-07-08)
+
+
+
+
+### Bug Fixes:
+
+* Rename Ash.Resource.record() -> Ash.Resource.Record.t() by [@jimsynz](https://github.com/jimsynz)
+
 ## [v2.3.23](https://github.com/ash-project/ash_phoenix/compare/v2.3.22...v2.3.23) (2026-06-05)
 
 
