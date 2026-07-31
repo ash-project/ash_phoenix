@@ -2825,6 +2825,67 @@ defmodule AshPhoenix.FormTest do
     refute comment_form.source.context[:some_other_key]
   end
 
+  test "actor and tenant from a scope are propagated to nested forms built from initial params" do
+    scope = %{actor: %{id: "actor-1"}, tenant: "tenant-1"}
+
+    form =
+      Post
+      |> Form.for_create(:create,
+        domain: Domain,
+        scope: scope,
+        params: %{"text" => "post", "comments" => [%{"text" => "comment"}]}
+      )
+
+    [comment_form] = form.forms[:comments]
+    assert comment_form.source.tenant == "tenant-1"
+    assert comment_form.source.context[:private][:actor] == %{id: "actor-1"}
+  end
+
+  test "actor and tenant from a scope are propagated to nested forms added via add_form" do
+    scope = %{actor: %{id: "actor-1"}, tenant: "tenant-1"}
+
+    form =
+      Post
+      |> Form.for_create(:create, domain: Domain, scope: scope, params: %{"text" => "post"})
+      |> Form.add_form(:comments, params: %{"text" => "comment"})
+
+    [comment_form] = form.forms[:comments]
+    assert comment_form.source.tenant == "tenant-1"
+    assert comment_form.source.context[:private][:actor] == %{id: "actor-1"}
+  end
+
+  test "actor and tenant from a scope are propagated to nested forms added during validate" do
+    scope = %{actor: %{id: "actor-1"}, tenant: "tenant-1"}
+
+    form =
+      Post
+      |> Form.for_create(:create, domain: Domain, scope: scope, params: %{"text" => "post"})
+      |> Form.validate(%{"text" => "post", "comments" => [%{"text" => "comment"}]})
+
+    [comment_form] = form.forms[:comments]
+    assert comment_form.source.tenant == "tenant-1"
+    assert comment_form.source.context[:private][:actor] == %{id: "actor-1"}
+  end
+
+  test "explicit actor and tenant still take precedence over a scope" do
+    scope = %{actor: %{id: "actor-1"}, tenant: "tenant-1"}
+
+    form =
+      Post
+      |> Form.for_create(:create,
+        domain: Domain,
+        scope: scope,
+        actor: %{id: "explicit"},
+        tenant: "explicit-tenant",
+        params: %{"text" => "post"}
+      )
+      |> Form.add_form(:comments, params: %{"text" => "comment"})
+
+    [comment_form] = form.forms[:comments]
+    assert comment_form.source.tenant == "explicit-tenant"
+    assert comment_form.source.context[:private][:actor] == %{id: "explicit"}
+  end
+
   test "only shared context is propagated to nested forms added during validate" do
     form =
       Post

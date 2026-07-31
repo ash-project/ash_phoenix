@@ -465,6 +465,32 @@ defmodule AshPhoenix.Form do
   @doc false
   def nested_form_opts, do: @nested_form_opts
 
+  # `handle_forms/14` threads `actor` and `tenant` down and passes them to every nested
+  # `for_action/3` call explicitly. In Ash an explicitly-nil `:actor`/`:tenant` opt takes
+  # precedence over `:scope` (`Keyword.update/4` in `Ash.Actions.Helpers.set_when_ok/4` runs the
+  # merger whenever the key is present, nil included), so a form built with only `scope:` handed
+  # every nested form `actor: nil, tenant: nil`. Resolve them from the scope up front.
+  #
+  # A key the caller passed explicitly is left alone, including an explicit `nil`, so overriding a
+  # scope still works the same way it does in Ash.
+  defp resolve_scope_opts(opts) do
+    case opts[:scope] do
+      nil ->
+        opts
+
+      scope ->
+        scope_opts = Ash.Scope.to_opts(scope)
+
+        Enum.reduce([:actor, :tenant], opts, fn key, opts ->
+          if Keyword.has_key?(opts, key) do
+            opts
+          else
+            Keyword.put(opts, key, scope_opts[key])
+          end
+        end)
+    end
+  end
+
   defp validate_opts_with_extra_keys(opts, schema) do
     keys = Keyword.keys(schema)
 
@@ -578,6 +604,7 @@ defmodule AshPhoenix.Form do
       |> update_opts(opts[:data], opts[:params] || %{})
       |> validate_opts_with_extra_keys(@for_opts)
       |> forms_for_type(:action)
+      |> resolve_scope_opts()
 
     require_action!(resource, action, :action)
 
@@ -678,6 +705,7 @@ defmodule AshPhoenix.Form do
       |> update_opts(nil, opts[:params] || %{})
       |> validate_opts_with_extra_keys(@for_opts)
       |> forms_for_type(:create)
+      |> resolve_scope_opts()
 
     require_action!(resource, action, :create)
 
@@ -773,6 +801,7 @@ defmodule AshPhoenix.Form do
       |> update_opts(data, opts[:params] || %{})
       |> validate_opts_with_extra_keys(@for_opts)
       |> forms_for_type(:update)
+      |> resolve_scope_opts()
 
     require_action!(resource, action, :update)
 
@@ -912,6 +941,7 @@ defmodule AshPhoenix.Form do
       |> update_opts(data, opts[:params] || %{})
       |> validate_opts_with_extra_keys(@for_opts)
       |> forms_for_type(:destroy)
+      |> resolve_scope_opts()
 
     require_action!(resource, action, :destroy)
 
@@ -1012,6 +1042,7 @@ defmodule AshPhoenix.Form do
       |> update_opts(opts[:data], opts[:params] || %{})
       |> validate_opts_with_extra_keys(@for_opts)
       |> forms_for_type(:read)
+      |> resolve_scope_opts()
 
     require_action!(resource, action, :read)
 
