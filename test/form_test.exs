@@ -2867,6 +2867,62 @@ defmodule AshPhoenix.FormTest do
     assert comment_form.source.context[:private][:actor] == %{id: "actor-1"}
   end
 
+  test "actor and tenant are propagated to a single nested form built from existing data" do
+    post =
+      Post
+      |> Ash.Changeset.new()
+      |> Ash.Changeset.set_argument(:author, %{email: "nigel@elixir-lang.org"})
+      |> Ash.Changeset.for_create(:create, %{text: "post"})
+      |> Ash.create!()
+      |> Ash.load!(:author)
+
+    form =
+      post
+      |> Form.for_update(:update,
+        domain: Domain,
+        actor: %{id: "actor-1"},
+        tenant: "tenant-1",
+        forms: [auto?: true],
+        params: %{
+          "text" => "post",
+          "author" => %{"id" => post.author.id, "email" => "nigel@elixir-lang.org"}
+        }
+      )
+
+    author_form = form.forms[:author]
+    assert author_form.source.tenant == "tenant-1"
+    assert author_form.source.context[:private][:actor] == %{id: "actor-1"}
+  end
+
+  test "actor and tenant are propagated to a list of nested forms built from existing data" do
+    post =
+      Post
+      |> Ash.Changeset.new()
+      |> Ash.Changeset.set_argument(:comments, [%{text: "comment"}])
+      |> Ash.Changeset.for_create(:create, %{text: "post"})
+      |> Ash.create!()
+      |> Ash.load!(:comments)
+
+    [comment] = post.comments
+
+    form =
+      post
+      |> Form.for_update(:update,
+        domain: Domain,
+        actor: %{id: "actor-1"},
+        tenant: "tenant-1",
+        forms: [auto?: true],
+        params: %{
+          "text" => "post",
+          "comments" => [%{"id" => comment.id, "text" => "comment"}]
+        }
+      )
+
+    [comment_form] = form.forms[:comments]
+    assert comment_form.source.tenant == "tenant-1"
+    assert comment_form.source.context[:private][:actor] == %{id: "actor-1"}
+  end
+
   test "explicit actor and tenant still take precedence over a scope" do
     scope = %{actor: %{id: "actor-1"}, tenant: "tenant-1"}
 

@@ -5785,6 +5785,9 @@ defmodule AshPhoenix.Form do
                   action: :update
 
             for_action(data, update_action,
+              actor: actor,
+              scope: scope,
+              tenant: tenant,
               params: form_params,
               domain: domain,
               context: shared_context,
@@ -5793,6 +5796,7 @@ defmodule AshPhoenix.Form do
               accessing_from: opts[:managed_relationship],
               prepare_source: opts[:prepare_source],
               transform_params: opts[:transform_params],
+              updater: opts[:updater],
               warn_on_unhandled_errors?: warn_on_unhandled_errors?,
               prev_data_trail: prev_data_trail,
               transform_errors: transform_errors,
