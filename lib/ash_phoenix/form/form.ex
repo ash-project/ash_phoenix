@@ -6436,22 +6436,24 @@ defmodule AshPhoenix.Form do
       end
     end
 
-    defp type_validations(%{type: Ash.Types.Integer, constraints: constraints}) do
+    defp type_validations(%{type: Ash.Type.Integer, constraints: constraints}) do
       constraints
       |> Kernel.||([])
       |> Keyword.take([:max, :min])
       |> Keyword.put(:step, 1)
     end
 
-    defp type_validations(%{type: Ash.Types.Decimal, constraints: constraints}) do
+    defp type_validations(%{type: Ash.Type.Decimal, constraints: constraints}) do
       constraints
       |> Kernel.||([])
       |> Keyword.take([:max, :min])
       |> Keyword.put(:step, "any")
     end
 
-    defp type_validations(%{type: Ash.Types.String, constraints: constraints}) do
-      if constraints[:trim?] do
+    defp type_validations(%{type: Ash.Type.String, constraints: constraints}) do
+      constraints = constraints || []
+
+      if Keyword.get(constraints, :trim?, true) do
         # We should consider using the `match` validation here, but we can't
         # add a title here, so we can't set an error message
         # min_length = to_string(constraints[:min_length])
@@ -6459,18 +6461,8 @@ defmodule AshPhoenix.Form do
         # [match: "(\S\s*){#{min_length},#{max_length}}"]
         []
       else
-        validations =
-          if constraints[:min_length] do
-            [min_length: constraints[:min_length]]
-          else
-            []
-          end
-
-        if constraints[:min_length] do
-          Keyword.put(constraints, :min_length, constraints[:min_length])
-        else
-          validations
-        end
+        [minlength: constraints[:min_length], maxlength: constraints[:max_length]]
+        |> Enum.reject(fn {_attribute, value} -> is_nil(value) end)
       end
     end
 
