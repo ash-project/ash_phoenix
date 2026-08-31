@@ -73,27 +73,22 @@ defmodule AshPhoenix.LiveView.SubdomainHook do
   def on_mount(opts, _params, _session, socket) when is_list(opts) do
     opts = Spark.Options.validate!(opts, @hook_options)
 
-    socket
-    |> assign_tenant(opts)
-    |> call_handle_subdomain(opts)
+    {:cont,
+     attach_hook(socket, :set_tenant, :handle_params, fn _params, url, socket ->
+       subdomain = AshPhoenix.Helpers.get_subdomain(socket, url)
+       socket = assign(socket, opts[:assign], subdomain)
+       call_handle_subdomain(socket, subdomain, opts)
+     end)}
   end
 
   def on_mount(_action, params, session, socket) do
     on_mount([], params, session, socket)
   end
 
-  defp assign_tenant(socket, opts) do
-    attach_hook(socket, :set_tenant, :handle_params, fn
-      _params, url, socket ->
-        subdomain = AshPhoenix.Helpers.get_subdomain(socket, url)
-        {:cont, assign(socket, opts[:assign], subdomain)}
-    end)
-  end
-
-  defp call_handle_subdomain(socket, opts) do
+  defp call_handle_subdomain(socket, subdomain, opts) do
     case opts[:handle_subdomain] do
       {m, f, a} ->
-        apply(m, f, [socket, socket.assigns[opts[:assign]] | a])
+        apply(m, f, [socket, subdomain | a])
 
       _ ->
         {:cont, socket}
