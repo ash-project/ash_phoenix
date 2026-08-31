@@ -550,44 +550,16 @@ defmodule AshPhoenix.FilterForm do
          } = predicate,
          resource
        ) do
-    ref =
-      case Ash.Resource.Info.public_calculation(
-             Ash.Resource.Info.related(resource, path),
-             field
-           ) do
-        nil ->
-          {:ok, Ash.Expr.expr(^Ash.Expr.ref(List.wrap(path), field))}
+    related_resource = public_related(resource, path)
 
-        %{calculation: {module, calc_opts}} = calc ->
-          with {:ok, input} <-
-                 Ash.Query.validate_calculation_arguments(
-                   calc,
-                   arguments.input || %{}
-                 ),
-               {:ok, calc} <-
-                 Ash.Query.Calculation.new(
-                   calc.name,
-                   module,
-                   calc_opts,
-                   calc.type,
-                   calc.constraints,
-                   arguments: input,
-                   async?: calc.async?,
-                   filterable?: calc.filterable?,
-                   sortable?: calc.sortable?,
-                   sensitive?: calc.sensitive?,
-                   load: calc.load,
-                   calc_name: calc.name,
-                   source_context: %{}
-                 ) do
-            {:ok,
-             %Ash.Query.Ref{
-               attribute: calc,
-               relationship_path: path,
-               resource: Ash.Resource.Info.related(resource, path),
-               input?: true
-             }}
-          end
+    ref =
+      cond do
+        is_nil(related_resource) or
+            is_nil(Ash.Resource.Info.public_field(related_resource, field)) ->
+          {:error, {:operator, "Invalid path #{Enum.join(List.wrap(path) ++ [field], ".")}", []}}
+
+        true ->
+          build_ref(related_resource, path, field, arguments)
       end
 
     case ref do
@@ -617,6 +589,44 @@ defmodule AshPhoenix.FilterForm do
 
       {:error, error} ->
         {:error, error}
+    end
+  end
+
+  defp build_ref(related_resource, path, field, arguments) do
+    case Ash.Resource.Info.public_calculation(related_resource, field) do
+      nil ->
+        {:ok, Ash.Expr.expr(^Ash.Expr.ref(List.wrap(path), field))}
+
+      %{calculation: {module, calc_opts}} = calc ->
+        with {:ok, input} <-
+               Ash.Query.validate_calculation_arguments(
+                 calc,
+                 arguments.input || %{}
+               ),
+             {:ok, calc} <-
+               Ash.Query.Calculation.new(
+                 calc.name,
+                 module,
+                 calc_opts,
+                 calc.type,
+                 calc.constraints,
+                 arguments: input,
+                 async?: calc.async?,
+                 filterable?: calc.filterable?,
+                 sortable?: calc.sortable?,
+                 sensitive?: calc.sensitive?,
+                 load: calc.load,
+                 calc_name: calc.name,
+                 source_context: %{}
+               ) do
+          {:ok,
+           %Ash.Query.Ref{
+             attribute: calc,
+             relationship_path: path,
+             resource: related_resource,
+             input?: true
+           }}
+        end
     end
   end
 
@@ -750,7 +760,7 @@ defmodule AshPhoenix.FilterForm do
 
     extended_path = path ++ [field]
 
-    case Ash.Resource.Info.related(form.resource, extended_path) do
+    case public_related(form.resource, extended_path) do
       nil ->
         {path, field}
 
@@ -758,6 +768,15 @@ defmodule AshPhoenix.FilterForm do
         %{name: new_field} = List.first(Ash.Resource.Info.public_attributes(related))
         {extended_path, new_field}
     end
+  end
+
+  defp public_related(resource, path) do
+    Enum.reduce_while(List.wrap(path), resource, fn rel, resource ->
+      case resource && Ash.Resource.Info.public_relationship(resource, rel) do
+        nil -> {:halt, nil}
+        relationship -> {:cont, relationship.destination}
+      end
+    end)
   end
 
   defp parse_path(params) do
@@ -1072,7 +1091,7 @@ defmodule AshPhoenix.FilterForm do
   end
 
   defp predicate_errors(predicate, resource) do
-    case Ash.Resource.Info.related(resource, predicate.path) do
+    case public_related(resource, predicate.path) do
       nil ->
         [
           {:operator, "Invalid path #{Enum.join(predicate.path, ".")}", []}

@@ -331,6 +331,34 @@ defmodule AshPhoenix.FilterFormTest do
                contains(text, "new")
              )
     end
+
+    test "predicates cannot filter across a non-public relationship" do
+      form =
+        FilterForm.new(Post,
+          params: %{
+            "field" => "name",
+            "operator" => "eq",
+            "value" => "someone",
+            "path" => "author"
+          }
+        )
+
+      refute form.valid?
+      assert {:error, %FilterForm{}} = FilterForm.to_filter_expression(form)
+    end
+
+    test "a field that names a non-public relationship is not expanded into a path" do
+      form =
+        FilterForm.new(Post,
+          params: %{
+            "field" => "author",
+            "operator" => "eq",
+            "value" => "someone"
+          }
+        )
+
+      refute form.valid?
+    end
   end
 
   describe "form_data implementation" do

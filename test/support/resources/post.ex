@@ -113,7 +113,7 @@ defmodule AshPhoenix.Test.Post do
   end
 
   relationships do
-    has_many(:comments, AshPhoenix.Test.Comment)
+    has_many(:comments, AshPhoenix.Test.Comment, public?: true)
     belongs_to(:author, AshPhoenix.Test.Author)
     has_one(:featured_comment, AshPhoenix.Test.Comment, read_action: :featured)
 
