@@ -85,5 +85,19 @@ defmodule AshPhoenix.HelpersTest do
 
       assert subdomain == tenant
     end
+
+    test "matches the root host case-insensitively" do
+      assert is_nil(AshPhoenix.Helpers.get_subdomain("EXAMPLE.COM", TestEndpoint))
+      assert AshPhoenix.Helpers.get_subdomain("TENANT.EXAMPLE.COM", TestEndpoint) == "tenant"
+    end
+
+    test "does not treat the root host as a regex or match it unanchored" do
+      assert is_nil(
+               AshPhoenix.Helpers.get_subdomain("foo.exampleXcom.attacker.net", TestEndpoint)
+             )
+
+      assert is_nil(AshPhoenix.Helpers.get_subdomain("Xexample.com", TestEndpoint))
+      assert is_nil(AshPhoenix.Helpers.get_subdomain("foo.attacker.net", TestEndpoint))
+    end
   end
 end
