@@ -244,7 +244,7 @@ defmodule AshPhoenix.Form.Auto do
     end
   end
 
-  defp determine_type(constraints, _data, %{"_union_type" => union_type} = params) do
+  defp determine_type(constraints, _data, %{"_union_type" => union_type}) do
     constraints[:types]
     |> Enum.find(fn {key, _value} ->
       to_string(key) == union_type
@@ -254,13 +254,7 @@ defmodule AshPhoenix.Form.Auto do
         raise """
         Got "_union_type" parameter of #{inspect(union_type)}, but no type with that name was found in the constraints.
 
-        Params:
-
-        #{inspect(params, pretty: true)}
-
-        Available types:
-
-        #{inspect(constraints[:types], pretty: true)}
+        Available types: #{union_type_names(constraints)}
         """
 
       {key, config} ->
@@ -309,18 +303,17 @@ defmodule AshPhoenix.Form.Auto do
         If you are adding a form, select a type using `params: %{"_union_type" => "type_name"}`, or if one
         or more of your types is using a tag you can set that tag with `params: %{"tag" => "tag_value"}`.
 
-        Params:
-
-        #{inspect(params, pretty: true)}
-
-        Available types:
-
-        #{inspect(constraints[:types], pretty: true)}
+        Available types: #{union_type_names(constraints)}
         """
 
       {key, config} ->
         {key, config[:type], config[:constraints], config[:tag], config[:tag_value]}
     end
+  end
+
+  defp union_type_names(constraints) do
+    (constraints[:types] || [])
+    |> Enum.map_join(", ", fn {key, _config} -> to_string(key) end)
   end
 
   @doc false

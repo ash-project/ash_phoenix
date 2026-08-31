@@ -108,6 +108,20 @@ defmodule AshPhoenix.AutoFormTest do
       |> AshPhoenix.Form.submit!(params: params)
     end
 
+    test "an unknown _union_type does not leak the submitted params in the error" do
+      err =
+        assert_raise RuntimeError, fn ->
+          Post
+          |> AshPhoenix.Form.for_create(:create, domain: Domain, forms: [auto?: true])
+          |> AshPhoenix.Form.add_form(:union,
+            params: %{"_union_type" => "not_a_real_type", "password" => "marker-secret-3039"}
+          )
+        end
+
+      refute err.message =~ "marker-secret-3039"
+      assert err.message =~ "not_a_real_type"
+    end
+
     test "simple unions" do
       params = %{"text" => "foobar"}
       opts = [domain: Domain, forms: [auto?: true], params: params]
