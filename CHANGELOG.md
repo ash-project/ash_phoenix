@@ -11,6 +11,31 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.25](https://github.com/ash-project/ash_phoenix/compare/v2.3.24...v2.3.25) (2026-08-31)
+
+
+
+
+### Bug Fixes:
+
+* remove deprecated page_from_params/3 (client-controlled count) by [@zachdaniel](https://github.com/zachdaniel)
+
+* don't leak submitted params in unknown _union_type error (CVE-2026-82727) by [@zachdaniel](https://github.com/zachdaniel)
+
+* match root host case-insensitively and as an exact suffix in get_subdomain (CVE-2026-82726) by [@zachdaniel](https://github.com/zachdaniel)
+
+* reject filtering across non-public relationships in FilterForm (CVE-2026-82725) by [@zachdaniel](https://github.com/zachdaniel)
+
+* run handle_subdomain with the real tenant in handle_params (cross-tenant) (CVE-2026-82724) by [@zachdaniel](https://github.com/zachdaniel)
+
+* propagate actor, scope and tenant to a single nested form built from existing data (#483) by Johannes Welebil [(#483)](https://github.com/ash-project/ash_phoenix/pull/483)
+
+* don't use `negated?` for filter generation by [@zachdaniel](https://github.com/zachdaniel)
+
+* prevent false PendingCodegen when the check races the code reloader (#482) by [@Malian](https://github.com/Malian) [(#482)](https://github.com/ash-project/ash_phoenix/pull/482)
+
+* resolve actor and tenant from scope before building nested forms (#480) by [@Valian](https://github.com/Valian) [(#480)](https://github.com/ash-project/ash_phoenix/pull/480)
+
 ## [v2.3.24](https://github.com/ash-project/ash_phoenix/compare/v2.3.23...v2.3.24) (2026-07-08)
 
 
