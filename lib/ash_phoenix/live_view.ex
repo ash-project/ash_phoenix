@@ -252,28 +252,6 @@ defmodule AshPhoenix.LiveView do
     |> assign(:ash_live_config, new_live_config)
   end
 
-  @doc """
-  Generates a page request for doing pagination based on the passed in parameters.
-
-  ## Examples
-
-      iex> AshPhoenix.LiveView.page_from_params(%{"offset" => "10", "limit" => "10"}, 20, true)
-      [count: true, limit: 10, offset: 10]
-
-      iex> AshPhoenix.LiveView.page_from_params(%{"offset" => "10", "limit" => "10"}, 20)
-      [count: false, limit: 10, offset: 10]
-
-      iex> AshPhoenix.LiveView.page_from_params(%{"offset" => "10", "count" => "true"}, 20)
-      [count: true, limit: 20, offset: 10]
-  """
-  @doc deprecated: "Use params_to_page_opts/2 instead"
-  @spec page_from_params(page_params(), pos_integer(), boolean()) :: Keyword.t()
-  def page_from_params(params, default_limit, count? \\ false) do
-    params
-    |> page_request_params(default_limit)
-    |> Keyword.put(:count, count? || params["count"] == "true")
-  end
-
   @page_opts [
     default_limit: [
       type: :pos_integer,
@@ -298,7 +276,7 @@ defmodule AshPhoenix.LiveView do
 
   Count queries are **only** included if `count?: true` is explicitly set in options.
 
-  Unlike `page_from_params/3`, this function does **not** override `:count` based on user params, even if params map contains "count" key.
+  This function does **not** override `:count` based on user params, even if the params map contains a "count" key.
   This makes developer intent more explicit, and prevents potentially expensive queries from being run unexpectedly.
 
   If you'd like to include a count query from user params, you can explicitly do:
