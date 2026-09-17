@@ -73,7 +73,8 @@ defmodule AshPhoenix.Plug.CheckCodegenStatus do
   # The code reloader holds the build lock. When the check also holds this
   # lock, the two operations occur one after the other. This prevents the
   # incorrect report.
-  # TODO: remove once we depend on Elixir 1.18
+  # The fallback clause can go once we require Elixir 1.18, which always has
+  # `Mix.Project.with_build_lock/1`.
   if Code.ensure_loaded?(Mix.Project) and function_exported?(Mix.Project, :with_build_lock, 1) do
     defp with_build_lock(fun), do: Mix.Project.with_build_lock(fun)
   else

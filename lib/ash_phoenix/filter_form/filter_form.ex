@@ -550,13 +550,11 @@ defmodule AshPhoenix.FilterForm do
     related_resource = public_related(resource, path)
 
     ref =
-      cond do
-        is_nil(related_resource) or
-            is_nil(Ash.Resource.Info.public_field(related_resource, field)) ->
-          {:error, {:operator, "Invalid path #{Enum.join(List.wrap(path) ++ [field], ".")}", []}}
-
-        true ->
-          build_ref(related_resource, path, field, arguments)
+      if is_nil(related_resource) or
+           is_nil(Ash.Resource.Info.public_field(related_resource, field)) do
+        {:error, {:operator, "Invalid path #{Enum.join(List.wrap(path) ++ [field], ".")}", []}}
+      else
+        build_ref(related_resource, path, field, arguments)
       end
 
     case ref do
