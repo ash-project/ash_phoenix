@@ -23,3 +23,5 @@ if Mix.env() == :dev do
     manage_readme_version: "README.md",
     version_tag_prefix: "v"
 end
+
+config :ash, default_string_length_count: :codepoints
