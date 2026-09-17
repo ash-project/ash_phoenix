@@ -8,8 +8,6 @@ defmodule AshPhoenix.Test.TodoTask do
     domain: AshPhoenix.Test.Domain,
     data_layer: Ash.DataLayer.Ets
 
-  require Ash.Query
-
   resource do
     ets do
       private? true

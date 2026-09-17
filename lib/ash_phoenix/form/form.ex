@@ -2345,7 +2345,7 @@ defmodule AshPhoenix.Form do
              |> set_changed?()}
           end
 
-        {:error, %{action_input: action_input} = error} when form.type == :action_input ->
+        {:error, %{action_input: action_input} = error} when form.type == :action ->
           if opts[:raise?] do
             errors =
               if action_input do
@@ -3215,17 +3215,17 @@ defmodule AshPhoenix.Form do
         if form.submit_errors do
           case type do
             :raw ->
-              form.submit_errors || []
+              form.submit_errors
 
             :simple ->
-              Map.new(form.submit_errors || [], fn {field, {message, vars}} ->
+              Map.new(form.submit_errors, fn {field, {message, vars}} ->
                 message = replace_vars(message, vars)
 
                 {field, message}
               end)
 
             :plaintext ->
-              Enum.map(form.submit_errors || [], fn {field, {message, vars}} ->
+              Enum.map(form.submit_errors, fn {field, {message, vars}} ->
                 message = replace_vars(message, vars)
 
                 "#{field}: " <> message
@@ -6376,7 +6376,7 @@ defmodule AshPhoenix.Form do
           resource: form.resource,
           action: form.action,
           field: field,
-          available: Keyword.keys(form.form_keys || [])
+          available: Keyword.keys(form.form_keys)
       end
 
       case form.form_keys[field][:type] || :single do
