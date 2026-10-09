@@ -91,6 +91,12 @@ defmodule AshPhoenix.Test.Post do
       change(manage_relationship(:comments, type: :direct_control))
     end
 
+    create :create_with_comment_lookup do
+      argument(:comments, {:array, :map})
+
+      change(manage_relationship(:comments, on_lookup: :relate_and_update, on_no_match: :error))
+    end
+
     create :create_author_required do
       argument(:author, :map, allow_nil?: false)
       change(manage_relationship(:author, type: :direct_control, on_missing: :unrelate))

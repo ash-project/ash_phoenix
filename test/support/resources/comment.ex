@@ -36,6 +36,22 @@ defmodule AshPhoenix.Test.Comment do
       change(manage_relationship(:post, type: :direct_control))
     end
 
+    create :create_with_post_updated_by_replace do
+      argument(:post, :map)
+
+      change(
+        manage_relationship(:post,
+          type: :direct_control,
+          on_match: {:update, :update_with_replace}
+        )
+      )
+    end
+
+    create :create_with_post_lookup do
+      argument(:post, :map)
+      change(manage_relationship(:post, on_lookup: :relate, on_no_match: :error))
+    end
+
     create :create_with_post_id do
       accept [:post_id, :text]
     end

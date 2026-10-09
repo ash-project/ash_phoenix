@@ -428,7 +428,6 @@ defmodule AshPhoenix.Form.Auto do
             |> add_read_action(manage_opts, relationship, auto_opts)
             |> add_update_action(manage_opts, relationship, auto_opts)
             |> add_destroy_action(manage_opts, relationship, auto_opts)
-            |> add_nested_forms(auto_opts)
 
           if opts[:read_action] || opts[:update_action] || opts[:destroy_action] do
             Keyword.put(
@@ -512,40 +511,9 @@ defmodule AshPhoenix.Form.Auto do
     end
   end
 
-  defp add_nested_forms(opts, auto_opts) do
-    Keyword.update!(opts, :forms, fn forms ->
-      forms =
-        if forms[:update_action] do
-          forms ++ set_for_type(auto(opts[:resource], opts[:update_action], auto_opts), :update)
-        else
-          forms
-        end
-
-      forms =
-        if forms[:create_action] do
-          forms ++ set_for_type(auto(opts[:resource], opts[:create_action], auto_opts), :create)
-        else
-          forms
-        end
-
-      forms =
-        if forms[:destroy_action] do
-          forms ++ set_for_type(auto(opts[:resource], opts[:destroy_action], auto_opts), :destroy)
-        else
-          forms
-        end
-
-      if forms[:read_action] do
-        forms ++ set_for_type(auto(opts[:resource], opts[:read_action], auto_opts), :read)
-      else
-        forms
-      end
-    end)
-  end
-
   defp set_for_type(forms, type) do
     Enum.map(forms, fn {key, value} ->
-      {key, Keyword.put(value, :for_type, type)}
+      {key, Keyword.put(value, :for_type, [type])}
     end)
   end
 
@@ -557,59 +525,49 @@ defmodule AshPhoenix.Form.Auto do
         opts
 
       {source_dest_or_join, action_name} ->
-        resource = rel_to_resource(source_dest_or_join, relationship)
+        read_resource = rel_to_resource(source_dest_or_join, relationship)
+
+        {update_forms, extra_forms} =
+          case Ash.Changeset.ManagedRelationshipHelpers.on_lookup_update_action(
+                 manage_opts,
+                 relationship
+               ) do
+            nil ->
+              {[], []}
+
+            {source_dest_or_join, update_action} ->
+              update_resource = rel_to_resource(source_dest_or_join, relationship)
+
+              {auto(update_resource, update_action, auto_opts),
+               [lookup_update_form(update_resource, update_action, relationship, manage_opts)]}
+
+            {:join, update_action, _} ->
+              update_resource = relationship.through
+
+              {auto(update_resource, update_action, auto_opts),
+               [lookup_update_form(update_resource, update_action, relationship, manage_opts)]}
+          end
 
         opts
-        |> Keyword.put(:read_resource, resource)
+        |> Keyword.put(:read_resource, read_resource)
         |> Keyword.put(:read_action, action_name)
-        |> Keyword.update!(
-          :forms,
-          fn forms ->
-            case Ash.Changeset.ManagedRelationshipHelpers.on_lookup_update_action(
-                   manage_opts,
-                   relationship
-                 ) do
-              nil ->
-                forms ++
-                  auto(resource, action_name, auto_opts)
-
-              {source_dest_or_join, update_action} ->
-                resource = rel_to_resource(source_dest_or_join, relationship)
-
-                forms ++
-                  auto(resource, action_name, auto_opts) ++
-                  [
-                    {:_update,
-                     [
-                       resource: resource,
-                       managed_relationship:
-                         {relationship.source, relationship.name, manage_opts},
-                       type: :single,
-                       data: resource.__struct__(),
-                       update_action: update_action
-                     ]}
-                  ]
-
-              {:join, update_action, _} ->
-                resource = relationship.through
-
-                forms ++
-                  auto(resource, action_name, auto_opts) ++
-                  [
-                    {:_update,
-                     [
-                       resource: resource,
-                       managed_relationship:
-                         {relationship.source, relationship.name, manage_opts},
-                       type: :single,
-                       data: resource.__struct__(),
-                       update_action: update_action
-                     ]}
-                  ]
-            end
-          end
-        )
+        |> Keyword.update!(:forms, fn forms ->
+          forms ++
+            set_for_type(auto(read_resource, action_name, auto_opts) ++ update_forms, :read) ++
+            extra_forms
+        end)
     end
+  end
+
+  defp lookup_update_form(resource, update_action, relationship, manage_opts) do
+    {:_update,
+     [
+       resource: resource,
+       managed_relationship: {relationship.source, relationship.name, manage_opts},
+       type: :single,
+       data: resource.__struct__(),
+       update_action: update_action
+     ]}
   end
 
   defp add_create_action(opts, manage_opts, relationship, auto_opts) do
@@ -630,7 +588,7 @@ defmodule AshPhoenix.Form.Auto do
         |> Keyword.update!(
           :forms,
           &(&1 ++
-              auto(resource, action_name, auto_opts))
+              set_for_type(auto(resource, action_name, auto_opts), :create))
         )
         |> add_join_form(relationship, rest, manage_opts)
     end
@@ -654,7 +612,7 @@ defmodule AshPhoenix.Form.Auto do
         |> Keyword.update!(
           :forms,
           &(&1 ++
-              auto(resource, action_name, auto_opts))
+              set_for_type(auto(resource, action_name, auto_opts), :update))
         )
         |> add_join_form(relationship, rest, manage_opts)
 
@@ -667,7 +625,7 @@ defmodule AshPhoenix.Form.Auto do
         |> Keyword.update!(
           :forms,
           &(&1 ++
-              auto(resource, action_name, auto_opts))
+              set_for_type(auto(resource, action_name, auto_opts), :update))
         )
         |> add_join_form(relationship, rest, manage_opts)
     end
@@ -694,7 +652,7 @@ defmodule AshPhoenix.Form.Auto do
         |> Keyword.update!(
           :forms,
           &(&1 ++
-              auto(resource, action_name, auto_opts))
+              set_for_type(auto(resource, action_name, auto_opts), :destroy))
         )
         |> add_join_form(relationship, rest, manage_opts)
     end

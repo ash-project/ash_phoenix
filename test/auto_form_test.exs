@@ -6,7 +6,7 @@ defmodule AshPhoenix.AutoFormTest do
   use ExUnit.Case
 
   alias AshPhoenix.Form.Auto
-  alias AshPhoenix.Test.{Domain, Post, SimplePost}
+  alias AshPhoenix.Test.{Comment, Domain, Post, SimplePost}
   import AshPhoenix.Form, only: [update_opts: 2]
 
   defp form_for(a, _b), do: Phoenix.HTML.FormData.to_form(a, [])
@@ -33,6 +33,59 @@ defmodule AshPhoenix.AutoFormTest do
     assert update_opts(forms[:comments], %{})[:create_action] == :create
     assert update_opts(forms[:linked_posts], %{})[:update_action] == :update
     assert update_opts(forms[:linked_posts], %{})[:create_action] == :create
+  end
+
+  describe "a related form's nested forms" do
+    defp post_form(action, add_form_opts) do
+      Comment
+      |> AshPhoenix.Form.for_create(action, domain: Domain)
+      |> AshPhoenix.Form.add_form([:post], add_form_opts)
+      |> Map.get(:forms)
+      |> Map.get(:post)
+    end
+
+    defp existing_post, do: %Post{id: Ash.UUID.generate(), text: "post"}
+
+    test "only include relationships managed by the action the form runs" do
+      # `Post.create` manages `linked_posts`, `Post.update` does not.
+      creating = post_form(:create, params: %{"text" => "post"})
+      updating = post_form(:create, type: :update, data: existing_post())
+
+      assert creating.form_keys[:linked_posts]
+      refute updating.form_keys[:linked_posts]
+      assert updating.form_keys[:comments]
+    end
+
+    test "use the config of the action the form runs when actions manage a relationship differently" do
+      # Creating a post uses `Post.create` (comments: direct_control), updating one uses
+      # `Post.update_with_replace` (comments: append_and_remove).
+      creating = post_form(:create_with_post_updated_by_replace, params: %{"text" => "post"})
+
+      updating =
+        post_form(:create_with_post_updated_by_replace, type: :update, data: existing_post())
+
+      assert creating.form_keys[:comments][:create_action] == :create
+      refute updating.form_keys[:comments][:create_action]
+      assert updating.form_keys[:comments][:read_action] == :read
+    end
+
+    test "for a lookup with no follow-up update are empty" do
+      # `belongs_to` lookups only relate, they never update the looked up record.
+      assert post_form(:create_with_post_lookup, type: :read).form_keys == []
+    end
+
+    test "for a lookup include the nested forms of the update that follows it" do
+      [comment] =
+        Post
+        |> AshPhoenix.Form.for_create(:create_with_comment_lookup, domain: Domain)
+        |> AshPhoenix.Form.add_form([:comments], type: :read)
+        |> Map.get(:forms)
+        |> Map.get(:comments)
+
+      # The looked up comment is then updated with `Comment.update`, which manages its post.
+      assert comment.form_keys[:post][:create_action] == :create
+      assert comment.form_keys[:_update][:update_action] == :update
+    end
   end
 
   test "it works when the relationship arg type is a NewType with subtype_of: :map" do
