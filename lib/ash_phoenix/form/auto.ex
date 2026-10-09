@@ -428,7 +428,6 @@ defmodule AshPhoenix.Form.Auto do
             |> add_read_action(manage_opts, relationship, auto_opts)
             |> add_update_action(manage_opts, relationship, auto_opts)
             |> add_destroy_action(manage_opts, relationship, auto_opts)
-            |> add_nested_forms(auto_opts)
 
           if opts[:read_action] || opts[:update_action] || opts[:destroy_action] do
             Keyword.put(
@@ -512,40 +511,11 @@ defmodule AshPhoenix.Form.Auto do
     end
   end
 
-  defp add_nested_forms(opts, auto_opts) do
-    Keyword.update!(opts, :forms, fn forms ->
-      forms =
-        if forms[:update_action] do
-          forms ++ set_for_type(auto(opts[:resource], opts[:update_action], auto_opts), :update)
-        else
-          forms
-        end
-
-      forms =
-        if forms[:create_action] do
-          forms ++ set_for_type(auto(opts[:resource], opts[:create_action], auto_opts), :create)
-        else
-          forms
-        end
-
-      forms =
-        if forms[:destroy_action] do
-          forms ++ set_for_type(auto(opts[:resource], opts[:destroy_action], auto_opts), :destroy)
-        else
-          forms
-        end
-
-      if forms[:read_action] do
-        forms ++ set_for_type(auto(opts[:resource], opts[:read_action], auto_opts), :read)
-      else
-        forms
-      end
-    end)
-  end
-
+  # A related form's own nested forms are those of the action it runs: the create action's for a
+  # form that creates, the update action's for one that updates, and so on.
   defp set_for_type(forms, type) do
     Enum.map(forms, fn {key, value} ->
-      {key, Keyword.put(value, :for_type, type)}
+      {key, Keyword.put(value, :for_type, [type])}
     end)
   end
 
@@ -571,13 +541,13 @@ defmodule AshPhoenix.Form.Auto do
                  ) do
               nil ->
                 forms ++
-                  auto(resource, action_name, auto_opts)
+                  set_for_type(auto(resource, action_name, auto_opts), :read)
 
               {source_dest_or_join, update_action} ->
                 resource = rel_to_resource(source_dest_or_join, relationship)
 
                 forms ++
-                  auto(resource, action_name, auto_opts) ++
+                  set_for_type(auto(resource, action_name, auto_opts), :read) ++
                   [
                     {:_update,
                      [
@@ -594,7 +564,7 @@ defmodule AshPhoenix.Form.Auto do
                 resource = relationship.through
 
                 forms ++
-                  auto(resource, action_name, auto_opts) ++
+                  set_for_type(auto(resource, action_name, auto_opts), :read) ++
                   [
                     {:_update,
                      [
@@ -630,7 +600,7 @@ defmodule AshPhoenix.Form.Auto do
         |> Keyword.update!(
           :forms,
           &(&1 ++
-              auto(resource, action_name, auto_opts))
+              set_for_type(auto(resource, action_name, auto_opts), :create))
         )
         |> add_join_form(relationship, rest, manage_opts)
     end
@@ -654,7 +624,7 @@ defmodule AshPhoenix.Form.Auto do
         |> Keyword.update!(
           :forms,
           &(&1 ++
-              auto(resource, action_name, auto_opts))
+              set_for_type(auto(resource, action_name, auto_opts), :update))
         )
         |> add_join_form(relationship, rest, manage_opts)
 
@@ -667,7 +637,7 @@ defmodule AshPhoenix.Form.Auto do
         |> Keyword.update!(
           :forms,
           &(&1 ++
-              auto(resource, action_name, auto_opts))
+              set_for_type(auto(resource, action_name, auto_opts), :update))
         )
         |> add_join_form(relationship, rest, manage_opts)
     end
@@ -694,7 +664,7 @@ defmodule AshPhoenix.Form.Auto do
         |> Keyword.update!(
           :forms,
           &(&1 ++
-              auto(resource, action_name, auto_opts))
+              set_for_type(auto(resource, action_name, auto_opts), :destroy))
         )
         |> add_join_form(relationship, rest, manage_opts)
     end

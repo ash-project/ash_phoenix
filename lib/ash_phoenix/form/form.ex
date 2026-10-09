@@ -404,7 +404,7 @@ defmodule AshPhoenix.Form do
       doc: "Forms nested inside the current nesting level in all cases."
     ],
     for_type: [
-      type: {:list, {:one_of, [:read, :create, :update]}},
+      type: {:list, {:one_of, [:read, :create, :update, :destroy]}},
       doc:
         "What action types the form applies for. Leave blank for it to apply to all action types."
     ],

@@ -6,7 +6,7 @@ defmodule AshPhoenix.AutoFormTest do
   use ExUnit.Case
 
   alias AshPhoenix.Form.Auto
-  alias AshPhoenix.Test.{Domain, Post, SimplePost}
+  alias AshPhoenix.Test.{Comment, Domain, Post, SimplePost}
   import AshPhoenix.Form, only: [update_opts: 2]
 
   defp form_for(a, _b), do: Phoenix.HTML.FormData.to_form(a, [])
@@ -33,6 +33,24 @@ defmodule AshPhoenix.AutoFormTest do
     assert update_opts(forms[:comments], %{})[:create_action] == :create
     assert update_opts(forms[:linked_posts], %{})[:update_action] == :update
     assert update_opts(forms[:linked_posts], %{})[:create_action] == :create
+  end
+
+  test "a related form's nested forms are those of the action it runs" do
+    form = AshPhoenix.Form.for_create(Comment, :create, domain: Domain)
+
+    updating =
+      AshPhoenix.Form.add_form(form, [:post],
+        type: :update,
+        data: %Post{id: Ash.UUID.generate(), text: "post"}
+      )
+
+    creating = AshPhoenix.Form.add_form(form, [:post], params: %{"text" => "post"})
+
+    # `Post.update` manages its comments but not its linked posts; `Post.create` manages both.
+    assert Keyword.has_key?(updating.forms[:post].form_keys, :comments)
+    refute Keyword.has_key?(updating.forms[:post].form_keys, :linked_posts)
+    assert Keyword.has_key?(creating.forms[:post].form_keys, :linked_posts)
+    assert length(Keyword.get_values(creating.forms[:post].form_keys, :comments)) == 1
   end
 
   test "it works when the relationship arg type is a NewType with subtype_of: :map" do
