@@ -1494,6 +1494,40 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
            |> assert_creates(show_path, show_contents)
   end
 
+  test "running twice does not create a second live directory" do
+    # two runs, each answering: no multitenancy, no actor
+    for _run <- 1..2 do
+      send(self(), {:mix_shell_input, :yes?, false})
+      send(self(), {:mix_shell_input, :yes?, false})
+    end
+
+    args = [
+      "--domain",
+      "Elixir.AshPhoenix.Test.Domain",
+      "--resource",
+      "Elixir.AshPhoenix.Test.Artist",
+      "--resource-plural",
+      "Artists"
+    ]
+
+    # Deliberately no `add_extension phoenix`: this is the project shape
+    # where Igniter maps *Web.ArtistLive.* to artist_live/ with no live/.
+    applied =
+      Igniter.Test.test_project()
+      |> Igniter.compose_task("ash_phoenix.gen.live", args)
+      |> apply_igniter!()
+
+    second =
+      applied
+      |> Igniter.compose_task("ash_phoenix.gen.live", args)
+      |> Igniter.Project.Module.move_files()
+
+    paths = second.rewrite |> Rewrite.sources() |> Enum.map(& &1.path)
+
+    refute Enum.any?(paths, &String.contains?(&1, "/live/")),
+           "second run created files in a different directory: #{inspect(paths)}"
+  end
+
   defp format_contents(contents, path) do
     {formatter_function, _options} =
       Mix.Tasks.Format.formatter_for_file(path)

@@ -66,7 +66,13 @@ if Code.ensure_loaded?(Igniter) do
         ]
         |> add_resource_assigns(resource, opts)
 
-      web_live = Path.join([web_path(igniter), "live", "#{assigns[:resource_singular]}_live"])
+      index_module =
+        Module.concat([web_module(igniter), "#{assigns[:resource_alias]}Live", "Index"])
+
+      web_live =
+        igniter
+        |> Igniter.Project.Module.proper_location(index_module)
+        |> Path.dirname()
 
       generate_opts =
         if opts[:interactive?] do
