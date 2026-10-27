@@ -1495,7 +1495,6 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
   end
 
   test "running twice does not create a second live directory" do
-    # two runs, each answering: no multitenancy, no actor
     for _run <- 1..2 do
       send(self(), {:mix_shell_input, :yes?, false})
       send(self(), {:mix_shell_input, :yes?, false})
@@ -1510,8 +1509,6 @@ defmodule Mix.Tasks.AshPhoenix.Gen.LiveTest do
       "Artists"
     ]
 
-    # Deliberately no `add_extension phoenix`: this is the project shape
-    # where Igniter maps *Web.ArtistLive.* to artist_live/ with no live/.
     applied =
       Igniter.Test.test_project()
       |> Igniter.compose_task("ash_phoenix.gen.live", args)
