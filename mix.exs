@@ -153,7 +153,7 @@ defmodule AshPhoenix.MixProject do
       {:phoenix_html, "~> 4.0"},
       {:phoenix_live_view, "~> 0.20.3 or ~> 1.0 or ~> 1.0.0-rc.1"},
       {:spark, "~> 2.1 and >= 2.2.29"},
-      {:inertia, "~> 3.1", optional: true},
+      {:inertia, "~> 2.3 or ~> 3.0", optional: true},
       {:simple_sat, "~> 0.1", only: [:dev, :test]},
       {:git_ops, "~> 2.5", only: [:dev, :test]},
       {:ex_doc, "~> 0.32", only: [:dev, :test], override: true},
