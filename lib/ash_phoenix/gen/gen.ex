@@ -19,6 +19,7 @@ defmodule AshPhoenix.Gen do
     """
   end
 
+  # sobelow_skip ["DOS.ModuleConcat"]
   def parse_opts(argv) do
     {domain, resource, rest} =
       case argv do
