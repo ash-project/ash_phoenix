@@ -2639,6 +2639,93 @@ defmodule AshPhoenix.FormTest do
       assert comment_form.data.id == second.id
       assert Form.value(comment_form, :text) == "B2"
     end
+
+    defp author_with_two_posts(b_comments) do
+      comment = fn ->
+        %Comment{id: Ash.UUID.generate(), text: "c", post: %Post{id: Ash.UUID.generate()}}
+      end
+
+      a = %Post{id: Ash.UUID.generate(), text: "A", comments: [comment.()]}
+
+      b = %Post{
+        id: Ash.UUID.generate(),
+        text: "B",
+        comments: Enum.map(1..b_comments, fn _ -> comment.() end)
+      }
+
+      author = %Author{id: Ash.UUID.generate(), email: "a@b.c", posts: [a, b]}
+
+      {Form.for_update(author, :update_with_posts, domain: Domain, forms: [auto?: true]), a, b}
+    end
+
+    defp post_row(post, comments) do
+      %{"_form_type" => "update", "id" => post.id, "text" => post.text, "comments" => comments}
+    end
+
+    defp comment_row(comment) do
+      %{"_form_type" => "update", "id" => comment.id, "text" => comment.text}
+    end
+
+    test "nested forms of a row matched by key at a new index are renamed" do
+      {form, _a, b} = author_with_two_posts(1)
+      [comment] = b.comments
+
+      form =
+        Form.validate(form, %{"posts" => %{"0" => post_row(b, %{"0" => comment_row(comment)})}})
+
+      assert [%{name: "form[posts][0]", forms: %{comments: [comment_form]}}] = form.forms[:posts]
+      assert comment_form.name == "form[posts][0][comments][0]"
+      assert comment_form.id == "form_posts_0_comments_0"
+    end
+
+    test "nested forms added under a row matched by key at a new index get its new name" do
+      {form, _a, b} = author_with_two_posts(1)
+      [comment] = b.comments
+
+      form =
+        Form.validate(form, %{
+          "posts" => %{
+            "0" =>
+              post_row(b, %{
+                "0" => comment_row(comment),
+                "1" => %{"_form_type" => "create", "text" => "new"}
+              })
+          }
+        })
+
+      assert [%{forms: %{comments: comment_forms}}] = form.forms[:posts]
+
+      assert Enum.map(comment_forms, & &1.name) ==
+               ["form[posts][0][comments][0]", "form[posts][0][comments][1]"]
+    end
+
+    test "a row matched by key at a new index inside another moved row is renamed at every depth" do
+      {form, _a, b} = author_with_two_posts(2)
+      [_, comment] = b.comments
+
+      form =
+        Form.validate(form, %{"posts" => %{"0" => post_row(b, %{"0" => comment_row(comment)})}})
+
+      assert [%{forms: %{comments: [comment_form]}}] = form.forms[:posts]
+      assert comment_form.name == "form[posts][0][comments][0]"
+      assert comment_form.forms[:post].name == "form[posts][0][comments][0][post]"
+      assert comment_form.forms[:post].id == "form_posts_0_comments_0_post"
+    end
+
+    test "nested forms of a row matched by key at the same index keep their names" do
+      {form, a, b} = author_with_two_posts(1)
+
+      form =
+        Form.validate(form, %{
+          "posts" => %{
+            "0" => post_row(a, %{"0" => comment_row(hd(a.comments))}),
+            "1" => post_row(b, %{"0" => comment_row(hd(b.comments))})
+          }
+        })
+
+      assert Enum.map(form.forms[:posts], &hd(&1.forms[:comments]).name) ==
+               ["form[posts][0][comments][0]", "form[posts][1][comments][0]"]
+    end
   end
 
   describe "issue #259" do
