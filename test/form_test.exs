@@ -2566,6 +2566,79 @@ defmodule AshPhoenix.FormTest do
 
       refute form |> AshPhoenix.Form.get_form([:post, :comments, 3])
     end
+
+    defp post_with_two_comments do
+      Post
+      |> Form.for_create(:create, domain: Domain, forms: [auto?: true])
+      |> Form.validate(%{
+        "text" => "post",
+        "comments" => %{"0" => %{"text" => "A"}, "1" => %{"text" => "B"}}
+      })
+      |> Form.submit!()
+      |> Ash.load!(:comments)
+    end
+
+    test "a row posted as a create form does not match a stored row at the same index" do
+      post = post_with_two_comments()
+
+      form =
+        post
+        |> Form.for_update(:update, domain: Domain, forms: [auto?: true])
+        |> Form.validate(%{
+          "comments" => %{"0" => %{"_form_type" => "create", "text" => "new"}}
+        })
+
+      assert [%{type: :create, data: nil} = comment_form] = form.forms[:comments]
+      assert Form.value(comment_form, :text) == "new"
+    end
+
+    test "submitting a row posted as a create form replaces the stored rows" do
+      post = post_with_two_comments()
+      stored_ids = Enum.map(post.comments, & &1.id)
+
+      form =
+        post
+        |> Form.for_update(:update, domain: Domain, forms: [auto?: true])
+        |> Form.validate(%{
+          "comments" => %{"0" => %{"_form_type" => "create", "text" => "new"}}
+        })
+
+      post = form |> Form.submit!(params: Form.params(form)) |> Ash.load!(:comments)
+
+      assert [%{text: "new", id: id}] = post.comments
+      refute id in stored_ids
+    end
+
+    test "a row without `_form_type` still matches the stored row at the same index" do
+      post = post_with_two_comments()
+      [first | _] = post.comments
+
+      form =
+        post
+        |> Form.for_update(:update, domain: Domain, forms: [auto?: true])
+        |> Form.validate(%{"comments" => %{"0" => %{"text" => "new"}}})
+
+      assert [%{type: :update} = comment_form] = form.forms[:comments]
+      assert comment_form.data.id == first.id
+    end
+
+    test "a stored row posted as an update form at another index still matches by primary key" do
+      post = post_with_two_comments()
+      [_, second] = post.comments
+
+      form =
+        post
+        |> Form.for_update(:update, domain: Domain, forms: [auto?: true])
+        |> Form.validate(%{
+          "comments" => %{
+            "0" => %{"_form_type" => "update", "id" => second.id, "text" => "B2"}
+          }
+        })
+
+      assert [%{type: :update} = comment_form] = form.forms[:comments]
+      assert comment_form.data.id == second.id
+      assert Form.value(comment_form, :text) == "B2"
+    end
   end
 
   describe "issue #259" do

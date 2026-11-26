@@ -1384,7 +1384,8 @@ defmodule AshPhoenix.Form do
     matcher =
       opts[:matcher] ||
         fn nested_form, params, root_form, key, index ->
-          if is_map(params) do
+          if is_map(params) and
+               params["_form_type"] in [nil, to_string(nested_form.type)] do
             pkey_fields = Ash.Resource.Info.primary_key(nested_form.resource)
 
             if Enum.any?(pkey_fields) &&
