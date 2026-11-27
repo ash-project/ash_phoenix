@@ -1717,8 +1717,10 @@ defmodule AshPhoenix.Form do
                         prepare_source: opts[:prepare_source],
                         prev_data_trail?: prev_data_trail
                       )
-                      |> Map.put(:name, form.name <> "[#{key}][#{index}]")
-                      |> Map.put(:id, form.id <> "_#{key}_#{index}")
+                      |> do_replace_form_names(
+                        {matching_form.name, form.name <> "[#{key}][#{index}]"},
+                        {matching_form.id, form.id <> "_#{key}_#{index}"}
+                      )
                       |> clear_embed_source_errors(opts)
 
                     Map.update(forms, key, [validated], fn nested_forms ->
